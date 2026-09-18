@@ -10,33 +10,102 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnakalyChar968Char949RouteImport } from './routes/anakalyψε'
+import { Route as DimofiliRouteImport } from './routes/dimofili'
+import { Route as KatigoriesRouteImport } from './routes/katigories'
+import { Route as SxetikaRouteImport } from './routes/sxetika'
+import { Route as ArthroSlugRouteImport } from './routes/arthro.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnakalyChar968Char949Route = AnakalyChar968Char949RouteImport.update({
+  id: '/anakalyψε',
+  path: '/anakalyψε',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DimofiliRoute = DimofiliRouteImport.update({
+  id: '/dimofili',
+  path: '/dimofili',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KatigoriesRoute = KatigoriesRouteImport.update({
+  id: '/katigories',
+  path: '/katigories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SxetikaRoute = SxetikaRouteImport.update({
+  id: '/sxetika',
+  path: '/sxetika',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArthroSlugRoute = ArthroSlugRouteImport.update({
+  id: '/arthro/$slug',
+  path: '/arthro/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/anakalyψε': typeof AnakalyChar968Char949Route
+  '/dimofili': typeof DimofiliRoute
+  '/katigories': typeof KatigoriesRoute
+  '/sxetika': typeof SxetikaRoute
+  '/arthro/$slug': typeof ArthroSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/anakalyψε': typeof AnakalyChar968Char949Route
+  '/dimofili': typeof DimofiliRoute
+  '/katigories': typeof KatigoriesRoute
+  '/sxetika': typeof SxetikaRoute
+  '/arthro/$slug': typeof ArthroSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/anakalyψε': typeof AnakalyChar968Char949Route
+  '/dimofili': typeof DimofiliRoute
+  '/katigories': typeof KatigoriesRoute
+  '/sxetika': typeof SxetikaRoute
+  '/arthro/$slug': typeof ArthroSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/anakalyψε'
+    | '/dimofili'
+    | '/katigories'
+    | '/sxetika'
+    | '/arthro/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/anakalyψε'
+    | '/dimofili'
+    | '/katigories'
+    | '/sxetika'
+    | '/arthro/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/anakalyψε'
+    | '/dimofili'
+    | '/katigories'
+    | '/sxetika'
+    | '/arthro/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnakalyChar968Char949Route: typeof AnakalyChar968Char949Route
+  DimofiliRoute: typeof DimofiliRoute
+  KatigoriesRoute: typeof KatigoriesRoute
+  SxetikaRoute: typeof SxetikaRoute
+  ArthroSlugRoute: typeof ArthroSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +117,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/anakalyψε': {
+      id: '/anakalyψε'
+      path: '/anakalyψε'
+      fullPath: '/anakalyψε'
+      preLoaderRoute: typeof AnakalyChar968Char949RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dimofili': {
+      id: '/dimofili'
+      path: '/dimofili'
+      fullPath: '/dimofili'
+      preLoaderRoute: typeof DimofiliRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/katigories': {
+      id: '/katigories'
+      path: '/katigories'
+      fullPath: '/katigories'
+      preLoaderRoute: typeof KatigoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sxetika': {
+      id: '/sxetika'
+      path: '/sxetika'
+      fullPath: '/sxetika'
+      preLoaderRoute: typeof SxetikaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/arthro/$slug': {
+      id: '/arthro/$slug'
+      path: '/arthro/$slug'
+      fullPath: '/arthro/$slug'
+      preLoaderRoute: typeof ArthroSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnakalyChar968Char949Route: AnakalyChar968Char949Route,
+  DimofiliRoute: DimofiliRoute,
+  KatigoriesRoute: KatigoriesRoute,
+  SxetikaRoute: SxetikaRoute,
+  ArthroSlugRoute: ArthroSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

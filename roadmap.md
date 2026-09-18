@@ -7,4 +7,4 @@
 - [x] Λειτουργικά dark mode, bookmarks σε localStorage, random article, newsletter validation, copy/share
 - [x] Reading progress, back-to-top, cookie consent, accessible mobile menu και θεματικό 404
 - [x] Ελληνικά mock δεδομένα 8+ άρθρων με σαφή σήμανση demo content
-- [ ] SEO/Open Graph metadata ανά σελίδα και responsive έλεγχος
+- [x] SEO/Open Graph metadata ανά σελίδα και responsive έλεγχος

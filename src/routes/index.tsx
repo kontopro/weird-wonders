@@ -8,9 +8,9 @@ import { useBookmarks } from "@/hooks/use-bookmarks";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
-    { title: "Ήξερες ότι; — Κάθε μέρα κρύβει κάτι που δεν γνώριζες" },
-    { name: "description", content: "Συναρπαστικές ιστορίες και απρόσμενα facts από την επιστήμη, την ιστορία και τον κόσμο." },
-    { property: "og:title", content: "Ήξερες ότι;" }, { property: "og:description", content: "Κάθε μέρα κρύβει κάτι που δεν γνώριζες." },
+    { title: "FACTάκι — Μικρό fact. Μεγάλη έκπληξη." },
+    { name: "description", content: "Απρόσμενα και τεκμηριωμένα facts από την επιστήμη, την ιστορία, τη φύση, την τεχνολογία και τον πολιτισμό." },
+    { property: "og:title", content: "FACTάκι — Κάθε μέρα κάτι που δεν ήξερες" }, { property: "og:description", content: "Μικρές πληροφορίες που κρύβουν μεγάλες εκπλήξεις." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }),
   component: Index,
@@ -37,11 +37,11 @@ function Index() {
         <div className="trending-stack"><div className="section-kicker"><span>Τώρα διαβάζονται</span><Sparkles /></div>{articles.slice(1, 3).map((article, index) => <Link key={article.slug} to="/arthro/$slug" params={{ slug: article.slug }} className="trending-card"><img src={article.image} alt="" width={1200} height={900} /><div><span>0{index + 1} · {article.category}</span><h2>{article.title}</h2><p>{article.minutes} λεπτά ανάγνωσης</p></div></Link>)}</div>
       </section>
 
-      <section className="fact-band"><div className="section-shell fact-layout"><div><p className="eyebrow">Το fact της ημέρας</p><h2>{revealed ? fact : "Έτοιμος να ανακαλύψεις κάτι απρόσμενο;"}</h2><div className="fact-actions"><Button onClick={() => setRevealed(true)}>{revealed ? "Αποκαλύφθηκε" : "Αποκάλυψέ το"}</Button>{revealed && <><Button variant="outline" onClick={() => { navigator.clipboard.writeText(fact); setCopied(true); }}><Clipboard /> {copied ? "Αντιγράφηκε" : "Αντιγραφή"}</Button><Button variant="ghost" size="icon" onClick={() => navigator.share?.({ title: "Ήξερες ότι;", text: fact })} aria-label="Κοινοποίηση"><Share2 /></Button></>}</div></div><div className={`fact-mark ${revealed ? "revealed" : ""}`}>;</div></div></section>
+      <section className="fact-band"><div className="section-shell fact-layout"><div><p className="eyebrow">Το FACTάκι της ημέρας</p><h2>{revealed ? fact : "Έτοιμος να ανακαλύψεις κάτι απρόσμενο;"}</h2><div className="fact-actions"><Button onClick={() => setRevealed(true)}>{revealed ? "Αποκαλύφθηκε" : "Αποκάλυψέ το"}</Button>{revealed && <><Button variant="outline" onClick={() => { navigator.clipboard.writeText(fact); setCopied(true); }}><Clipboard /> {copied ? "Αντιγράφηκε" : "Αντιγραφή"}</Button><Button variant="ghost" size="icon" onClick={() => navigator.share?.({ title: "FACTάκι", text: fact })} aria-label="Κοινοποίηση"><Share2 /></Button></>}</div></div><div className={`fact-mark ${revealed ? "revealed" : ""}`}>F</div></div></section>
 
       <section className="section-shell section-block"><header className="section-heading"><div><p className="eyebrow">Ο κόσμος είναι μεγαλύτερος απ’ όσο νομίζεις</p><h2>Διάλεξε την περιέργειά σου</h2></div><Link to="/katigories">Όλες οι κατηγορίες <ArrowRight /></Link></header><div className="category-grid">{categories.map((category, index) => { const Icon = categoryIcons[index] ?? BookOpen; return <Link key={category} to="/anakalyψε" search={{ category }} className={`category-tile ${categoryStyles[category]}`}><Icon /><span>{category}</span><small>Ανακάλυψε</small></Link>; })}</div></section>
 
-      <section className="section-shell section-block"><header className="section-heading"><div><p className="eyebrow">Νέα γνώση, χωρίς θόρυβο</p><h2>Πρόσφατες ανακαλύψεις</h2></div><Link to="/anakalyψε">Δες τα όλα <ArrowRight /></Link></header><div className="article-grid">{articles.slice(0, 6).map((article) => <ArticleCard key={article.slug} article={article} saved={bookmarks.includes(article.slug)} onBookmark={() => toggle(article.slug)} />)}</div></section>
+      <section className="section-shell section-block"><header className="section-heading"><div><p className="eyebrow">Νέα γνώση, χωρίς θόρυβο</p><h2>Νέα FACTάκια</h2></div><Link to="/anakalyψε">Δες τα όλα <ArrowRight /></Link></header><div className="article-grid">{articles.slice(0, 6).map((article) => <ArticleCard key={article.slug} article={article} saved={bookmarks.includes(article.slug)} onBookmark={() => toggle(article.slug)} />)}</div></section>
 
       <section className="popular-band"><div className="section-shell popular-layout"><div><p className="eyebrow">Αυτή την εβδομάδα</p><h2>Οι ιστορίες που άνοιξαν τις περισσότερες συζητήσεις.</h2></div><ol>{articles.slice(0, 5).map((article, index) => <li key={article.slug}><span>0{index + 1}</span><Link to="/arthro/$slug" params={{ slug: article.slug }}>{article.title}</Link><small>{article.category}</small></li>)}</ol></div></section>
 

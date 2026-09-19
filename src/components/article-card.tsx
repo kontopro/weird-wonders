@@ -17,7 +17,7 @@ export function ArticleCard({ article, saved, onBookmark }: { article: Article; 
         </div>
         <Link to="/arthro/$slug" params={{ slug: article.slug }}><h3>{article.title}</h3></Link>
         <p>{article.excerpt}</p>
-        <div className="story-footer"><span>{article.date}</span><span><Clock /> {article.minutes} λεπτά</span></div>
+        <div className="story-footer"><span>{article.date}</span><span><Clock /> {article.minutes} λεπτά ανάγνωσης</span></div>
       </div>
     </article>
   );

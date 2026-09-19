@@ -32,7 +32,7 @@ function Index() {
       <section className="hero section-shell">
         <div className="hero-lead">
           <img src={featured.image} alt="Πυκνές κορυφές δέντρων που συναντιούνται" width={1600} height={1008} className="hero-image" />
-          <div className="hero-overlay"><span className="category-pill nature">Φύση</span><h1>{featured.title}</h1><p>{featured.excerpt}</p><div className="hero-meta"><span><Clock /> {featured.minutes} λεπτά</span><Link to="/arthro/$slug" params={{ slug: featured.slug }} className="link-button">Ανακάλυψέ το <ArrowRight /></Link></div></div>
+           <div className="hero-overlay"><span className="category-pill nature">Φύση</span><h1>{featured.title}</h1><p>{featured.excerpt}</p><div className="hero-meta"><span><Clock /> {featured.minutes} λεπτά ανάγνωσης</span><Link to="/arthro/$slug" params={{ slug: featured.slug }} className="link-button">Ανακάλυψέ το <ArrowRight /></Link></div></div>
         </div>
         <div className="trending-stack"><div className="section-kicker"><span>Τώρα διαβάζονται</span><Sparkles /></div>{articles.slice(1, 3).map((article, index) => <Link key={article.slug} to="/arthro/$slug" params={{ slug: article.slug }} className="trending-card"><img src={article.image} alt="" width={1200} height={900} /><div><span>0{index + 1} · {article.category}</span><h2>{article.title}</h2><p>{article.minutes} λεπτά ανάγνωσης</p></div></Link>)}</div>
       </section>

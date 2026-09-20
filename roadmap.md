@@ -9,8 +9,8 @@
 - [x] Ελληνικά mock δεδομένα 8+ άρθρων με σαφή σήμανση demo content
 - [x] SEO/Open Graph metadata ανά σελίδα και responsive έλεγχος
 - [x] Admin layout και responsive navigation
-- [ ] Admin επισκόπηση με mock δεδομένα
-- [ ] Διαχείριση άρθρων με φίλτρα και local actions
-- [ ] Reusable editor νέου/υπάρχοντος άρθρου
-- [ ] Admin κατηγορίες και προφίλ
+- [x] Admin επισκόπηση με mock δεδομένα
+- [x] Διαχείριση άρθρων με φίλτρα και local actions
+- [x] Reusable editor νέου/υπάρχοντος άρθρου
+- [x] Admin κατηγορίες και προφίλ
 - [ ] Responsive και λειτουργικός έλεγχος admin

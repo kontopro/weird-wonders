@@ -1,0 +1,3 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { ArticleEditor } from "@/components/admin/article-editor";
+export const Route = createFileRoute("/admin/articles/new")({ component: () => <ArticleEditor />, head: () => ({ meta: [{ title: "Νέο άρθρο — FACTάκι" }, { name: "description", content: "Δημιουργία νέου άρθρου στο frontend prototype του FACTάκι." }, { property: "og:title", content: "Νέο άρθρο — FACTάκι" }, { property: "og:description", content: "Δημιουργία νέου άρθρου στο frontend prototype του FACTάκι." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }) });

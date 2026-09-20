@@ -16,7 +16,11 @@ import { Route as DimofiliRouteImport } from './routes/dimofili'
 import { Route as KatigoriesRouteImport } from './routes/katigories'
 import { Route as SxetikaRouteImport } from './routes/sxetika'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminArticlesRouteImport } from './routes/admin.articles'
+import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as ArthroSlugRouteImport } from './routes/arthro.$slug'
+import { Route as AdminArticlesIndexRouteImport } from './routes/admin.articles.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -53,10 +57,30 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminArticlesRoute = AdminArticlesRouteImport.update({
+  id: '/articles',
+  path: '/articles',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProfileRoute = AdminProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ArthroSlugRoute = ArthroSlugRouteImport.update({
   id: '/arthro/$slug',
   path: '/arthro/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminArticlesIndexRoute = AdminArticlesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminArticlesRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -66,8 +90,12 @@ export interface FileRoutesByFullPath {
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
   '/sxetika': typeof SxetikaRoute
+  '/admin/articles': typeof AdminArticlesRouteWithChildren
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/arthro/$slug': typeof ArthroSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/articles/': typeof AdminArticlesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,8 +103,11 @@ export interface FileRoutesByTo {
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
   '/sxetika': typeof SxetikaRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/arthro/$slug': typeof ArthroSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/articles': typeof AdminArticlesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,8 +117,12 @@ export interface FileRoutesById {
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
   '/sxetika': typeof SxetikaRoute
+  '/admin/articles': typeof AdminArticlesRouteWithChildren
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/arthro/$slug': typeof ArthroSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/articles/': typeof AdminArticlesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,8 +133,12 @@ export interface FileRouteTypes {
     | '/dimofili'
     | '/katigories'
     | '/sxetika'
+    | '/admin/articles'
+    | '/admin/categories'
+    | '/admin/profile'
     | '/arthro/$slug'
     | '/admin/'
+    | '/admin/articles/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -107,8 +146,11 @@ export interface FileRouteTypes {
     | '/dimofili'
     | '/katigories'
     | '/sxetika'
+    | '/admin/categories'
+    | '/admin/profile'
     | '/arthro/$slug'
     | '/admin'
+    | '/admin/articles'
   id:
     | '__root__'
     | '/'
@@ -117,8 +159,12 @@ export interface FileRouteTypes {
     | '/dimofili'
     | '/katigories'
     | '/sxetika'
+    | '/admin/articles'
+    | '/admin/categories'
+    | '/admin/profile'
     | '/arthro/$slug'
     | '/admin/'
+    | '/admin/articles/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -182,6 +228,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/articles': {
+      id: '/admin/articles'
+      path: '/articles'
+      fullPath: '/admin/articles'
+      preLoaderRoute: typeof AdminArticlesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/profile': {
+      id: '/admin/profile'
+      path: '/profile'
+      fullPath: '/admin/profile'
+      preLoaderRoute: typeof AdminProfileRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/arthro/$slug': {
       id: '/arthro/$slug'
       path: '/arthro/$slug'
@@ -189,14 +256,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArthroSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/articles/': {
+      id: '/admin/articles/'
+      path: '/'
+      fullPath: '/admin/articles/'
+      preLoaderRoute: typeof AdminArticlesIndexRouteImport
+      parentRoute: typeof AdminArticlesRoute
+    }
   }
 }
 
+interface AdminArticlesRouteChildren {
+  AdminArticlesIndexRoute: typeof AdminArticlesIndexRoute
+}
+
+const AdminArticlesRouteChildren: AdminArticlesRouteChildren = {
+  AdminArticlesIndexRoute: AdminArticlesIndexRoute,
+}
+
+const AdminArticlesRouteWithChildren = AdminArticlesRoute._addFileChildren(
+  AdminArticlesRouteChildren,
+)
+
 interface AdminRouteChildren {
+  AdminArticlesRoute: typeof AdminArticlesRouteWithChildren
+  AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminProfileRoute: typeof AdminProfileRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminArticlesRoute: AdminArticlesRouteWithChildren,
+  AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminProfileRoute: AdminProfileRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

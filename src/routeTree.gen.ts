@@ -10,15 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AnakalyChar968Char949RouteImport } from './routes/anakalyψε'
 import { Route as DimofiliRouteImport } from './routes/dimofili'
 import { Route as KatigoriesRouteImport } from './routes/katigories'
 import { Route as SxetikaRouteImport } from './routes/sxetika'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ArthroSlugRouteImport } from './routes/arthro.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnakalyChar968Char949Route = AnakalyChar968Char949RouteImport.update({
@@ -41,6 +48,11 @@ const SxetikaRoute = SxetikaRouteImport.update({
   path: '/sxetika',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ArthroSlugRoute = ArthroSlugRouteImport.update({
   id: '/arthro/$slug',
   path: '/arthro/$slug',
@@ -49,11 +61,13 @@ const ArthroSlugRoute = ArthroSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/anakalyψε': typeof AnakalyChar968Char949Route
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
   '/sxetika': typeof SxetikaRoute
   '/arthro/$slug': typeof ArthroSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,25 +76,30 @@ export interface FileRoutesByTo {
   '/katigories': typeof KatigoriesRoute
   '/sxetika': typeof SxetikaRoute
   '/arthro/$slug': typeof ArthroSlugRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/anakalyψε': typeof AnakalyChar968Char949Route
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
   '/sxetika': typeof SxetikaRoute
   '/arthro/$slug': typeof ArthroSlugRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/anakalyψε'
     | '/dimofili'
     | '/katigories'
     | '/sxetika'
     | '/arthro/$slug'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,18 +108,22 @@ export interface FileRouteTypes {
     | '/katigories'
     | '/sxetika'
     | '/arthro/$slug'
+    | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/anakalyψε'
     | '/dimofili'
     | '/katigories'
     | '/sxetika'
     | '/arthro/$slug'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AnakalyChar968Char949Route: typeof AnakalyChar968Char949Route
   DimofiliRoute: typeof DimofiliRoute
   KatigoriesRoute: typeof KatigoriesRoute
@@ -115,6 +138,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/anakalyψε': {
@@ -145,6 +175,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SxetikaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/arthro/$slug': {
       id: '/arthro/$slug'
       path: '/arthro/$slug'
@@ -155,8 +192,19 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AnakalyChar968Char949Route: AnakalyChar968Char949Route,
   DimofiliRoute: DimofiliRoute,
   KatigoriesRoute: KatigoriesRoute,

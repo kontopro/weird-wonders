@@ -1,0 +1,2 @@
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+export const Route = createFileRoute("/admin/articles")({ component: () => <Outlet />, head: () => ({ meta: [{ title: "Άρθρα — FACTάκι" }, { name: "description", content: "Διαχείριση άρθρων του FACTάκι." }, { property: "og:title", content: "Άρθρα — FACTάκι" }, { property: "og:description", content: "Διαχείριση άρθρων του FACTάκι." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }) });

@@ -19,7 +19,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
     <nav className="admin-nav" aria-label="Πλοήγηση διαχείρισης">
       {navItems.map(({ label, to, icon: Icon }) => {
         const active = to === "/admin" ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
-        return <Link key={to} to={to} className={active ? "active" : ""} onClick={onNavigate}><Icon /><span>{label}</span></Link>;
+        return <Link key={to} to={to} activeOptions={{ exact: true }} className={active ? "active" : ""} onClick={onNavigate}><Icon /><span>{label}</span></Link>;
       })}
     </nav>
     <div className="admin-profile-card"><div className="admin-avatar">ΜΠ</div><div><strong>Μαρία Παπαδοπούλου</strong><span>Αρχισυντάκτρια</span></div></div>

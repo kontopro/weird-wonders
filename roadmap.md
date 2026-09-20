@@ -13,4 +13,4 @@
 - [x] Διαχείριση άρθρων με φίλτρα και local actions
 - [x] Reusable editor νέου/υπάρχοντος άρθρου
 - [x] Admin κατηγορίες και προφίλ
-- [ ] Responsive και λειτουργικός έλεγχος admin — τελική επαλήθευση interactions
+- [x] Responsive και λειτουργικός έλεγχος admin

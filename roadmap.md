@@ -8,7 +8,7 @@
 - [x] Reading progress, back-to-top, cookie consent, accessible mobile menu και θεματικό 404
 - [x] Ελληνικά mock δεδομένα 8+ άρθρων με σαφή σήμανση demo content
 - [x] SEO/Open Graph metadata ανά σελίδα και responsive έλεγχος
-- [ ] Admin layout και responsive navigation
+- [x] Admin layout και responsive navigation
 - [ ] Admin επισκόπηση με mock δεδομένα
 - [ ] Διαχείριση άρθρων με φίλτρα και local actions
 - [ ] Reusable editor νέου/υπάρχοντος άρθρου

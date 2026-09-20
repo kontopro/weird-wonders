@@ -81,6 +81,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "FACTάκι" },
       { name: "description", content: "Απρόσμενα και τεκμηριωμένα facts από την επιστήμη, την ιστορία, τη φύση, την τεχνολογία και τον πολιτισμό." },
       { name: "author", content: "FACTάκι" },
+      { property: "og:title", content: "FACTάκι — Κάθε μέρα κάτι που δεν ήξερες" },
+      { property: "og:description", content: "Μικρές πληροφορίες που κρύβουν μεγάλες εκπλήξεις." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

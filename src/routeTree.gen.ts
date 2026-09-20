@@ -21,6 +21,8 @@ import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as ArthroSlugRouteImport } from './routes/arthro.$slug'
 import { Route as AdminArticlesIndexRouteImport } from './routes/admin.articles.index'
+import { Route as AdminArticlesNewRouteImport } from './routes/admin.articles.new'
+import { Route as AdminArticlesSlugEditRouteImport } from './routes/admin.articles.$slug.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +84,16 @@ const AdminArticlesIndexRoute = AdminArticlesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminArticlesRoute,
 } as any)
+const AdminArticlesNewRoute = AdminArticlesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminArticlesRoute,
+} as any)
+const AdminArticlesSlugEditRoute = AdminArticlesSlugEditRouteImport.update({
+  id: '/$slug/edit',
+  path: '/$slug/edit',
+  getParentRoute: () => AdminArticlesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,7 +107,9 @@ export interface FileRoutesByFullPath {
   '/admin/profile': typeof AdminProfileRoute
   '/arthro/$slug': typeof ArthroSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/articles/new': typeof AdminArticlesNewRoute
   '/admin/articles/': typeof AdminArticlesIndexRoute
+  '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -107,7 +121,9 @@ export interface FileRoutesByTo {
   '/admin/profile': typeof AdminProfileRoute
   '/arthro/$slug': typeof ArthroSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/articles/new': typeof AdminArticlesNewRoute
   '/admin/articles': typeof AdminArticlesIndexRoute
+  '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,7 +138,9 @@ export interface FileRoutesById {
   '/admin/profile': typeof AdminProfileRoute
   '/arthro/$slug': typeof ArthroSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/articles/new': typeof AdminArticlesNewRoute
   '/admin/articles/': typeof AdminArticlesIndexRoute
+  '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -138,7 +156,9 @@ export interface FileRouteTypes {
     | '/admin/profile'
     | '/arthro/$slug'
     | '/admin/'
+    | '/admin/articles/new'
     | '/admin/articles/'
+    | '/admin/articles/$slug/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,7 +170,9 @@ export interface FileRouteTypes {
     | '/admin/profile'
     | '/arthro/$slug'
     | '/admin'
+    | '/admin/articles/new'
     | '/admin/articles'
+    | '/admin/articles/$slug/edit'
   id:
     | '__root__'
     | '/'
@@ -164,7 +186,9 @@ export interface FileRouteTypes {
     | '/admin/profile'
     | '/arthro/$slug'
     | '/admin/'
+    | '/admin/articles/new'
     | '/admin/articles/'
+    | '/admin/articles/$slug/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -263,15 +287,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminArticlesIndexRouteImport
       parentRoute: typeof AdminArticlesRoute
     }
+    '/admin/articles/new': {
+      id: '/admin/articles/new'
+      path: '/new'
+      fullPath: '/admin/articles/new'
+      preLoaderRoute: typeof AdminArticlesNewRouteImport
+      parentRoute: typeof AdminArticlesRoute
+    }
+    '/admin/articles/$slug/edit': {
+      id: '/admin/articles/$slug/edit'
+      path: '/$slug/edit'
+      fullPath: '/admin/articles/$slug/edit'
+      preLoaderRoute: typeof AdminArticlesSlugEditRouteImport
+      parentRoute: typeof AdminArticlesRoute
+    }
   }
 }
 
 interface AdminArticlesRouteChildren {
+  AdminArticlesNewRoute: typeof AdminArticlesNewRoute
   AdminArticlesIndexRoute: typeof AdminArticlesIndexRoute
+  AdminArticlesSlugEditRoute: typeof AdminArticlesSlugEditRoute
 }
 
 const AdminArticlesRouteChildren: AdminArticlesRouteChildren = {
+  AdminArticlesNewRoute: AdminArticlesNewRoute,
   AdminArticlesIndexRoute: AdminArticlesIndexRoute,
+  AdminArticlesSlugEditRoute: AdminArticlesSlugEditRoute,
 }
 
 const AdminArticlesRouteWithChildren = AdminArticlesRoute._addFileChildren(

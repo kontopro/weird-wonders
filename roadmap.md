@@ -15,3 +15,15 @@
 - [x] Admin κατηγορίες και προφίλ
 - [x] Responsive και λειτουργικός έλεγχος admin
 - [x] Μενού «Προσθήκη block» στον editor με 8 mock επιλογές
+
+## Multi-tenant platform
+
+- [x] Ασφαλές `ui-prototype-v1` checkpoint και feature branch
+- [x] Central FACTάκι site configuration χωρίς αλλαγή ταυτότητας
+- [x] Versioned Zod schema και ασφαλής public renderer για article blocks
+- [x] Typed author-facing block editor χωρίς JSON
+- [x] Προτεινόμενο Supabase MVP ER model, RLS matrix, Storage design και test strategy
+- [ ] Έγκριση του `docs/supabase-mvp-design.md`
+- [ ] Supabase local setup και version-controlled migrations
+- [ ] Authentication, RLS και tenant-isolation integration tests
+- [ ] Article CRUD και αντικατάσταση των mock queries

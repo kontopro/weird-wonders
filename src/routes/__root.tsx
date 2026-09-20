@@ -15,13 +15,14 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SiteShell } from "../components/site-shell";
 import { Button } from "../components/ui/button";
 import { Toaster } from "../components/ui/sonner";
+import { siteConfig } from "../config/site";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">FACTάκι: αυτή η σελίδα δεν υπάρχει.</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{siteConfig.name}: αυτή η σελίδα δεν υπάρχει.</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Μόλις το έμαθες. Υπάρχουν όμως πολλές αληθινές ιστορίες στην αρχική.
         </p>
@@ -80,11 +81,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "FACTάκι" },
-      { name: "description", content: "Απρόσμενα και τεκμηριωμένα facts από την επιστήμη, την ιστορία, τη φύση, την τεχνολογία και τον πολιτισμό." },
-      { name: "author", content: "FACTάκι" },
-      { property: "og:title", content: "FACTάκι — Κάθε μέρα κάτι που δεν ήξερες" },
-      { property: "og:description", content: "Μικρές πληροφορίες που κρύβουν μεγάλες εκπλήξεις." },
+      { title: siteConfig.name },
+      { name: "description", content: siteConfig.seo.description },
+      { name: "author", content: siteConfig.name },
+      { property: "og:title", content: siteConfig.seo.socialTitle },
+      { property: "og:description", content: siteConfig.seo.socialDescription },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -107,7 +108,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="el">
+    <html lang={siteConfig.defaultLanguage}>
       <head>
         <HeadContent />
       </head>

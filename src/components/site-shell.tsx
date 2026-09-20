@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { articles } from "@/lib/articles";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
+import { siteConfig } from "@/config/site";
 
 export function SiteShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
@@ -31,11 +32,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <div className="header-actions">
           <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/anakalyψε" })} aria-label="Αναζήτηση"><Search /></Button>
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={dark ? "Φωτεινό θέμα" : "Σκούρο θέμα"}>{dark ? <Sun /> : <Moon />}</Button>
-          <Button className="random-button" onClick={random}><Shuffle /> Τυχαίο FACTάκι</Button>
+          <Button className="random-button" onClick={random}><Shuffle /> Τυχαίο {siteConfig.contentLabels.singular}</Button>
           <Button variant="ghost" size="icon" className="menu-button" onClick={() => setMenu(!menu)} aria-label="Μενού">{menu ? <X /> : <Menu />}</Button>
         </div>
       </div>
-      {menu && <nav className="mobile-nav" aria-label="Μενού κινητού">{nav.map(([label, to]) => <Link key={to} to={to} onClick={() => setMenu(false)}>{label}</Link>)}<Button onClick={random}><Shuffle /> Τυχαίο FACTάκι</Button></nav>}
+      {menu && <nav className="mobile-nav" aria-label="Μενού κινητού">{nav.map(([label, to]) => <Link key={to} to={to} onClick={() => setMenu(false)}>{label}</Link>)}<Button onClick={random}><Shuffle /> Τυχαίο {siteConfig.contentLabels.singular}</Button></nav>}
     </header>
     <main>{children}</main>
     <footer className="site-footer"><div><BrandLogo /><p>Κάθε μέρα κρύβει κάτι που δεν γνώριζες.</p></div><div className="footer-links"><Link to="/sxetika">Σχετικά</Link><Link to="/anakalyψε">Ανακάλυψε</Link><span>© 2026</span></div></footer>

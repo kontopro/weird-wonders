@@ -5,8 +5,9 @@ import { toast } from "sonner";
 import { ArticlesLoadingSkeleton, ArticlesTable, ConfirmDialog } from "@/components/admin/admin-ui";
 import { adminArticles, type AdminArticle, type ArticleStatus } from "@/lib/admin-data";
 import { categories } from "@/lib/articles";
+import { brandedTitle, siteConfig } from "@/config/site";
 
-export const Route = createFileRoute("/admin/articles/")({ component: ArticlesPage, head: () => ({ meta: [{ title: "Άρθρα — FACTάκι" }, { name: "description", content: "Αναζήτηση, φίλτρα και οργάνωση άρθρων του FACTάκι." }, { property: "og:title", content: "Άρθρα — FACTάκι" }, { property: "og:description", content: "Αναζήτηση, φίλτρα και οργάνωση άρθρων του FACTάκι." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }) });
+export const Route = createFileRoute("/admin/articles/")({ component: ArticlesPage, head: () => ({ meta: [{ title: brandedTitle("Άρθρα") }, { name: "description", content: `Αναζήτηση, φίλτρα και οργάνωση άρθρων του ${siteConfig.name}.` }, { property: "og:title", content: brandedTitle("Άρθρα") }, { property: "og:description", content: `Αναζήτηση, φίλτρα και οργάνωση άρθρων του ${siteConfig.name}.` }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }) });
 
 function ArticlesPage() {
   const [rows, setRows] = useState(adminArticles); const [query, setQuery] = useState(""); const [category, setCategory] = useState("Όλες"); const [status, setStatus] = useState("Όλες"); const [sort, setSort] = useState("newest"); const [target, setTarget] = useState<AdminArticle>(); const [loading,setLoading]=useState(true);

@@ -14,3 +14,4 @@
 - [x] Reusable editor νέου/υπάρχοντος άρθρου
 - [x] Admin κατηγορίες και προφίλ
 - [x] Responsive και λειτουργικός έλεγχος admin
+- [ ] Μενού «Προσθήκη block» στον editor με 8 mock επιλογές

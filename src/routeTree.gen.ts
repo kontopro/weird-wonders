@@ -10,15 +10,28 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AnakalyChar968Char949RouteImport } from './routes/anakalyψε'
 import { Route as DimofiliRouteImport } from './routes/dimofili'
 import { Route as KatigoriesRouteImport } from './routes/katigories'
 import { Route as SxetikaRouteImport } from './routes/sxetika'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminArticlesRouteImport } from './routes/admin.articles'
+import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as ArthroSlugRouteImport } from './routes/arthro.$slug'
+import { Route as AdminArticlesIndexRouteImport } from './routes/admin.articles.index'
+import { Route as AdminArticlesNewRouteImport } from './routes/admin.articles.new'
+import { Route as AdminArticlesSlugEditRouteImport } from './routes/admin.articles.$slug.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnakalyChar968Char949Route = AnakalyChar968Char949RouteImport.update({
@@ -41,19 +54,62 @@ const SxetikaRoute = SxetikaRouteImport.update({
   path: '/sxetika',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminArticlesRoute = AdminArticlesRouteImport.update({
+  id: '/articles',
+  path: '/articles',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProfileRoute = AdminProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ArthroSlugRoute = ArthroSlugRouteImport.update({
   id: '/arthro/$slug',
   path: '/arthro/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminArticlesIndexRoute = AdminArticlesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminArticlesRoute,
+} as any)
+const AdminArticlesNewRoute = AdminArticlesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminArticlesRoute,
+} as any)
+const AdminArticlesSlugEditRoute = AdminArticlesSlugEditRouteImport.update({
+  id: '/$slug/edit',
+  path: '/$slug/edit',
+  getParentRoute: () => AdminArticlesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/anakalyψε': typeof AnakalyChar968Char949Route
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
   '/sxetika': typeof SxetikaRoute
+  '/admin/articles': typeof AdminArticlesRouteWithChildren
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/arthro/$slug': typeof ArthroSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/articles/new': typeof AdminArticlesNewRoute
+  '/admin/articles/': typeof AdminArticlesIndexRoute
+  '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,26 +117,48 @@ export interface FileRoutesByTo {
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
   '/sxetika': typeof SxetikaRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/arthro/$slug': typeof ArthroSlugRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/articles/new': typeof AdminArticlesNewRoute
+  '/admin/articles': typeof AdminArticlesIndexRoute
+  '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/anakalyψε': typeof AnakalyChar968Char949Route
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
   '/sxetika': typeof SxetikaRoute
+  '/admin/articles': typeof AdminArticlesRouteWithChildren
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/arthro/$slug': typeof ArthroSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/articles/new': typeof AdminArticlesNewRoute
+  '/admin/articles/': typeof AdminArticlesIndexRoute
+  '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/anakalyψε'
     | '/dimofili'
     | '/katigories'
     | '/sxetika'
+    | '/admin/articles'
+    | '/admin/categories'
+    | '/admin/profile'
     | '/arthro/$slug'
+    | '/admin/'
+    | '/admin/articles/new'
+    | '/admin/articles/'
+    | '/admin/articles/$slug/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -88,19 +166,34 @@ export interface FileRouteTypes {
     | '/dimofili'
     | '/katigories'
     | '/sxetika'
+    | '/admin/categories'
+    | '/admin/profile'
     | '/arthro/$slug'
+    | '/admin'
+    | '/admin/articles/new'
+    | '/admin/articles'
+    | '/admin/articles/$slug/edit'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/anakalyψε'
     | '/dimofili'
     | '/katigories'
     | '/sxetika'
+    | '/admin/articles'
+    | '/admin/categories'
+    | '/admin/profile'
     | '/arthro/$slug'
+    | '/admin/'
+    | '/admin/articles/new'
+    | '/admin/articles/'
+    | '/admin/articles/$slug/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AnakalyChar968Char949Route: typeof AnakalyChar968Char949Route
   DimofiliRoute: typeof DimofiliRoute
   KatigoriesRoute: typeof KatigoriesRoute
@@ -115,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/anakalyψε': {
@@ -145,6 +245,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SxetikaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/articles': {
+      id: '/admin/articles'
+      path: '/articles'
+      fullPath: '/admin/articles'
+      preLoaderRoute: typeof AdminArticlesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/profile': {
+      id: '/admin/profile'
+      path: '/profile'
+      fullPath: '/admin/profile'
+      preLoaderRoute: typeof AdminProfileRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/arthro/$slug': {
       id: '/arthro/$slug'
       path: '/arthro/$slug'
@@ -152,11 +280,65 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArthroSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/articles/': {
+      id: '/admin/articles/'
+      path: '/'
+      fullPath: '/admin/articles/'
+      preLoaderRoute: typeof AdminArticlesIndexRouteImport
+      parentRoute: typeof AdminArticlesRoute
+    }
+    '/admin/articles/new': {
+      id: '/admin/articles/new'
+      path: '/new'
+      fullPath: '/admin/articles/new'
+      preLoaderRoute: typeof AdminArticlesNewRouteImport
+      parentRoute: typeof AdminArticlesRoute
+    }
+    '/admin/articles/$slug/edit': {
+      id: '/admin/articles/$slug/edit'
+      path: '/$slug/edit'
+      fullPath: '/admin/articles/$slug/edit'
+      preLoaderRoute: typeof AdminArticlesSlugEditRouteImport
+      parentRoute: typeof AdminArticlesRoute
+    }
   }
 }
 
+interface AdminArticlesRouteChildren {
+  AdminArticlesNewRoute: typeof AdminArticlesNewRoute
+  AdminArticlesIndexRoute: typeof AdminArticlesIndexRoute
+  AdminArticlesSlugEditRoute: typeof AdminArticlesSlugEditRoute
+}
+
+const AdminArticlesRouteChildren: AdminArticlesRouteChildren = {
+  AdminArticlesNewRoute: AdminArticlesNewRoute,
+  AdminArticlesIndexRoute: AdminArticlesIndexRoute,
+  AdminArticlesSlugEditRoute: AdminArticlesSlugEditRoute,
+}
+
+const AdminArticlesRouteWithChildren = AdminArticlesRoute._addFileChildren(
+  AdminArticlesRouteChildren,
+)
+
+interface AdminRouteChildren {
+  AdminArticlesRoute: typeof AdminArticlesRouteWithChildren
+  AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminProfileRoute: typeof AdminProfileRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminArticlesRoute: AdminArticlesRouteWithChildren,
+  AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminProfileRoute: AdminProfileRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AnakalyChar968Char949Route: AnakalyChar968Char949Route,
   DimofiliRoute: DimofiliRoute,
   KatigoriesRoute: KatigoriesRoute,

@@ -25,7 +25,7 @@
 - [x] Απόφαση: ανεξάρτητο repository και Supabase project ανά blog
 - [x] Cloneable Supabase MVP ER model, RLS matrix, Storage design και test strategy
 - [x] Έγκριση της αρχιτεκτονικής στο `docs/supabase-mvp-design.md`
-- [ ] Supabase local setup και version-controlled migrations
+- [x] Version-controlled initial Supabase migrations, χωρίς εφαρμογή σε βάση
 - [ ] Authentication, RLS και role/storage integration tests
 - [ ] Article CRUD και αντικατάσταση των mock queries
 - [ ] Εξαγωγή ουδέτερου `reusable-blog-starter` μετά τη σταθεροποίηση του FACTάκι

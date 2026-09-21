@@ -1,6 +1,6 @@
 # Cloneable Supabase MVP design
 
-Status: **approved architecture — migrations have not been created or applied yet**.
+Status: **approved architecture — initial migrations created but not applied to any database**.
 
 This document defines the database contract for a reusable blog starter. FACTάκι is the first real implementation, but every new blog will be created as an independent repository with an independent Supabase project. The same version-controlled migrations will initialize each project.
 

@@ -22,3 +22,22 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Supabase setup
+
+The repository contains a version-controlled Supabase baseline for one independent blog. A new blog gets its own repository and hosted Supabase project, then applies the same migrations from `supabase/migrations`.
+
+Nothing in the repository applies migrations automatically. No local database setup is required. Copy `.env.example` to `.env.local` only after a hosted project has been created, and never place secret/service-role credentials in a `VITE_*` variable.
+
+To initialize the first owner, create/sign in a user and call the one-time `claim_initial_owner()` RPC. The call is concurrency-safe and stops working as soon as the first membership exists.
+
+When a fresh hosted project is available:
+
+```sh
+bunx supabase login
+bunx supabase link --project-ref <project-ref>
+bunx supabase db push --dry-run
+bunx supabase db push
+```
+
+Always review the dry run before applying changes. Do not run `db reset --linked` against production; it deletes remote data before replaying migrations.

@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, BookOpen, Brain, Check, Clipboard, Clock, FlaskConical, Globe2, History, Laptop, Leaf, Orbit, Share2, Sparkles, Users } from "lucide-react";
 import { useState } from "react";
-import { articles, categories, categoryStyles } from "@/lib/articles";
+import { categories, categoryStyles } from "@/lib/articles";
+import { articleRepository } from "@/data/articles";
 import { ArticleCard } from "@/components/article-card";
 import { Button } from "@/components/ui/button";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { siteConfig } from "@/config/site";
 
 export const Route = createFileRoute("/")({
+  loader: () => articleRepository.listPublished(),
   head: () => ({ meta: [
     { title: siteConfig.seo.title },
     { name: "description", content: siteConfig.seo.description },
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const articles = Route.useLoaderData();
   const { bookmarks, toggle } = useBookmarks();
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);

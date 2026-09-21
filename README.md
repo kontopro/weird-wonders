@@ -29,6 +29,8 @@ The repository contains a version-controlled Supabase baseline for one independe
 
 Nothing in the repository applies migrations automatically. No local database setup is required. Copy `.env.example` to `.env.local` only after a hosted project has been created, and never place secret/service-role credentials in a `VITE_*` variable.
 
+Article reads and writes use a shared repository contract. The default `VITE_DATA_SOURCE=mock` keeps the application entirely on demo data. The Supabase adapter is activated only when `VITE_DATA_SOURCE=supabase` is set together with a hosted project URL and publishable key.
+
 To initialize the first owner, create/sign in a user and call the one-time `claim_initial_owner()` RPC. The call is concurrency-safe and stops working as soon as the first membership exists.
 
 When a fresh hosted project is available:

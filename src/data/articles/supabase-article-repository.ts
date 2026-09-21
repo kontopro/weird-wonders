@@ -1,0 +1,227 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ArticleRepository, ArticleWriteInput } from "@/data/articles/article-repository";
+import { parseArticleContent } from "@/lib/article-content";
+import type { AdminArticle, ArticleStatus } from "@/lib/admin-data";
+import type { Article } from "@/lib/articles";
+
+type ArticleRow = {
+  id: string;
+  author_id: string | null;
+  category_id: string | null;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content_version: number;
+  content_blocks: unknown;
+  cover_image_id: string | null;
+  status: string;
+  is_trending: boolean;
+  scheduled_at: string | null;
+  published_at: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  reading_time_minutes: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type Relations = {
+  categories: Map<string, string>;
+  authors: Map<string, string>;
+  images: Map<string, string>;
+};
+
+const statusFromDatabase: Record<string, ArticleStatus> = {
+  draft: "Πρόχειρο",
+  in_review: "Πρόχειρο",
+  scheduled: "Προγραμματισμένο",
+  published: "Δημοσιευμένο",
+  archived: "Πρόχειρο",
+};
+
+const statusToDatabase: Record<ArticleStatus, "draft" | "scheduled" | "published"> = {
+  Πρόχειρο: "draft",
+  Προγραμματισμένο: "scheduled",
+  Δημοσιευμένο: "published",
+};
+
+const toDateValue = (row: ArticleRow) =>
+  (row.published_at ?? row.scheduled_at ?? row.updated_at ?? row.created_at).slice(0, 10);
+
+const formatDate = (dateValue: string) =>
+  new Intl.DateTimeFormat("el-GR", { day: "numeric", month: "short", year: "numeric" }).format(
+    new Date(`${dateValue}T12:00:00`),
+  );
+
+export class SupabaseArticleRepository implements ArticleRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  private async loadRelations(): Promise<Relations> {
+    const [categoryResult, profileResult, mediaResult] = await Promise.all([
+      this.client.from("categories").select("id, name"),
+      this.client.from("profiles").select("id, display_name"),
+      this.client.from("media_assets").select("id, storage_bucket, storage_path, visibility"),
+    ]);
+
+    const error = categoryResult.error ?? profileResult.error ?? mediaResult.error;
+    if (error) throw error;
+
+    return {
+      categories: new Map((categoryResult.data ?? []).map((row) => [String(row.id), String(row.name)])),
+      authors: new Map((profileResult.data ?? []).map((row) => [String(row.id), String(row.display_name)])),
+      images: new Map(
+        (mediaResult.data ?? []).map((row) => {
+          if (row.visibility !== "public") return [String(row.id), ""];
+          const { data } = this.client.storage.from(String(row.storage_bucket)).getPublicUrl(String(row.storage_path));
+          return [String(row.id), data.publicUrl];
+        }),
+      ),
+    };
+  }
+
+  private toPublicArticle(row: ArticleRow, relations: Relations): Article {
+    const dateValue = toDateValue(row);
+    return {
+      slug: row.slug,
+      category: row.category_id ? (relations.categories.get(row.category_id) ?? "Χωρίς κατηγορία") : "Χωρίς κατηγορία",
+      title: row.title,
+      excerpt: row.excerpt ?? "",
+      date: formatDate(dateValue),
+      minutes: row.reading_time_minutes ?? 1,
+      image: row.cover_image_id ? (relations.images.get(row.cover_image_id) ?? "") : "",
+      popularity: row.is_trending ? 1 : 0,
+      author: row.author_id ? (relations.authors.get(row.author_id) ?? "Συντακτική ομάδα") : "Συντακτική ομάδα",
+    };
+  }
+
+  private toAdminArticle(row: ArticleRow, relations: Relations): AdminArticle {
+    const article = this.toPublicArticle(row, relations);
+    return {
+      id: row.id,
+      slug: row.slug,
+      title: row.title,
+      excerpt: row.excerpt ?? "",
+      category: article.category,
+      author: article.author,
+      status: statusFromDatabase[row.status] ?? "Πρόχειρο",
+      date: article.date,
+      dateValue: toDateValue(row),
+      views: 0,
+      image: article.image,
+    };
+  }
+
+  private async selectRows(publishedOnly: boolean) {
+    let query = this.client
+      .from("articles")
+      .select(
+        "id, author_id, category_id, title, slug, excerpt, content_version, content_blocks, cover_image_id, status, is_trending, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes, created_at, updated_at",
+      )
+      .order("published_at", { ascending: false, nullsFirst: false });
+
+    if (publishedOnly) query = query.eq("status", "published");
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []) as ArticleRow[];
+  }
+
+  async listPublished() {
+    const [rows, relations] = await Promise.all([this.selectRows(true), this.loadRelations()]);
+    return rows.map((row) => this.toPublicArticle(row, relations));
+  }
+
+  async findPublishedBySlug(slug: string) {
+    const { data, error } = await this.client
+      .from("articles")
+      .select(
+        "id, author_id, category_id, title, slug, excerpt, content_version, content_blocks, cover_image_id, status, is_trending, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes, created_at, updated_at",
+      )
+      .eq("slug", slug)
+      .eq("status", "published")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+
+    const row = data as ArticleRow;
+    const relations = await this.loadRelations();
+    return { ...this.toPublicArticle(row, relations), content: parseArticleContent(row.content_blocks) };
+  }
+
+  async listAdmin() {
+    const [rows, relations] = await Promise.all([this.selectRows(false), this.loadRelations()]);
+    return rows.map((row) => this.toAdminArticle(row, relations));
+  }
+
+  async findAdminBySlug(slug: string) {
+    const { data, error } = await this.client.from("articles").select("*").eq("slug", slug).maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return this.toAdminArticle(data as ArticleRow, await this.loadRelations());
+  }
+
+  async save(input: ArticleWriteInput) {
+    const { data: category, error: categoryError } = await this.client
+      .from("categories")
+      .select("id")
+      .eq("name", input.category)
+      .maybeSingle();
+    if (categoryError) throw categoryError;
+
+    const userResult = await this.client.auth.getUser();
+    if (userResult.error) throw userResult.error;
+
+    const databaseStatus = statusToDatabase[input.status];
+    const payload = {
+      author_id: input.authorId ?? userResult.data.user?.id ?? null,
+      category_id: category?.id ?? null,
+      slug: input.slug,
+      title: input.title,
+      excerpt: input.excerpt,
+      content_version: input.content.version,
+      content_blocks: input.content,
+      status: databaseStatus,
+      scheduled_at: databaseStatus === "scheduled" ? `${input.dateValue}T12:00:00.000Z` : null,
+      seo_title: input.seoTitle || null,
+      seo_description: input.seoDescription || null,
+      is_featured: input.isFeatured ?? false,
+      is_trending: input.isTrending ?? false,
+      is_fact_of_day: input.isFactOfDay ?? false,
+    };
+
+    const query = input.id
+      ? this.client.from("articles").update(payload).eq("id", input.id)
+      : this.client.from("articles").insert(payload);
+    const { data, error } = await query.select("*").single();
+    if (error) throw error;
+    return this.toAdminArticle(data as ArticleRow, await this.loadRelations());
+  }
+
+  async duplicate(id: string) {
+    const { data: source, error: readError } = await this.client.from("articles").select("*").eq("id", id).single();
+    if (readError) throw readError;
+
+    const { id: _id, created_at: _createdAt, updated_at: _updatedAt, ...copyable } = source;
+    const { data, error } = await this.client
+      .from("articles")
+      .insert({
+        ...copyable,
+        slug: `${source.slug}-copy-${Date.now()}`,
+        title: `${source.title} — αντίγραφο`,
+        status: "draft",
+        published_at: null,
+        scheduled_at: null,
+        is_featured: false,
+        is_trending: false,
+        is_fact_of_day: false,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return this.toAdminArticle(data as ArticleRow, await this.loadRelations());
+  }
+
+  async delete(id: string) {
+    const { error } = await this.client.from("articles").delete().eq("id", id);
+    if (error) throw error;
+  }
+}

@@ -4,7 +4,7 @@ import octopus from "@/assets/octopus.jpg";
 import timeMachine from "@/assets/time-machine.jpg";
 import type { ArticleContentDocument } from "@/lib/article-content";
 
-export type Category = "Επιστήμη" | "Ιστορία" | "Τεχνολογία" | "Φύση" | "Διάστημα" | "Πολιτισμός" | "Άνθρωπος" | "Καθημερινότητα";
+export type Category = string;
 export type Article = { slug: string; category: Category; title: string; excerpt: string; date: string; minutes: number; image: string; popularity: number; author: string };
 
 export const demoArticleContent: ArticleContentDocument = {
@@ -71,12 +71,12 @@ export const demoArticleContent: ArticleContentDocument = {
   ],
 };
 
-export const categoryStyles: Record<Category, string> = {
+export const categoryStyles: Record<string, string> = {
   Επιστήμη: "science", Ιστορία: "history", Τεχνολογία: "technology", Φύση: "nature",
   Διάστημα: "space", Πολιτισμός: "culture", Άνθρωπος: "human", Καθημερινότητα: "daily",
 };
 
-export const articles: Article[] = [
+export const demoArticles: Article[] = [
   { slug: "ta-dentra-epikoinonoun", category: "Φύση", title: "Ήξερες ότι τα δέντρα επικοινωνούν μεταξύ τους;", excerpt: "Κάτω από το δάσος απλώνεται ένα αόρατο δίκτυο ανταλλαγής θρεπτικών στοιχείων και σημάτων.", date: "18 Σεπ 2026", minutes: 7, image: forest, popularity: 98, author: "Μαρίνα Θεοδώρου" },
   { slug: "to-fos-koitazei-parelthon", category: "Διάστημα", title: "Κάθε ματιά στον ουρανό είναι ένα ταξίδι στο παρελθόν", excerpt: "Το φως χρειάζεται χρόνο για να φτάσει ως εμάς — μερικές φορές δισεκατομμύρια χρόνια.", date: "16 Σεπ 2026", minutes: 5, image: observatory, popularity: 94, author: "Άρης Λυμπέρης" },
   { slug: "treis-kardies-ena-xrwma", category: "Επιστήμη", title: "Το χταπόδι έχει τρεις καρδιές και μπλε αίμα", excerpt: "Μια εντελώς διαφορετική βιολογική αρχιτεκτονική κρύβεται κάτω από οκτώ πλοκάμια.", date: "14 Σεπ 2026", minutes: 4, image: octopus, popularity: 91, author: "Εύα Πέτρου" },

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, Moon, Search, Shuffle, Sun, X, ArrowUp } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { articles } from "@/lib/articles";
+import { articleRepository } from "@/data/articles";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
 import { siteConfig } from "@/config/site";
@@ -20,7 +20,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
     window.addEventListener("scroll", onScroll); return () => window.removeEventListener("scroll", onScroll);
   }, []);
   const toggleTheme = () => { const next = !dark; setDark(next); localStorage.setItem("theme", next ? "dark" : "light"); document.documentElement.classList.toggle("dark", next); };
-  const random = () => { const article = articles[Math.floor(Math.random() * articles.length)]; if (article) navigate({ to: "/arthro/$slug", params: { slug: article.slug } }); };
+  const random = async () => { const articles = await articleRepository.listPublished(); const article = articles[Math.floor(Math.random() * articles.length)]; if (article) navigate({ to: "/arthro/$slug", params: { slug: article.slug } }); };
   const nav = [
     ["Αρχική", "/"], ["Ανακάλυψε", "/anakalyψε"], ["Κατηγορίες", "/katigories"], ["Δημοφιλή", "/dimofili"], ["Σχετικά", "/sxetika"],
   ] as const;

@@ -12,7 +12,7 @@ export function ArticleCard({ article, saved, onBookmark }: { article: Article; 
       </Link>
       <div className="story-body">
         <div className="meta-row">
-          <span className={`category-pill ${categoryStyles[article.category]}`}>{article.category}</span>
+          <span className={`category-pill ${categoryStyles[article.category] ?? ""}`}>{article.category}</span>
           {onBookmark && <Button variant="ghost" size="icon" onClick={onBookmark} aria-label={saved ? "Αφαίρεση σελιδοδείκτη" : "Αποθήκευση άρθρου"}><Bookmark className={saved ? "bookmark-active" : ""} /></Button>}
         </div>
         <Link to="/arthro/$slug" params={{ slug: article.slug }}><h3>{article.title}</h3></Link>

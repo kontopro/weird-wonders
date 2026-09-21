@@ -8,8 +8,8 @@ export type SiteConfig = {
   tagline: string;
   domain: string;
   defaultLanguage: string;
-  themeKey: "factaki";
-  layoutKey: "editorial";
+  themeKey: string;
+  layoutKey: string;
   contentLabels: {
     singular: string;
     plural: string;
@@ -47,8 +47,8 @@ export const factakiSite = {
   },
 } satisfies SiteConfig;
 
-// The first application remains FACTάκι. A later tenant resolver can select a
-// different validated site configuration without changing shared components.
+// This repository remains FACTάκι. A new blog starts from the reusable starter
+// and replaces this validated configuration without changing shared components.
 export const siteConfig: SiteConfig = factakiSite;
 
 export function brandedTitle(title: string) {

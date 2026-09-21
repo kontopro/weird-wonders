@@ -16,14 +16,16 @@
 - [x] Responsive και λειτουργικός έλεγχος admin
 - [x] Μενού «Προσθήκη block» στον editor με 8 mock επιλογές
 
-## Multi-tenant platform
+## Reusable blog starter
 
 - [x] Ασφαλές `ui-prototype-v1` checkpoint και feature branch
 - [x] Central FACTάκι site configuration χωρίς αλλαγή ταυτότητας
 - [x] Versioned Zod schema και ασφαλής public renderer για article blocks
 - [x] Typed author-facing block editor χωρίς JSON
-- [x] Προτεινόμενο Supabase MVP ER model, RLS matrix, Storage design και test strategy
-- [ ] Έγκριση του `docs/supabase-mvp-design.md`
+- [x] Απόφαση: ανεξάρτητο repository και Supabase project ανά blog
+- [x] Cloneable Supabase MVP ER model, RLS matrix, Storage design και test strategy
+- [x] Έγκριση της αρχιτεκτονικής στο `docs/supabase-mvp-design.md`
 - [ ] Supabase local setup και version-controlled migrations
-- [ ] Authentication, RLS και tenant-isolation integration tests
+- [ ] Authentication, RLS και role/storage integration tests
 - [ ] Article CRUD και αντικατάσταση των mock queries
+- [ ] Εξαγωγή ουδέτερου `reusable-blog-starter` μετά τη σταθεροποίηση του FACTάκι

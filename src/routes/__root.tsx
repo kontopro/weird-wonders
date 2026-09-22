@@ -21,7 +21,9 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">{siteConfig.name}: αυτή η σελίδα δεν υπάρχει.</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">
+          {siteConfig.name}: αυτή η σελίδα δεν υπάρχει.
+        </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Μόλις το έμαθες. Υπάρχουν όμως πολλές αληθινές ιστορίες στην αρχική.
         </p>
@@ -93,7 +95,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -118,11 +123,19 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const isAdmin = useRouterState({ select: (state) => state.location.pathname.startsWith("/admin") });
+  const isAdmin = useRouterState({
+    select: (state) => state.location.pathname.startsWith("/admin"),
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
-      {isAdmin ? <Outlet /> : <SiteShell><Outlet /></SiteShell>}
+      {isAdmin ? (
+        <Outlet />
+      ) : (
+        <SiteShell>
+          <Outlet />
+        </SiteShell>
+      )}
       <Toaster position="top-right" />
     </QueryClientProvider>
   );

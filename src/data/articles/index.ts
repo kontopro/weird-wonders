@@ -1,6 +1,11 @@
 import type { ArticleRepository } from "@/data/articles/article-repository";
 
-export type { ArticleDetail, ArticleRepository, ArticleWriteInput } from "@/data/articles/article-repository";
+export type {
+  ArticleDetail,
+  ArticleRepository,
+  ArticleWriteInput,
+  EditableArticle,
+} from "@/data/articles/article-repository";
 
 const createRepository = async (): Promise<ArticleRepository> => {
   const source = import.meta.env["VITE_DATA_SOURCE"] ?? "mock";

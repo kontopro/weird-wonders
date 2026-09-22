@@ -1,3 +1,37 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { brandedTitle, siteConfig } from "@/config/site";
-export const Route = createFileRoute("/sxetika")({ head: () => ({ meta: [{ title: brandedTitle("Σχετικά") }, { name: "description", content: `Η ιστορία και η editorial υπόσχεση του ${siteConfig.name}.` }, { property: "og:title", content: brandedTitle("Σχετικά") }, { property: "og:description", content: "Περιέργεια με καθαρή ματιά και πηγές." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }), component: () => <div className="section-shell about-page page-top"><p className="eyebrow">Η περιέργεια θέλει ακρίβεια</p><h1>Δεν συλλέγουμε απλώς facts. Αφηγούμαστε όσα αξίζει να θυμάσαι.</h1><div className="about-grid"><p>Το «{siteConfig.name}» σχεδιάστηκε ως ένα σύγχρονο ελληνικό περιοδικό για την επιστήμη, την ιστορία, τη φύση και την ανθρώπινη εμπειρία.</p><p>Κάθε κείμενο οφείλει να ξεχωρίζει τι γνωρίζουμε, τι υποθέτουμε και ποια πηγή στηρίζει κάθε ισχυρισμό.</p></div><div className="manifesto"><span>Η υπόσχεσή μας</span><h2>Καμία υπερβολή για το κλικ. Καμία βεβαιότητα χωρίς τεκμηρίωση.</h2></div></div> });
+export const Route = createFileRoute("/sxetika")({
+  head: () => ({
+    meta: [
+      { title: brandedTitle("Σχετικά") },
+      {
+        name: "description",
+        content: `Η ιστορία και η editorial υπόσχεση του ${siteConfig.name}.`,
+      },
+      { property: "og:title", content: brandedTitle("Σχετικά") },
+      { property: "og:description", content: "Περιέργεια με καθαρή ματιά και πηγές." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: () => (
+    <div className="section-shell about-page page-top">
+      <p className="eyebrow">Η περιέργεια θέλει ακρίβεια</p>
+      <h1>Δεν συλλέγουμε απλώς facts. Αφηγούμαστε όσα αξίζει να θυμάσαι.</h1>
+      <div className="about-grid">
+        <p>
+          Το «{siteConfig.name}» σχεδιάστηκε ως ένα σύγχρονο ελληνικό περιοδικό για την επιστήμη,
+          την ιστορία, τη φύση και την ανθρώπινη εμπειρία.
+        </p>
+        <p>
+          Κάθε κείμενο οφείλει να ξεχωρίζει τι γνωρίζουμε, τι υποθέτουμε και ποια πηγή στηρίζει κάθε
+          ισχυρισμό.
+        </p>
+      </div>
+      <div className="manifesto">
+        <span>Η υπόσχεσή μας</span>
+        <h2>Καμία υπερβολή για το κλικ. Καμία βεβαιότητα χωρίς τεκμηρίωση.</h2>
+      </div>
+    </div>
+  ),
+});

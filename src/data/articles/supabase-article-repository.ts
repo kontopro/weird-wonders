@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ArticleRepository, ArticleWriteInput } from "@/data/articles/article-repository";
+import type {
+  ArticleRepository,
+  ArticleWriteInput,
+  EditableArticle,
+} from "@/data/articles/article-repository";
 import { parseArticleContent } from "@/lib/article-content";
 import type { AdminArticle, ArticleStatus } from "@/lib/admin-data";
 import type { Article } from "@/lib/articles";
@@ -14,8 +18,11 @@ type ArticleRow = {
   content_version: number;
   content_blocks: unknown;
   cover_image_id: string | null;
+  cover_image_alt: string | null;
   status: string;
+  is_featured: boolean;
   is_trending: boolean;
+  is_fact_of_day: boolean;
   scheduled_at: string | null;
   published_at: string | null;
   seo_title: string | null;
@@ -28,7 +35,7 @@ type ArticleRow = {
 type Relations = {
   categories: Map<string, string>;
   authors: Map<string, string>;
-  images: Map<string, string>;
+  images: Map<string, { src: string; width?: number; height?: number }>;
 };
 
 const statusFromDatabase: Record<string, ArticleStatus> = {
@@ -60,20 +67,35 @@ export class SupabaseArticleRepository implements ArticleRepository {
     const [categoryResult, profileResult, mediaResult] = await Promise.all([
       this.client.from("categories").select("id, name"),
       this.client.from("profiles").select("id, display_name"),
-      this.client.from("media_assets").select("id, storage_bucket, storage_path, visibility"),
+      this.client
+        .from("media_assets")
+        .select("id, storage_bucket, storage_path, visibility, width, height"),
     ]);
 
     const error = categoryResult.error ?? profileResult.error ?? mediaResult.error;
     if (error) throw error;
 
     return {
-      categories: new Map((categoryResult.data ?? []).map((row) => [String(row.id), String(row.name)])),
-      authors: new Map((profileResult.data ?? []).map((row) => [String(row.id), String(row.display_name)])),
+      categories: new Map(
+        (categoryResult.data ?? []).map((row) => [String(row.id), String(row.name)]),
+      ),
+      authors: new Map(
+        (profileResult.data ?? []).map((row) => [String(row.id), String(row.display_name)]),
+      ),
       images: new Map(
         (mediaResult.data ?? []).map((row) => {
-          if (row.visibility !== "public") return [String(row.id), ""];
-          const { data } = this.client.storage.from(String(row.storage_bucket)).getPublicUrl(String(row.storage_path));
-          return [String(row.id), data.publicUrl];
+          if (row.visibility !== "public") return [String(row.id), { src: "" }];
+          const { data } = this.client.storage
+            .from(String(row.storage_bucket))
+            .getPublicUrl(String(row.storage_path));
+          return [
+            String(row.id),
+            {
+              src: data.publicUrl,
+              ...(typeof row.width === "number" ? { width: row.width } : {}),
+              ...(typeof row.height === "number" ? { height: row.height } : {}),
+            },
+          ];
         }),
       ),
     };
@@ -83,14 +105,18 @@ export class SupabaseArticleRepository implements ArticleRepository {
     const dateValue = toDateValue(row);
     return {
       slug: row.slug,
-      category: row.category_id ? (relations.categories.get(row.category_id) ?? "Χωρίς κατηγορία") : "Χωρίς κατηγορία",
+      category: row.category_id
+        ? (relations.categories.get(row.category_id) ?? "Χωρίς κατηγορία")
+        : "Χωρίς κατηγορία",
       title: row.title,
       excerpt: row.excerpt ?? "",
       date: formatDate(dateValue),
       minutes: row.reading_time_minutes ?? 1,
-      image: row.cover_image_id ? (relations.images.get(row.cover_image_id) ?? "") : "",
+      image: row.cover_image_id ? (relations.images.get(row.cover_image_id)?.src ?? "") : "",
       popularity: row.is_trending ? 1 : 0,
-      author: row.author_id ? (relations.authors.get(row.author_id) ?? "Συντακτική ομάδα") : "Συντακτική ομάδα",
+      author: row.author_id
+        ? (relations.authors.get(row.author_id) ?? "Συντακτική ομάδα")
+        : "Συντακτική ομάδα",
     };
   }
 
@@ -111,11 +137,26 @@ export class SupabaseArticleRepository implements ArticleRepository {
     };
   }
 
+  private toEditableArticle(row: ArticleRow, relations: Relations): EditableArticle {
+    return {
+      ...this.toAdminArticle(row, relations),
+      ...(row.author_id ? { authorId: row.author_id } : {}),
+      content: parseArticleContent(row.content_blocks),
+      imageAlt: row.cover_image_alt ?? "",
+      tags: [],
+      seoTitle: row.seo_title ?? row.title,
+      seoDescription: row.seo_description ?? row.excerpt ?? "",
+      isFeatured: row.is_featured,
+      isTrending: row.is_trending,
+      isFactOfDay: row.is_fact_of_day,
+    };
+  }
+
   private async selectRows(publishedOnly: boolean) {
     let query = this.client
       .from("articles")
       .select(
-        "id, author_id, category_id, title, slug, excerpt, content_version, content_blocks, cover_image_id, status, is_trending, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes, created_at, updated_at",
+        "id, author_id, category_id, title, slug, excerpt, content_version, content_blocks, cover_image_id, cover_image_alt, status, is_featured, is_trending, is_fact_of_day, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes, created_at, updated_at",
       )
       .order("published_at", { ascending: false, nullsFirst: false });
 
@@ -134,7 +175,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
     const { data, error } = await this.client
       .from("articles")
       .select(
-        "id, author_id, category_id, title, slug, excerpt, content_version, content_blocks, cover_image_id, status, is_trending, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes, created_at, updated_at",
+        "id, author_id, category_id, title, slug, excerpt, content_version, content_blocks, cover_image_id, cover_image_alt, status, is_featured, is_trending, is_fact_of_day, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes, created_at, updated_at",
       )
       .eq("slug", slug)
       .eq("status", "published")
@@ -144,7 +185,11 @@ export class SupabaseArticleRepository implements ArticleRepository {
 
     const row = data as ArticleRow;
     const relations = await this.loadRelations();
-    return { ...this.toPublicArticle(row, relations), content: parseArticleContent(row.content_blocks) };
+    return {
+      ...this.toPublicArticle(row, relations),
+      content: parseArticleContent(row.content_blocks),
+      mediaAssets: Object.fromEntries(relations.images),
+    };
   }
 
   async listAdmin() {
@@ -153,10 +198,14 @@ export class SupabaseArticleRepository implements ArticleRepository {
   }
 
   async findAdminBySlug(slug: string) {
-    const { data, error } = await this.client.from("articles").select("*").eq("slug", slug).maybeSingle();
+    const { data, error } = await this.client
+      .from("articles")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    return this.toAdminArticle(data as ArticleRow, await this.loadRelations());
+    return this.toEditableArticle(data as ArticleRow, await this.loadRelations());
   }
 
   async save(input: ArticleWriteInput) {
@@ -171,14 +220,16 @@ export class SupabaseArticleRepository implements ArticleRepository {
     if (userResult.error) throw userResult.error;
 
     const databaseStatus = statusToDatabase[input.status];
+    const author = input.authorId ?? userResult.data.user?.id ?? null;
     const payload = {
-      author_id: input.authorId ?? userResult.data.user?.id ?? null,
+      ...(!input.id || input.authorId ? { author_id: author } : {}),
       category_id: category?.id ?? null,
       slug: input.slug,
       title: input.title,
       excerpt: input.excerpt,
       content_version: input.content.version,
       content_blocks: input.content,
+      cover_image_alt: input.imageAlt || null,
       status: databaseStatus,
       scheduled_at: databaseStatus === "scheduled" ? `${input.dateValue}T12:00:00.000Z` : null,
       seo_title: input.seoTitle || null,
@@ -193,11 +244,15 @@ export class SupabaseArticleRepository implements ArticleRepository {
       : this.client.from("articles").insert(payload);
     const { data, error } = await query.select("*").single();
     if (error) throw error;
-    return this.toAdminArticle(data as ArticleRow, await this.loadRelations());
+    return this.toEditableArticle(data as ArticleRow, await this.loadRelations());
   }
 
   async duplicate(id: string) {
-    const { data: source, error: readError } = await this.client.from("articles").select("*").eq("id", id).single();
+    const { data: source, error: readError } = await this.client
+      .from("articles")
+      .select("*")
+      .eq("id", id)
+      .single();
     if (readError) throw readError;
 
     const { id: _id, created_at: _createdAt, updated_at: _updatedAt, ...copyable } = source;
@@ -217,7 +272,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       .select("*")
       .single();
     if (error) throw error;
-    return this.toAdminArticle(data as ArticleRow, await this.loadRelations());
+    return this.toEditableArticle(data as ArticleRow, await this.loadRelations());
   }
 
   async delete(id: string) {

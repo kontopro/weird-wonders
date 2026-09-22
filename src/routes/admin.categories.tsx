@@ -3,5 +3,45 @@ import { GripVertical, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { categories, categoryStyles } from "@/lib/articles";
 import { brandedTitle, siteConfig } from "@/config/site";
-export const Route = createFileRoute("/admin/categories")({ component: CategoriesAdmin, head: () => ({ meta: [{ title: brandedTitle("Κατηγορίες") }, { name: "description", content: `Οργάνωση κατηγοριών του ${siteConfig.name}.` }, { property: "og:title", content: brandedTitle("Κατηγορίες") }, { property: "og:description", content: `Οργάνωση κατηγοριών του ${siteConfig.name}.` }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }) });
-function CategoriesAdmin(){ return <div className="admin-page"><header className="admin-page-header"><div><p className="admin-overline">Ταξινόμηση</p><h1>Κατηγορίες</h1><p>Η χρωματική γλώσσα του περιοδικού σε μία καθαρή λίστα.</p></div><Button onClick={() => undefined}><Plus /> Νέα κατηγορία</Button></header><section className="admin-panel category-admin-list">{categories.map((category,index)=><article key={category}><GripVertical /><i className={categoryStyles[category]} /><div><strong>{category}</strong><span>{8 + index * 3} άρθρα</span></div><Button variant="ghost">Επεξεργασία</Button></article>)}</section></div> }
+export const Route = createFileRoute("/admin/categories")({
+  component: CategoriesAdmin,
+  head: () => ({
+    meta: [
+      { title: brandedTitle("Κατηγορίες") },
+      { name: "description", content: `Οργάνωση κατηγοριών του ${siteConfig.name}.` },
+      { property: "og:title", content: brandedTitle("Κατηγορίες") },
+      { property: "og:description", content: `Οργάνωση κατηγοριών του ${siteConfig.name}.` },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+});
+function CategoriesAdmin() {
+  return (
+    <div className="admin-page">
+      <header className="admin-page-header">
+        <div>
+          <p className="admin-overline">Ταξινόμηση</p>
+          <h1>Κατηγορίες</h1>
+          <p>Η χρωματική γλώσσα του περιοδικού σε μία καθαρή λίστα.</p>
+        </div>
+        <Button onClick={() => undefined}>
+          <Plus /> Νέα κατηγορία
+        </Button>
+      </header>
+      <section className="admin-panel category-admin-list">
+        {categories.map((category, index) => (
+          <article key={category}>
+            <GripVertical />
+            <i className={categoryStyles[category]} />
+            <div>
+              <strong>{category}</strong>
+              <span>{8 + index * 3} άρθρα</span>
+            </div>
+            <Button variant="ghost">Επεξεργασία</Button>
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}

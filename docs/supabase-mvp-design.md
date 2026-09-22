@@ -229,16 +229,16 @@ has_role(allowed_roles text[]) → boolean
 
 Security-definer helpers must have a fixed empty `search_path`, fully qualified references, minimum execution grants and direct tests. No service-role credential is exposed through `VITE_*` variables or browser code.
 
-| Table | Anonymous | Author | Editor | Admin | Owner |
-| --- | --- | --- | --- | --- | --- |
-| `profiles` | published authors only | read members, update self | same | same | same |
-| `members` | — | read self | read active members | manage non-owners | protected full control |
-| `site_settings` | read | read | read | read/update | read/update |
-| `media_assets` | public metadata | own uploads | manage all | manage all | manage all |
-| `categories` | read | read | create/read/update/delete | same | same |
-| `tags` | read | read | create/read/update/delete | same | same |
-| `articles` | published only | create/read, update own drafts/reviews | full editorial scope | same | same |
-| `article_tags` | published links only | own editable articles | full editorial scope | same | same |
+| Table           | Anonymous              | Author                                 | Editor                    | Admin             | Owner                  |
+| --------------- | ---------------------- | -------------------------------------- | ------------------------- | ----------------- | ---------------------- |
+| `profiles`      | published authors only | read members, update self              | same                      | same              | same                   |
+| `members`       | —                      | read self                              | read active members       | manage non-owners | protected full control |
+| `site_settings` | read                   | read                                   | read                      | read/update       | read/update            |
+| `media_assets`  | public metadata        | own uploads                            | manage all                | manage all        | manage all             |
+| `categories`    | read                   | read                                   | create/read/update/delete | same              | same                   |
+| `tags`          | read                   | read                                   | create/read/update/delete | same              | same                   |
+| `articles`      | published only         | create/read, update own drafts/reviews | full editorial scope      | same              | same                   |
+| `article_tags`  | published links only   | own editable articles                  | full editorial scope      | same              | same                   |
 
 ## Storage
 

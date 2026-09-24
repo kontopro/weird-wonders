@@ -22,6 +22,8 @@ create table public.media_assets (
   )
 );
 
+alter table public.media_assets enable row level security;
+
 create index media_assets_created_at_idx on public.media_assets (created_at desc);
 create index media_assets_uploader_visibility_idx on public.media_assets (uploaded_by, visibility);
 

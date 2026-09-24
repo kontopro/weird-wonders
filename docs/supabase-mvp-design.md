@@ -13,8 +13,8 @@ This document defines the database contract for a reusable blog starter. FACTά�
 5. Roles live in `members`; `profiles` contains no authorization role.
 6. Use `text` columns with `check` constraints for workflow values instead of PostgreSQL enums.
 7. Article content is stored as versioned JSON and validated by the application Zod schema before every write.
-8. Production users, credentials, domains and content are never committed to starter migrations or seed data.
-9. Schema upgrades are added as new migrations. Already-applied or published migration history is never rewritten.
+8. Production users, credentials, domains and article content are never committed to migrations. Each blog repository may seed its public, non-secret baseline branding and taxonomy; those values are neutralized when extracting the reusable starter.
+9. Until the baseline is applied to its first database, it may be hardened in place. After any migration has been applied to a database, its history is immutable and every schema upgrade is added as a new migration.
 
 ## Clone workflow
 
@@ -286,15 +286,15 @@ Query plans should be measured before adding more indexes.
 5. `0005_taxonomy` — categories and tags.
 6. `0006_articles` — articles, workflow rules and media references.
 7. `0007_article_tags` — article/tag join table.
-8. `0008_rls` — enable RLS and add policies table by table.
+8. `0008_rls` — add explicit grants and policies; RLS is already enabled in each table-creation migration so an interrupted initial push never leaves a table exposed.
 9. `0009_storage` — buckets and Storage object policies.
-10. `0010_seed_development` — optional generic local demo content only.
+10. `0010_seed` — deterministic public site settings and taxonomy for the current blog; never users, credentials or article content.
 
 Generated TypeScript database types follow migrations and are committed separately from hand-written application domain types.
 
 ## Required tests
 
-Tests run against direct Supabase REST/SQL and Storage behavior, not merely hidden UI controls.
+Tests run against direct Supabase REST/SQL and Storage behavior in the fresh hosted project, not merely hidden UI controls. This project does not require or start a local Supabase database.
 
 1. Anonymous users can read settings, taxonomy, public media metadata and published articles only.
 2. Anonymous users cannot read drafts, members or private media.

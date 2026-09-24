@@ -30,6 +30,8 @@ create table public.articles (
   check (status <> 'published' or cover_image_id is null or nullif(trim(cover_image_alt), '') is not null)
 );
 
+alter table public.articles enable row level security;
+
 create unique index articles_one_fact_of_day_idx
 on public.articles (is_fact_of_day)
 where is_fact_of_day;

@@ -81,16 +81,24 @@ export const demoArticleContent: ArticleContentDocument = {
   ],
 };
 
-export const categoryStyles: Record<string, string> = {
-  Επιστήμη: "science",
-  Ιστορία: "history",
-  Τεχνολογία: "technology",
-  Φύση: "nature",
-  Διάστημα: "space",
-  Πολιτισμός: "culture",
-  Άνθρωπος: "human",
-  Καθημερινότητα: "daily",
-};
+export const categoryDefinitions = [
+  { name: "Επιστήμη", slug: "epistimi", style: "science" },
+  { name: "Ιστορία", slug: "istoria", style: "history" },
+  { name: "Τεχνολογία", slug: "technologia", style: "technology" },
+  { name: "Φύση", slug: "fysi", style: "nature" },
+  { name: "Διάστημα", slug: "diastima", style: "space" },
+  { name: "Πολιτισμός", slug: "politismos", style: "culture" },
+  { name: "Άνθρωπος", slug: "anthropos", style: "human" },
+  { name: "Καθημερινότητα", slug: "kathimerinotita", style: "daily" },
+] as const;
+
+export const categoryStyles: Record<string, string> = Object.fromEntries(
+  categoryDefinitions.map(({ name, style }) => [name, style]),
+);
+
+export function getCategorySlug(category: Category) {
+  return categoryDefinitions.find(({ name }) => name === category)?.slug ?? null;
+}
 
 export const demoArticles: Article[] = [
   {
@@ -186,4 +194,4 @@ export const demoArticles: Article[] = [
   },
 ];
 
-export const categories = Object.keys(categoryStyles) as Category[];
+export const categories = categoryDefinitions.map(({ name }) => name);

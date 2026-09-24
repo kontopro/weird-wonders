@@ -29,11 +29,17 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatViews, type AdminArticle, type ArticleStatus } from "@/lib/admin-data";
 
+const statusTone: Record<ArticleStatus, string> = {
+  Πρόχειρο: "draft",
+  "Σε έλεγχο": "review",
+  Προγραμματισμένο: "scheduled",
+  Δημοσιευμένο: "published",
+  Αρχειοθετημένο: "archived",
+};
+
 export function ArticleStatusBadge({ status }: { status: ArticleStatus }) {
   return (
-    <span
-      className={`admin-status status-${status === "Δημοσιευμένο" ? "published" : status === "Πρόχειρο" ? "draft" : "scheduled"}`}
-    >
+    <span className={`admin-status status-${statusTone[status]}`}>
       <i />
       {status}
     </span>

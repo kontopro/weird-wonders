@@ -4,9 +4,11 @@ import type {
   ArticleWriteInput,
   EditableArticle,
 } from "@/data/articles/article-repository";
-import { parseArticleContent } from "@/lib/article-content";
+import { calculateReadingTimeMinutes, parseArticleContent } from "@/lib/article-content";
 import type { AdminArticle, ArticleStatus } from "@/lib/admin-data";
-import type { Article } from "@/lib/articles";
+import { getCategorySlug, type Article } from "@/lib/articles";
+
+type DatabaseArticleStatus = "draft" | "in_review" | "scheduled" | "published" | "archived";
 
 type ArticleRow = {
   id: string;
@@ -19,7 +21,7 @@ type ArticleRow = {
   content_blocks: unknown;
   cover_image_id: string | null;
   cover_image_alt: string | null;
-  status: string;
+  status: DatabaseArticleStatus;
   is_featured: boolean;
   is_trending: boolean;
   is_fact_of_day: boolean;
@@ -38,18 +40,20 @@ type Relations = {
   images: Map<string, { src: string; width?: number; height?: number }>;
 };
 
-const statusFromDatabase: Record<string, ArticleStatus> = {
+const statusFromDatabase: Record<DatabaseArticleStatus, ArticleStatus> = {
   draft: "Πρόχειρο",
-  in_review: "Πρόχειρο",
+  in_review: "Σε έλεγχο",
   scheduled: "Προγραμματισμένο",
   published: "Δημοσιευμένο",
-  archived: "Πρόχειρο",
+  archived: "Αρχειοθετημένο",
 };
 
-const statusToDatabase: Record<ArticleStatus, "draft" | "scheduled" | "published"> = {
+const statusToDatabase: Record<ArticleStatus, DatabaseArticleStatus> = {
   Πρόχειρο: "draft",
+  "Σε έλεγχο": "in_review",
   Προγραμματισμένο: "scheduled",
   Δημοσιευμένο: "published",
+  Αρχειοθετημένο: "archived",
 };
 
 const toDateValue = (row: ArticleRow) =>
@@ -129,7 +133,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       excerpt: row.excerpt ?? "",
       category: article.category,
       author: article.author,
-      status: statusFromDatabase[row.status] ?? "Πρόχειρο",
+      status: statusFromDatabase[row.status],
       date: article.date,
       dateValue: toDateValue(row),
       views: 0,
@@ -209,12 +213,22 @@ export class SupabaseArticleRepository implements ArticleRepository {
   }
 
   async save(input: ArticleWriteInput) {
+    const categorySlug = getCategorySlug(input.category);
+    if (!categorySlug) {
+      throw new Error(`Η κατηγορία «${input.category}» δεν έχει σταθερό database slug.`);
+    }
+
     const { data: category, error: categoryError } = await this.client
       .from("categories")
       .select("id")
-      .eq("name", input.category)
+      .eq("slug", categorySlug)
       .maybeSingle();
     if (categoryError) throw categoryError;
+    if (!category) {
+      throw new Error(
+        `Η κατηγορία «${input.category}» (${categorySlug}) λείπει από τη βάση. Εφάρμοσε πρώτα το seed migration.`,
+      );
+    }
 
     const userResult = await this.client.auth.getUser();
     if (userResult.error) throw userResult.error;
@@ -223,7 +237,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
     const author = input.authorId ?? userResult.data.user?.id ?? null;
     const payload = {
       ...(!input.id || input.authorId ? { author_id: author } : {}),
-      category_id: category?.id ?? null,
+      category_id: category.id,
       slug: input.slug,
       title: input.title,
       excerpt: input.excerpt,
@@ -234,6 +248,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       scheduled_at: databaseStatus === "scheduled" ? `${input.dateValue}T12:00:00.000Z` : null,
       seo_title: input.seoTitle || null,
       seo_description: input.seoDescription || null,
+      reading_time_minutes: calculateReadingTimeMinutes(input.content),
       is_featured: input.isFeatured ?? false,
       is_trending: input.isTrending ?? false,
       is_fact_of_day: input.isFactOfDay ?? false,

@@ -18,6 +18,9 @@ create table public.tags (
   updated_at timestamptz not null default now()
 );
 
+alter table public.categories enable row level security;
+alter table public.tags enable row level security;
+
 create trigger categories_set_updated_at
 before update on public.categories
 for each row execute function private.set_updated_at();

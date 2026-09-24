@@ -4,6 +4,7 @@ import type {
   EditableArticle,
 } from "@/data/articles/article-repository";
 import { demoAdminArticles, type AdminArticle } from "@/lib/admin-data";
+import { calculateReadingTimeMinutes } from "@/lib/article-content";
 import { demoArticleContent, demoArticles, type Article } from "@/lib/articles";
 
 const clonePublicArticle = (article: Article): Article => ({ ...article });
@@ -43,7 +44,7 @@ export class MockArticleRepository implements ArticleRepository {
           title: article.title,
           excerpt: article.excerpt,
           date: article.date,
-          minutes: original?.minutes ?? 1,
+          minutes: original?.minutes ?? calculateReadingTimeMinutes(article.content),
           image: article.image,
           popularity: original?.popularity ?? article.views,
           author: article.author,

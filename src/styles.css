@@ -1827,6 +1827,14 @@ select:focus-visible {
   color: oklch(0.48 0.13 255);
   background: oklch(0.93 0.04 235);
 }
+.status-review {
+  color: oklch(0.48 0.13 300);
+  background: oklch(0.94 0.035 300);
+}
+.status-archived {
+  color: oklch(0.42 0.03 255);
+  background: oklch(0.91 0.015 255);
+}
 .articles-mobile-list {
   display: none;
 }

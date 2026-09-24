@@ -17,6 +17,8 @@ bun run dev
 
 The repository contains a version-controlled Supabase baseline for one independent blog. A new blog gets its own repository and hosted Supabase project, then applies the same migrations from `supabase/migrations`.
 
+The baseline enables RLS in the same migration that creates each table and seeds only public, non-secret FACTάκι settings plus the eight initial categories. It never seeds users, credentials or article content.
+
 Nothing in the repository applies migrations automatically. No local database setup is required. Copy `.env.example` to `.env.local` only after a hosted project has been created, and never place secret/service-role credentials in a `VITE_*` variable.
 
 Article reads and writes use a shared repository contract. The default `VITE_DATA_SOURCE=mock` keeps the application entirely on demo data. The Supabase adapter is activated only when `VITE_DATA_SOURCE=supabase` is set together with a hosted project URL and publishable key.
@@ -33,3 +35,5 @@ bunx supabase db push
 ```
 
 Always review the dry run before applying changes. Do not run `db reset --linked` against production; it deletes remote data before replaying migrations.
+
+After the first push, follow `docs/hosted-supabase-validation.md` before enabling `VITE_DATA_SOURCE=supabase`. Authentication, SSR cookie sessions and live RLS/Storage verification remain required before the admin can be used against Supabase.

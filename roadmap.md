@@ -26,6 +26,7 @@
 - [x] Cloneable Supabase MVP ER model, RLS matrix, Storage design και test strategy
 - [x] Έγκριση της αρχιτεκτονικής στο `docs/supabase-mvp-design.md`
 - [x] Version-controlled initial Supabase migrations, χωρίς εφαρμογή σε βάση
+- [x] Pre-Supabase hardening: άμεσο RLS, deterministic site/category seed και ασφαλές category/status/reading-time mapping
 - [x] Ενιαίο article repository με ενεργό mock και ανενεργό Supabase adapter
 - [ ] Authentication, RLS και role/storage integration tests
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports

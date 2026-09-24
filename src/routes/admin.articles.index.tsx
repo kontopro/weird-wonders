@@ -3,7 +3,7 @@ import { FileQuestion, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArticlesLoadingSkeleton, ArticlesTable, ConfirmDialog } from "@/components/admin/admin-ui";
-import { type AdminArticle, type ArticleStatus } from "@/lib/admin-data";
+import { articleStatuses, type AdminArticle } from "@/lib/admin-data";
 import { articleRepository } from "@/data/articles";
 import { categories } from "@/lib/articles";
 import { brandedTitle, siteConfig } from "@/config/site";
@@ -102,7 +102,7 @@ function ArticlesPage() {
           <span>Κατάσταση</span>
           <select value={status} onChange={(e) => setStatus(e.target.value)}>
             <option>Όλες</option>
-            {(["Δημοσιευμένο", "Πρόχειρο", "Προγραμματισμένο"] as ArticleStatus[]).map((s) => (
+            {articleStatuses.map((s) => (
               <option key={s}>{s}</option>
             ))}
           </select>

@@ -5,4 +5,6 @@ create table public.article_tags (
   primary key (article_id, tag_id)
 );
 
+alter table public.article_tags enable row level security;
+
 create index article_tags_tag_article_idx on public.article_tags (tag_id, article_id);

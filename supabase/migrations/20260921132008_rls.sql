@@ -16,15 +16,6 @@ $$;
 revoke all on function private.is_active_member_id(uuid) from public;
 grant execute on function private.is_active_member_id(uuid) to authenticated;
 
-alter table public.profiles enable row level security;
-alter table public.members enable row level security;
-alter table public.media_assets enable row level security;
-alter table public.site_settings enable row level security;
-alter table public.categories enable row level security;
-alter table public.tags enable row level security;
-alter table public.articles enable row level security;
-alter table public.article_tags enable row level security;
-
 revoke all on table public.profiles from anon, authenticated;
 revoke all on table public.members from anon, authenticated;
 revoke all on table public.media_assets from anon, authenticated;

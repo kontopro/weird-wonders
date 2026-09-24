@@ -16,7 +16,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/admin/admin-ui";
 import { BlockEditor } from "@/components/admin/block-editor";
 import { categories } from "@/lib/articles";
-import type { ArticleStatus } from "@/lib/admin-data";
+import { articleStatuses, type ArticleStatus } from "@/lib/admin-data";
 import { siteConfig } from "@/config/site";
 import {
   createEmptyArticleContent,
@@ -188,9 +188,9 @@ export function PublishPanel({
         <label>
           <span>Κατάσταση</span>
           <select value={status} onChange={(e) => onStatus(e.target.value as ArticleStatus)}>
-            <option>Πρόχειρο</option>
-            <option>Προγραμματισμένο</option>
-            <option>Δημοσιευμένο</option>
+            {articleStatuses.map((articleStatus) => (
+              <option key={articleStatus}>{articleStatus}</option>
+            ))}
           </select>
         </label>
         <label>

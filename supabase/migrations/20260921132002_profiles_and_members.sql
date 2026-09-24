@@ -16,6 +16,9 @@ create table public.members (
   updated_at timestamptz not null default now()
 );
 
+alter table public.profiles enable row level security;
+alter table public.members enable row level security;
+
 create index members_status_role_idx on public.members (status, role);
 
 create trigger profiles_set_updated_at

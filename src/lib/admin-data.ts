@@ -4,7 +4,15 @@ import observatory from "@/assets/observatory.jpg";
 import octopus from "@/assets/octopus.jpg";
 import timeMachine from "@/assets/time-machine.jpg";
 
-export type ArticleStatus = "Δημοσιευμένο" | "Πρόχειρο" | "Προγραμματισμένο";
+export const articleStatuses = [
+  "Πρόχειρο",
+  "Σε έλεγχο",
+  "Προγραμματισμένο",
+  "Δημοσιευμένο",
+  "Αρχειοθετημένο",
+] as const;
+
+export type ArticleStatus = (typeof articleStatuses)[number];
 
 export type AdminArticle = {
   id: string;

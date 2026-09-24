@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { safeParseArticleContent } from "./article-content";
+import { calculateReadingTimeMinutes, safeParseArticleContent } from "./article-content";
 
 describe("article content validation", () => {
   test("rejects unsafe URLs", () => {
@@ -34,5 +34,22 @@ describe("article content validation", () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  test("calculates a minimum one-minute reading time from visible block text", () => {
+    expect(calculateReadingTimeMinutes({ version: 1, blocks: [] })).toBe(1);
+
+    expect(
+      calculateReadingTimeMinutes({
+        version: 1,
+        blocks: [
+          {
+            id: crypto.randomUUID(),
+            type: "paragraph",
+            data: { text: Array.from({ length: 201 }, () => "λέξη").join(" ") },
+          },
+        ],
+      }),
+    ).toBe(2);
   });
 });

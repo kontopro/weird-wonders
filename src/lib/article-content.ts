@@ -266,6 +266,53 @@ export function createEmptyArticleContent(): ArticleContentDocument {
   return { version: 1, blocks: [] };
 }
 
+function readableTextForBlock(block: ArticleBlock): string[] {
+  switch (block.type) {
+    case "paragraph":
+    case "heading":
+      return [block.data.text];
+    case "list":
+      return block.data.items;
+    case "quote":
+      return [block.data.text, block.data.attribution ?? ""];
+    case "image":
+      return [block.data.alt, block.data.caption ?? "", block.data.credit ?? ""];
+    case "imageGallery":
+      return block.data.images.flatMap((image) => [
+        image.alt,
+        image.caption ?? "",
+        image.credit ?? "",
+      ]);
+    case "table":
+      return [...block.data.columns, ...block.data.rows.flat()];
+    case "factBox":
+      return [block.data.title ?? "", block.data.text];
+    case "scorecard":
+      return [block.data.title, block.data.label ?? "", block.data.verdict ?? ""];
+    case "embed":
+      return [block.data.title ?? ""];
+    case "divider":
+      return [block.data.label ?? ""];
+    case "callToAction":
+      return [block.data.title, block.data.text ?? "", block.data.label];
+  }
+}
+
+export function calculateReadingTimeMinutes(
+  document: ArticleContentDocument,
+  wordsPerMinute = 200,
+) {
+  if (!Number.isFinite(wordsPerMinute) || wordsPerMinute <= 0) {
+    throw new Error("Το wordsPerMinute πρέπει να είναι θετικός αριθμός.");
+  }
+
+  const wordCount = document.blocks
+    .flatMap(readableTextForBlock)
+    .reduce((total, text) => total + text.trim().split(/\s+/u).filter(Boolean).length, 0);
+
+  return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
+}
+
 export function getArticleHeadings(value: unknown) {
   if (!value || typeof value !== "object") return [];
   const document = value as { version?: unknown; blocks?: unknown };

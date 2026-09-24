@@ -21,6 +21,9 @@ create table public.tags (
 alter table public.categories enable row level security;
 alter table public.tags enable row level security;
 
+create unique index categories_name_ci_idx on public.categories (lower(name));
+create unique index tags_name_ci_idx on public.tags (lower(name));
+
 create trigger categories_set_updated_at
 before update on public.categories
 for each row execute function private.set_updated_at();

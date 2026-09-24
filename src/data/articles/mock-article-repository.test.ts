@@ -49,4 +49,24 @@ describe("MockArticleRepository", () => {
     expect(copy.id).not.toBe(source!.id);
     expect(reloadedSource!.content.blocks.length).toBeGreaterThan(0);
   });
+
+  test("rejects a fact-of-day flag on an unpublished article", async () => {
+    const repository = new MockArticleRepository();
+    const original = await repository.findAdminBySlug("rologia-kai-ypologistes");
+    expect(original).not.toBeNull();
+
+    expect(
+      repository.save({
+        id: original!.id,
+        slug: original!.slug,
+        title: original!.title,
+        excerpt: original!.excerpt,
+        category: original!.category,
+        status: "Πρόχειρο",
+        dateValue: original!.dateValue,
+        content: original!.content,
+        isFactOfDay: true,
+      }),
+    ).rejects.toThrow("πρέπει να είναι δημοσιευμένο");
+  });
 });

@@ -70,6 +70,15 @@ with check (
   and (storage.foldername(name))[1] in ('branding', 'articles', 'media')
 );
 
+create policy storage_public_editor_read
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'blog-public'
+  and (select private.has_role(array['owner', 'admin', 'editor']))
+);
+
 create policy storage_public_editor_update
 on storage.objects
 for update

@@ -27,6 +27,7 @@ create table public.articles (
   check (jsonb_typeof(content_blocks -> 'blocks') = 'array'),
   check (status <> 'scheduled' or scheduled_at is not null),
   check (status <> 'published' or published_at is not null),
+  check (not is_fact_of_day or status = 'published'),
   check (status <> 'published' or cover_image_id is null or nullif(trim(cover_image_alt), '') is not null)
 );
 
@@ -58,10 +59,14 @@ begin
     raise exception 'Article author must be an active member';
   end if;
 
-  if new.status = 'published'
-     and (tg_op = 'INSERT' or old.status <> 'published')
-  then
+  if tg_op = 'INSERT' then
+    new.published_at = case when new.status = 'published' then now() else null end;
+  elsif old.published_at is not null then
+    new.published_at = old.published_at;
+  elsif new.status = 'published' then
     new.published_at = now();
+  else
+    new.published_at = null;
   end if;
 
   new.updated_at = now();

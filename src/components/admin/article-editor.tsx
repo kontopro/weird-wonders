@@ -348,6 +348,7 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
               date={date}
               onStatus={(value) => {
                 setStatus(value);
+                if (value !== "Δημοσιευμένο") setDaily(false);
                 setDirty(true);
               }}
               onDate={(value) => {
@@ -442,6 +443,7 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
                     <span>{siteConfig.contentLabels.singular} της ημέρας</span>
                     <Switch
                       checked={daily}
+                      disabled={status !== "Δημοσιευμένο"}
                       onCheckedChange={(value) => {
                         setDaily(value);
                         setDirty(true);

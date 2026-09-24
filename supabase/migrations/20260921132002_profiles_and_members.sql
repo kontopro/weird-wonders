@@ -147,21 +147,27 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  removing_active_owner boolean := false;
 begin
-  if tg_op = 'UPDATE' and new.user_id <> old.user_id then
-    raise exception 'Member identity cannot be changed';
+  if tg_op = 'UPDATE' then
+    if new.user_id <> old.user_id then
+      raise exception 'Member identity cannot be changed';
+    end if;
+
+    removing_active_owner := old.role = 'owner'
+      and old.status = 'active'
+      and (new.role <> 'owner' or new.status <> 'active');
+  else
+    removing_active_owner := old.role = 'owner' and old.status = 'active';
   end if;
 
-  if old.role = 'owner'
-     and old.status = 'active'
-     and (
-       tg_op = 'DELETE'
-       or new.role <> 'owner'
-       or new.status <> 'active'
-     )
-     and (select count(*) from public.members where role = 'owner' and status = 'active') <= 1
-  then
-    raise exception 'The blog must keep at least one active owner';
+  if removing_active_owner then
+    perform pg_advisory_xact_lock(hashtext('protect_last_blog_owner'));
+
+    if (select count(*) from public.members where role = 'owner' and status = 'active') <= 1 then
+      raise exception 'The blog must keep at least one active owner';
+    end if;
   end if;
 
   if tg_op = 'DELETE' then

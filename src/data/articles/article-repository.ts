@@ -39,6 +39,12 @@ export type ArticleWriteInput = {
   isFactOfDay?: boolean;
 };
 
+export function assertArticleWriteInvariants(input: ArticleWriteInput) {
+  if (input.isFactOfDay && input.status !== "Δημοσιευμένο") {
+    throw new Error(`Το FACTάκι της ημέρας πρέπει να είναι δημοσιευμένο.`);
+  }
+}
+
 export interface ArticleRepository {
   listPublished(): Promise<Article[]>;
   findPublishedBySlug(slug: string): Promise<ArticleDetail | null>;

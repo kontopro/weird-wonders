@@ -1,7 +1,8 @@
-import type {
-  ArticleRepository,
-  ArticleWriteInput,
-  EditableArticle,
+import {
+  assertArticleWriteInvariants,
+  type ArticleRepository,
+  type ArticleWriteInput,
+  type EditableArticle,
 } from "@/data/articles/article-repository";
 import { demoAdminArticles, type AdminArticle } from "@/lib/admin-data";
 import { calculateReadingTimeMinutes } from "@/lib/article-content";
@@ -77,6 +78,7 @@ export class MockArticleRepository implements ArticleRepository {
   }
 
   async save(input: ArticleWriteInput) {
+    assertArticleWriteInvariants(input);
     const existing = input.id ? this.adminRows.find((item) => item.id === input.id) : undefined;
     const next: EditableArticle = {
       id: existing?.id ?? crypto.randomUUID(),

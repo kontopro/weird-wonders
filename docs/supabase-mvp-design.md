@@ -143,6 +143,7 @@ updated_at timestamptz not null default now()
 ```
 
 Slugs are normalized lowercase values. Icon and color values are interpreted through controlled frontend presets.
+Category and tag display names are unique case-insensitively within the blog, in addition to their unique slugs.
 
 ### `tags`
 
@@ -215,7 +216,8 @@ admin/owner: editor permissions plus project configuration and members
 - Editors manage all article states.
 - Admins manage settings and non-owner members.
 - Ownership changes go through protected database logic.
-- `published_at` is set by trusted database logic on first publication.
+- `published_at` is set by trusted database logic on first publication and remains immutable across unpublish/republish transitions.
+- `is_fact_of_day` may be true only for a published article, with at most one such article at a time.
 - Automatic scheduled publication requires a later trusted scheduled job.
 
 ## RLS approach

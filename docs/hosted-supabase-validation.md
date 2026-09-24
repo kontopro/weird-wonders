@@ -29,6 +29,8 @@ Run these checks only after cookie-based SSR auth and the admin guard are implem
 - Confirm the final active owner cannot be suspended, demoted or deleted.
 - Confirm an anonymous request cannot enter the admin flow.
 
+Account deletion is intentionally explicit: reassign or clear authored articles and uploaded media, remove the membership (without violating last-owner protection), and only then delete the Auth user. The restrictive foreign keys prevent accidental loss of attribution.
+
 ## RLS matrix
 
 Use temporary hosted test users for each role and remove or suspend them after validation.
@@ -48,6 +50,7 @@ Use temporary hosted test users for each role and remove or suspend them after v
 - Active members can upload only to allowed top-level folders.
 - Authors can manage their own private uploads but cannot promote public assets directly.
 - Editor, admin and owner promotion/deletion follows the intended policy.
+- Confirm an authenticated upload populates `storage.objects.owner_id` with the uploader's `auth.uid()::text` and that the upload response can read its returned metadata.
 - Invalid traversal-style paths and unsupported folders are rejected.
 
 ## Application cutover gate

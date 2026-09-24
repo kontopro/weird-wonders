@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type {
-  ArticleRepository,
-  ArticleWriteInput,
-  EditableArticle,
+import {
+  assertArticleWriteInvariants,
+  type ArticleRepository,
+  type ArticleWriteInput,
+  type EditableArticle,
 } from "@/data/articles/article-repository";
 import { calculateReadingTimeMinutes, parseArticleContent } from "@/lib/article-content";
 import type { AdminArticle, ArticleStatus } from "@/lib/admin-data";
@@ -213,6 +214,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
   }
 
   async save(input: ArticleWriteInput) {
+    assertArticleWriteInvariants(input);
     const categorySlug = getCategorySlug(input.category);
     if (!categorySlug) {
       throw new Error(`Η κατηγορία «${input.category}» δεν έχει σταθερό database slug.`);

@@ -27,21 +27,27 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatViews, type AdminArticle, type ArticleStatus } from "@/lib/admin-data";
+import {
+  articleStatusLabels,
+  formatViews,
+  type AdminArticle,
+  type ArticleStatus,
+} from "@/lib/admin-data";
 
+// CSS modifier per status (`status-review` predates the `in_review` code).
 const statusTone: Record<ArticleStatus, string> = {
-  Πρόχειρο: "draft",
-  "Σε έλεγχο": "review",
-  Προγραμματισμένο: "scheduled",
-  Δημοσιευμένο: "published",
-  Αρχειοθετημένο: "archived",
+  draft: "draft",
+  in_review: "review",
+  scheduled: "scheduled",
+  published: "published",
+  archived: "archived",
 };
 
 export function ArticleStatusBadge({ status }: { status: ArticleStatus }) {
   return (
     <span className={`admin-status status-${statusTone[status]}`}>
       <i />
-      {status}
+      {articleStatusLabels[status]}
     </span>
   );
 }
@@ -183,8 +189,8 @@ export function ArticlesTable({
                   </div>
                 </div>
               </td>
-              <td>{article.category}</td>
-              {!compact && <td>{article.author}</td>}
+              <td>{article.category.name}</td>
+              {!compact && <td>{article.author.name}</td>}
               <td>
                 <ArticleStatusBadge status={article.status} />
               </td>
@@ -207,7 +213,7 @@ export function ArticlesTable({
             </div>
             <strong>{article.title}</strong>
             <div className="admin-article-card-meta">
-              <span>{article.category}</span>
+              <span>{article.category.name}</span>
               <span>{article.date}</span>
               <span>{formatViews(article.views)} προβολές</span>
             </div>

@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { articleRepository } from "@/data/articles";
+import { articleApi } from "@/data/articles";
 import { brandedTitle } from "@/config/site";
 
 export const Route = createFileRoute("/dimofili")({
-  loader: () => articleRepository.listPublished(),
+  loader: () => articleApi.listPublished(),
   head: () => ({
     meta: [
       { title: brandedTitle("Δημοφιλή") },
@@ -36,7 +36,7 @@ function PopularPage() {
               <img src={a.image} alt="" />
               <div>
                 <small>
-                  {a.category} · {a.minutes} λεπτά ανάγνωσης
+                  {a.category.name} · {a.minutes} λεπτά ανάγνωσης
                 </small>
                 <Link to="/arthro/$slug" params={{ slug: a.slug }}>
                   {a.title}

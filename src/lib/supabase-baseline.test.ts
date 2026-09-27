@@ -58,4 +58,43 @@ describe("Supabase migration baseline", () => {
     );
     expect(sql).toContain("create unique index tags_name_ci_idx on public.tags (lower(name));");
   });
+
+  test("assigns the first owner only through an operator-run bootstrap", async () => {
+    const sql = await migrationFile("20260927120000_secure_owner_bootstrap.sql");
+    expect(sql).toContain("drop function if exists public.claim_initial_owner();");
+    expect(sql).toContain("create or replace function private.bootstrap_owner(owner_email text)");
+    expect(sql).toContain(
+      "revoke all on function private.bootstrap_owner(text) from public, anon, authenticated;",
+    );
+    expect(sql).not.toMatch(/grant\s+execute[\s\S]*bootstrap_owner/i);
+  });
+
+  test("disables public sign-ups in the reference Supabase config", async () => {
+    const config = await Bun.file(new URL("../../supabase/config.toml", import.meta.url)).text();
+    expect(config).not.toMatch(/^enable_signup = true$/m);
+  });
+
+  test("adds unique, normalized author slugs and an atomic, RLS-respecting tag setter", async () => {
+    const sql = await migrationFile("20260927130000_profile_slugs_and_article_tags.sql");
+    expect(sql).toContain("add constraint profiles_slug_key unique (slug)");
+    expect(sql).toMatch(/set_article_tags[\s\S]*security invoker/);
+    expect(sql).toContain("private.can_edit_article(p_article_id)");
+    expect(sql).toContain(
+      "revoke all on function public.set_article_tags(uuid, jsonb) from public, anon;",
+    );
+  });
+
+  test("mirrors the scheduled publishing rule in RLS", async () => {
+    const sql = await migrationFile("20260927140000_scheduled_publishing.sql");
+    const due = "status = 'scheduled' and scheduled_at <= now()";
+    expect(sql).toContain(due);
+    for (const policy of [
+      "articles_public_read",
+      "profiles_public_authors_read",
+      "article_tags_public_read",
+    ]) {
+      expect(sql).toContain(`drop policy ${policy}`);
+      expect(sql).toContain(`create policy ${policy}`);
+    }
+  });
 });

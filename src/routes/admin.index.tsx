@@ -15,11 +15,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArticlesTable, ConfirmDialog, StatsCard } from "@/components/admin/admin-ui";
 import { formatViews, type AdminArticle } from "@/lib/admin-data";
-import { articleRepository } from "@/data/articles";
+import { articleApi } from "@/data/articles";
+import { errorMessage } from "@/lib/error-message";
 import { brandedTitle, siteConfig } from "@/config/site";
 
 export const Route = createFileRoute("/admin/")({
-  loader: () => articleRepository.listAdmin(),
+  loader: () => articleApi.listAdmin(),
   component: AdminDashboard,
   head: () => ({
     meta: [
@@ -44,15 +45,25 @@ function AdminDashboard() {
   const [rows, setRows] = useState<AdminArticle[]>(() => loadedRows);
   const [target, setTarget] = useState<AdminArticle>();
   const duplicate = async (article: AdminArticle) => {
-    const copy = await articleRepository.duplicate(article.id);
-    setRows((current) => [copy, ...current]);
-    toast.success("Δημιουργήθηκε αντίγραφο ως πρόχειρο.");
+    try {
+      const copy = await articleApi.duplicate(article.id);
+      setRows((current) => [copy, ...current]);
+      toast.success("Δημιουργήθηκε αντίγραφο ως πρόχειρο.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
   };
   return (
     <div className="admin-page">
       <header className="admin-page-header dashboard-heading">
         <div>
-          <p className="admin-overline">Κυριακή, 20 Σεπτεμβρίου</p>
+          <p className="admin-overline">
+            {new Intl.DateTimeFormat("el-GR", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            }).format(new Date())}
+          </p>
           <h1>
             Καλημέρα, Μαρία <span className="sr-only">👋</span>
             <Hand className="greeting-hand" aria-hidden="true" />
@@ -162,15 +173,19 @@ function AdminDashboard() {
         open={!!target}
         onOpenChange={(open) => !open && setTarget(undefined)}
         title="Να αφαιρεθεί το άρθρο;"
-        description="Η ενέργεια περνά από το ενεργό article repository."
+        description="Η διαγραφή είναι οριστική."
         confirmLabel="Διαγραφή"
         onConfirm={async () => {
-          if (target) {
-            await articleRepository.delete(target.id);
+          if (!target) return;
+          try {
+            await articleApi.delete(target.id);
             setRows((current) => current.filter((row) => row.id !== target.id));
+            toast.success("Το άρθρο αφαιρέθηκε.");
+          } catch (error) {
+            toast.error(errorMessage(error));
+          } finally {
+            setTarget(undefined);
           }
-          setTarget(undefined);
-          toast.success("Το άρθρο αφαιρέθηκε από τη λίστα.");
         }}
       />
     </div>

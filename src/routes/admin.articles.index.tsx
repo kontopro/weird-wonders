@@ -1,15 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileQuestion, Plus, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArticlesLoadingSkeleton, ArticlesTable, ConfirmDialog } from "@/components/admin/admin-ui";
-import { articleStatuses, type AdminArticle } from "@/lib/admin-data";
-import { articleRepository } from "@/data/articles";
-import { categories } from "@/lib/articles";
+import { ArticlesTable, ConfirmDialog } from "@/components/admin/admin-ui";
+import { articleStatusLabels, articleStatuses, type AdminArticle } from "@/lib/admin-data";
+import { articleApi } from "@/data/articles";
+import { taxonomyApi } from "@/data/taxonomy";
+import { errorMessage } from "@/lib/error-message";
 import { brandedTitle, siteConfig } from "@/config/site";
 
 export const Route = createFileRoute("/admin/articles/")({
-  loader: () => articleRepository.listAdmin(),
+  loader: async () => {
+    const [articles, categories] = await Promise.all([
+      articleApi.listAdmin(),
+      taxonomyApi.listCategories(),
+    ]);
+    return { articles, categories };
+  },
   component: ArticlesPage,
   head: () => ({
     meta: [
@@ -30,27 +37,23 @@ export const Route = createFileRoute("/admin/articles/")({
 });
 
 function ArticlesPage() {
-  const loadedRows = Route.useLoaderData();
+  const { articles: loadedRows, categories } = Route.useLoaderData();
   const [rows, setRows] = useState<AdminArticle[]>(() => loadedRows);
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("Όλες");
-  const [status, setStatus] = useState("Όλες");
+  // Category filter holds a slug; "" means all categories.
+  const [category, setCategory] = useState("");
+  // "" means all statuses.
+  const [status, setStatus] = useState("");
   const [sort, setSort] = useState("newest");
   const [target, setTarget] = useState<AdminArticle>();
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setLoading(true);
-    const timer = window.setTimeout(() => setLoading(false), 280);
-    return () => window.clearTimeout(timer);
-  }, [query, category, status, sort]);
   const filtered = useMemo(
     () =>
       rows
         .filter(
           (a) =>
             (!query || a.title.toLocaleLowerCase("el").includes(query.toLocaleLowerCase("el"))) &&
-            (category === "Όλες" || a.category === category) &&
-            (status === "Όλες" || a.status === status),
+            (category === "" || a.category.slug === category) &&
+            (status === "" || a.status === status),
         )
         .sort((a, b) =>
           sort === "newest"
@@ -60,9 +63,13 @@ function ArticlesPage() {
     [rows, query, category, status, sort],
   );
   const duplicate = async (article: AdminArticle) => {
-    const copy = await articleRepository.duplicate(article.id);
-    setRows((current) => [copy, ...current]);
-    toast.success("Το αντίγραφο αποθηκεύτηκε ως πρόχειρο.");
+    try {
+      const copy = await articleApi.duplicate(article.id);
+      setRows((current) => [copy, ...current]);
+      toast.success("Το αντίγραφο αποθηκεύτηκε ως πρόχειρο.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    }
   };
   return (
     <div className="admin-page">
@@ -71,7 +78,7 @@ function ArticlesPage() {
           <p className="admin-overline">Περιεχόμενο</p>
           <h1>Άρθρα</h1>
           <p>
-            {rows.length} άρθρα συνολικά · {rows.filter((a) => a.status === "Πρόχειρο").length}{" "}
+            {rows.length} άρθρα συνολικά · {rows.filter((a) => a.status === "draft").length}{" "}
             πρόχειρα
           </p>
         </div>
@@ -92,18 +99,22 @@ function ArticlesPage() {
         <label>
           <span>Κατηγορία</span>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option>Όλες</option>
+            <option value="">Όλες</option>
             {categories.map((c) => (
-              <option key={c}>{c}</option>
+              <option key={c.slug} value={c.slug}>
+                {c.name}
+              </option>
             ))}
           </select>
         </label>
         <label>
           <span>Κατάσταση</span>
           <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option>Όλες</option>
+            <option value="">Όλες</option>
             {articleStatuses.map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>
+                {articleStatusLabels[s]}
+              </option>
             ))}
           </select>
         </label>
@@ -115,9 +126,7 @@ function ArticlesPage() {
           </select>
         </label>
       </section>
-      {loading ? (
-        <ArticlesLoadingSkeleton />
-      ) : filtered.length ? (
+      {filtered.length ? (
         <ArticlesTable articles={filtered} onDelete={setTarget} onDuplicate={duplicate} />
       ) : (
         <section className="admin-empty">
@@ -128,8 +137,8 @@ function ArticlesPage() {
             className="btn btn-outline"
             onClick={() => {
               setQuery("");
-              setCategory("Όλες");
-              setStatus("Όλες");
+              setCategory("");
+              setStatus("");
             }}
           >
             Καθαρισμός φίλτρων
@@ -140,15 +149,19 @@ function ArticlesPage() {
         open={!!target}
         onOpenChange={(open) => !open && setTarget(undefined)}
         title="Να αφαιρεθεί το άρθρο;"
-        description="Η διαγραφή περνά από το ενεργό article repository."
+        description="Η διαγραφή είναι οριστική."
         confirmLabel="Διαγραφή"
         onConfirm={async () => {
-          if (target) {
-            await articleRepository.delete(target.id);
+          if (!target) return;
+          try {
+            await articleApi.delete(target.id);
             setRows((current) => current.filter((row) => row.id !== target.id));
+            toast.success("Το άρθρο αφαιρέθηκε.");
+          } catch (error) {
+            toast.error(errorMessage(error));
+          } finally {
+            setTarget(undefined);
           }
-          setTarget(undefined);
-          toast.success("Το άρθρο αφαιρέθηκε.");
         }}
       />
     </div>

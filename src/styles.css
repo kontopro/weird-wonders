@@ -906,7 +906,8 @@ svg {
   gap: 7px;
   margin-top: 30px;
 }
-.tags span {
+.tags span,
+.tags a {
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 7px 10px;
@@ -1871,6 +1872,7 @@ select:focus-visible {
 .article-filters input,
 .article-filters select,
 .admin-form-grid input,
+.admin-form-grid select,
 .admin-form-grid textarea,
 .editor-panel input,
 .editor-panel select,
@@ -2793,4 +2795,90 @@ select:focus-visible {
 /* Keep the FACTάκι brand in its exact casing inside uppercase labels */
 .brand-literal {
   text-transform: none;
+}
+
+/* Login */
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: var(--background);
+}
+.login-card {
+  width: min(100%, 420px);
+  padding: 28px 24px;
+  display: grid;
+  gap: 14px;
+}
+.login-card h1 {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+.login-form {
+  margin: 8px 0 0;
+}
+.login-note {
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.login-error {
+  color: var(--coral);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* Category, tag and author listings */
+.listing-intro {
+  max-width: 720px;
+  margin: -8px 0 24px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+.listing-intro .author-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+/* Category management */
+.category-form {
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.category-form h2 {
+  font-weight: 800;
+}
+.category-form .admin-form-grid {
+  margin: 18px 0;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.row-actions {
+  display: flex;
+  gap: 4px;
+}
+.admin-empty-note {
+  padding: 20px 0;
+  color: var(--muted-foreground);
+}
+.demo-accounts {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.demo-accounts button {
+  width: 100%;
+  justify-content: flex-start;
+}
+.demo-accounts small {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-weight: 600;
 }

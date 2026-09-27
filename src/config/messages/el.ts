@@ -53,12 +53,8 @@ export const el = {
     menu: "Μενού",
     random: (singular: string) => `Τυχαίο ${singular}`,
     backToTop: "Επιστροφή στην κορυφή",
+    skipToContent: "Μετάβαση στο περιεχόμενο",
     languages: "Γλώσσες",
-  },
-  cookies: {
-    title: "Μικρά cookies, μεγάλη περιέργεια.",
-    text: "Χρησιμοποιούμε μόνο απαραίτητα cookies για τη σωστή εμπειρία.",
-    accept: "Εντάξει",
   },
   common: {
     readingTime: (minutes: number) => `${minutes} λεπτά ανάγνωσης`,

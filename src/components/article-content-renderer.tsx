@@ -7,12 +7,10 @@ import {
   type ArticleBlock,
   type ArticleContentDocument,
 } from "@/lib/article-content";
+import { imageSizes } from "@/lib/image-sizes";
+import type { PublicMediaSource } from "@/domain/media";
 
-export type PublicMediaAsset = {
-  src: string;
-  width?: number;
-  height?: number;
-};
+export type PublicMediaAsset = PublicMediaSource;
 
 type ArticleContentRendererProps = {
   document: ArticleContentDocument | unknown;
@@ -55,6 +53,8 @@ function renderImage(
     <figure className="content-image" key={key}>
       <img
         src={asset.src}
+        srcSet={asset.srcSet || undefined}
+        sizes={asset.srcSet ? imageSizes.content : undefined}
         alt={image.alt}
         width={asset.width}
         height={asset.height}

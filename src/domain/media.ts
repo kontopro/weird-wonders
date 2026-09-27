@@ -19,6 +19,16 @@ export const maxImageBytes = 10 * 1024 * 1024;
 /** The editor downsizes larger images to this width before uploading. */
 export const maxImageWidth = 2000;
 
+/**
+ * Smaller copies made at upload so phones do not download the full image.
+ * Only widths below the original are made; pages pick one with `srcset`.
+ */
+export const imageVariantWidths = [480, 960, 1440] as const;
+export const maxImageVariants = imageVariantWidths.length;
+
+/** A smaller copy of an image (`src` is a URL the browser can load). */
+export type ImageVariant = { width: number; src: string };
+
 export type MediaAsset = {
   id: string;
   /** URL the browser can load (public Storage URL, or a demo route in mock mode). */
@@ -32,12 +42,39 @@ export type MediaAsset = {
   caption: string;
   uploadedBy: string | null;
   createdAt: string;
+  /** Smaller copies, narrowest first. */
+  variants: ImageVariant[];
   /** How many articles use it (cover or content). Used assets cannot be deleted. */
   usageCount: number;
 };
 
 /** What the public renderer needs to show an image. */
-export type PublicMediaSource = { src: string; width?: number; height?: number };
+export type PublicMediaSource = {
+  src: string;
+  width?: number;
+  height?: number;
+  /** `srcset` value listing the smaller copies and the original. */
+  srcSet?: string;
+};
+
+/**
+ * `srcset` for an image and its smaller copies, e.g.
+ * "a-w480.webp 480w, a-w960.webp 960w, a.webp 1600w". Empty when there is
+ * nothing to choose from (no copies, or the original width is unknown).
+ */
+export function srcSetOf(
+  src: string,
+  width: number | null | undefined,
+  variants: readonly ImageVariant[],
+): string {
+  if (!src || !width || variants.length === 0) return "";
+  return [...variants]
+    .filter((variant) => variant.width < width)
+    .sort((a, b) => a.width - b.width)
+    .map((variant) => `${variant.src} ${variant.width}w`)
+    .concat(`${src} ${width}w`)
+    .join(", ");
+}
 
 export const mediaUpdateSchema = z
   .object({
@@ -62,7 +99,13 @@ export type MediaUpload = MediaUploadMeta & {
   fileName: string;
   mimeType: AllowedImageType;
   bytes: Uint8Array;
+  /** Smaller copies made by the editor (see `imageVariantWidths`). */
+  variants: Array<{ width: number; mimeType: AllowedImageType; bytes: Uint8Array }>;
 };
+
+export function isImageVariantWidth(value: number): boolean {
+  return (imageVariantWidths as readonly number[]).includes(value);
+}
 
 export function isAllowedImageType(value: string): value is AllowedImageType {
   return (allowedImageTypes as readonly string[]).includes(value);

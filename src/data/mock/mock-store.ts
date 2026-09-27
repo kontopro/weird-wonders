@@ -30,6 +30,8 @@ export type MockStore = {
     src: string;
     /** Uploaded bytes, kept in memory; absent for static demo files. */
     bytes?: Uint8Array;
+    /** Smaller copies for `srcset` (uploads keep their bytes in memory too). */
+    variants: Array<{ width: number; src: string; bytes?: Uint8Array }>;
     width: number | null;
     height: number | null;
     mimeType: string;

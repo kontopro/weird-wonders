@@ -5,7 +5,7 @@
 - [x] Πλήρης σελίδα άρθρου με πηγές, περιεχόμενα, reactions και σχετικό περιεχόμενο
 - [x] Σελίδα Ανακάλυψε με αναζήτηση, φίλτρα, ταξινόμηση και empty state
 - [x] Λειτουργικά dark mode, bookmarks σε localStorage, random article, newsletter validation, copy/share
-- [x] Reading progress, back-to-top, cookie consent, accessible mobile menu και θεματικό 404
+- [x] Reading progress, back-to-top, accessible mobile menu και θεματικό 404
 - [x] Ελληνικά mock δεδομένα 8+ άρθρων με σαφή σήμανση demo content
 - [x] SEO/Open Graph metadata ανά σελίδα και responsive έλεγχος
 - [x] Admin layout και responsive navigation
@@ -44,6 +44,8 @@
 - [x] Πολυγλωσσικό site: κείμενα ανά γλώσσα (`src/config/messages`), URLs `/en/article/…`, hreflang, επιλογή γλώσσας στο άρθρο
 - [x] «Δημιουργία έκδοσης» μετάφρασης στον editor, μεταφράσεις κατηγοριών (`/admin/categories`) και ετικετών (`/admin/tags`)
 - [x] Αναζήτηση χωρίς τόνους, pagination, ανακατεύθυνση παλιών διευθύνσεων, μετρητής προβολών, newsletter (αποθήκευση εγγραφών)
+- [x] SEO: `sitemap.xml` με hreflang, `robots.txt`, RSS ανά γλώσσα, social previews, JSON-LD, `VITE_SITE_URL`
+- [x] Ταχύτητα/προσβασιμότητα: responsive εικόνες (srcset), self-hosted fonts, dark mode χωρίς αναβόσβημα, skip link, εικονίδια, χωρίς cookie banner
 - [ ] Αποστολή newsletter μέσω παρόχου email (π.χ. Resend)
 - [ ] Έλεγχος σε hosted project (`docs/hosted-supabase-validation.md`)
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports

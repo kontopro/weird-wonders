@@ -10,7 +10,7 @@ import {
 import { scheduleOf, type MockArticleRow, type MockStore } from "@/data/mock/mock-store";
 import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
-import { collectAssetIds } from "@/domain/media";
+import { collectAssetIds, srcSetOf } from "@/domain/media";
 import { matchesSearch, pageOf, popularWindowDays, searchTerms } from "@/domain/listing";
 import { MockMediaRepository } from "@/data/mock/mock-media-repository";
 import { effectiveStatus, isPubliclyVisible } from "@/domain/publishing";
@@ -72,6 +72,11 @@ export class MockArticleRepository implements ArticleRepository {
     return (assetId && this.store.media.find((item) => item.id === assetId)?.src) || "";
   }
 
+  private coverSrcSet(assetId: string | null) {
+    const media = assetId ? this.store.media.find((item) => item.id === assetId) : undefined;
+    return media ? srcSetOf(media.src, media.width, media.variants) : "";
+  }
+
   /** Views in the last `popularWindowDays` days (like `article_view_counts`). */
   private recentViews(id: string) {
     const since = new Date(Date.now() - popularWindowDays * 86_400_000).toISOString().slice(0, 10);
@@ -92,6 +97,7 @@ export class MockArticleRepository implements ArticleRepository {
       updatedAt: updatedAtOf(row),
       minutes: row.minutes ?? calculateReadingTimeMinutes(row.content),
       image: this.coverSrc(row.coverAssetId),
+      imageSrcSet: this.coverSrcSet(row.coverAssetId),
       imageAlt: row.imageAlt,
       popularity: this.recentViews(row.id),
       category: this.categoryRef(row.categoryId, row.language),

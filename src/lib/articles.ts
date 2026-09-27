@@ -18,6 +18,8 @@ export type Article = {
   minutes: number;
   /** Cover image URL ("" when the article has none). */
   image: string;
+  /** `srcset` of the cover's smaller copies ("" when there are none). */
+  imageSrcSet: string;
   imageAlt: string;
   /** Views in the last `popularWindowDays` days. */
   popularity: number;

@@ -80,7 +80,7 @@ A blog has a **main language** and may publish in others (`src/config/site.ts`: 
 - **Words:** everything the public site says — menus, labels, SEO text, the About page and the URL words — lives in one file per language: `src/config/messages/el.ts`, `en.ts`. To add a language, copy a file, translate it, register it in `src/config/messages/index.ts` and add the code to `languages`. The admin stays in the main language.
 - **URLs:** the main language has no prefix (`/arthro/…`); other languages are prefixed and use their own words (`/en/article/…`, `/en/category/…`). Routes are defined once; the router rewrite in `src/router.tsx` translates the words (`src/i18n/paths.ts`). `/el/…` redirects to the unprefixed URL.
 - **Articles:** each version is its own article in a translation group, with its own slug, SEO and status. In the editor, a saved article's **Γλώσσες** panel creates a linked draft in another language (content, cover, category and tags are copied) for translating. New articles can pick their language.
-- **Public pages** link to the other published versions and emit `hreflang`, `x-default`, canonical and `og:locale`.
+- **Public pages** link to the other published versions and emit `hreflang`, `x-default`, canonical and `og:locale` (see _Search engines and sharing_).
 - **Categories and tags** are named in the main language; translations (name, slug, description) are edited on `/admin/categories` and `/admin/tags`. Pages fall back to the main-language name when a translation is missing. The admin always shows main-language names so tags are never duplicated.
 
 ## Reader features
@@ -88,8 +88,28 @@ A blog has a **main language** and may publish in others (`src/config/site.ts`: 
 - **Search** (`/anakalypse?q=…`): accent- and case-insensitive, matches the start of words ("δεντρ" finds "Δέντρα") across title, excerpt and article text. In Supabase it is a ranked full-text search (`unaccent` + GIN index); mock mode applies the same rule in memory.
 - **Pagination:** Discover, category, tag and author pages show 12 articles per page (`?page=2`).
 - **Old addresses:** changing the slug of a published article keeps the old address working with a permanent (301) redirect.
-- **Views:** each article page counts one view per browser session. Only daily totals per article are stored — no visitor data. "Popular" means most viewed in the last 30 days; the admin shows all-time views.
+- **Views:** each article page counts one view per page load (nothing is stored on the visitor's device). Only daily totals per article are stored — no visitor data. "Popular" means most viewed in the last 30 days; the admin shows all-time views.
 - **Newsletter:** the homepage form stores sign-ups with language and consent time (silently idempotent, so it cannot reveal who is subscribed). Owners and admins see the list at `/admin/subscribers`, export it as CSV and erase entries. Confirm/unsubscribe links (`/newsletter?action=confirm|unsubscribe&token=…`) work; **sending e-mails needs an e-mail provider** (e.g. Resend), which is not connected yet.
+
+## Search engines and sharing
+
+Set `VITE_SITE_URL` to the deployment's public address (e.g. `https://factaki.gr`; defaults to `https://<siteConfig.domain>`). Every absolute link below uses it.
+
+- **`/sitemap.xml`:** home and list pages, published articles, categories and tags with articles, and authors — every language version with its `hreflang` alternates and `lastmod`. Drafts and scheduled-but-not-yet-public articles never appear. Submit it once in Google Search Console and Bing Webmaster Tools.
+- **`/robots.txt`:** generated; keeps `/admin`, `/login` and `/auth/` out and points to the sitemap.
+- **RSS:** `/rss.xml` (main language) and `/en/rss.xml` carry the latest 20 articles; every page links its feed.
+- **Social previews:** each public page sets Open Graph and X/Twitter tags. Articles use their cover; other pages use the language's share image (`public/og-default.png`, `og-default-en.png`, 1200×630 — replace them for a new blog, set in `messages.<lang>.site.shareImage`).
+- **Structured data (JSON-LD):** `Article` + `BreadcrumbList` on articles, `WebSite` with site search on the home page, `BreadcrumbList` on categories, `ProfilePage` on authors. Dates are `<time datetime>` elements.
+- **Icons:** `favicon.ico`, `icon-192.png`, `icon-512.png` (also the publisher logo) and `apple-touch-icon.png` in `public/`.
+
+## Speed and accessibility
+
+- **Responsive images:** uploads get smaller WebP copies (480, 960 and 1440 px wide, `imageVariantWidths` in `src/domain/media.ts`), stored next to the original (`media_assets.variants`). Pages send `srcset` + `sizes` (`src/lib/image-sizes.ts`), so phones download a fraction of the full image; the lead image loads with high priority.
+- **Fonts are self-hosted** (`@fontsource`): no request to Google, nothing to disclose. Manrope covers Greek; Newsreader is Latin-only, so Greek headings use Georgia.
+- **Dark mode** follows the system until the reader picks a theme, and is applied before the first paint (no light flash).
+- **No cookie banner:** the public site sets no tracking cookies and stores only what the reader asks for (theme, bookmarks) in their browser. Add a consent banner if you add analytics or ads.
+- **Skip link:** the first Tab on every page jumps to the main content.
+- The **demo notice** on articles appears only in mock mode.
 
 ## Team
 

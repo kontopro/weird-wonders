@@ -107,6 +107,7 @@ mime_type text not null
 file_size_bytes bigint null
 width integer null
 height integer null
+variants jsonb not null default '[]'   -- smaller copies: [{width, path}]
 alt_text text null
 caption text null
 created_at timestamptz not null default now()
@@ -118,6 +119,7 @@ Constraints:
 - `unique(storage_bucket, storage_path)`
 - `visibility in ('private', 'public')`
 - positive size and dimensions when present
+- `variants` is an array (at most 8) of `{width > 0, path}` with paths inside `articles/` or `media/`
 
 ### `site_settings` (removed in the 2026-09-27 baseline)
 

@@ -13,7 +13,7 @@ import { toDomainError } from "@/data/supabase/supabase-errors";
 import { publiclyVisibleFilter } from "@/data/supabase/visibility";
 import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
-import { collectAssetIds } from "@/domain/media";
+import { collectAssetIds, srcSetOf, type PublicMediaSource } from "@/domain/media";
 import {
   clampPage,
   defaultPageSize,
@@ -45,6 +45,8 @@ type MediaRow = {
   visibility: string;
   width: number | null;
   height: number | null;
+  /** Smaller copies: [{ width, path }] (see the media adapter). */
+  variants?: unknown;
 };
 
 type ArticleRow = {
@@ -103,7 +105,7 @@ const LIST_COLUMNS = [
   "is_highlighted, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes",
   "created_at, updated_at",
   "category:categories(slug, name, icon_key, category_translations(language, name, slug))",
-  "cover:media_assets!articles_cover_image_id_fkey(storage_bucket, storage_path, visibility, width, height)",
+  "cover:media_assets!articles_cover_image_id_fkey(storage_bucket, storage_path, visibility, width, height, variants)",
   "article_tags(tag:tags(id, slug, name, tag_translations(language, name, slug)))",
 ].join(", ");
 const DETAIL_COLUMNS = `${LIST_COLUMNS}, content_blocks`;
@@ -116,13 +118,20 @@ export class SupabaseArticleRepository implements ArticleRepository {
 
   private mediaSource(media: MediaRow | null) {
     if (!media || media.visibility !== "public") return null;
-    const { data } = this.client.storage
-      .from(media.storage_bucket)
-      .getPublicUrl(media.storage_path);
+    const bucket = this.client.storage.from(media.storage_bucket);
+    const src = bucket.getPublicUrl(media.storage_path).data.publicUrl;
+    const variants = (Array.isArray(media.variants) ? media.variants : []).flatMap(
+      (variant: { width?: unknown; path?: unknown }) =>
+        typeof variant.width === "number" && typeof variant.path === "string"
+          ? [{ width: variant.width, src: bucket.getPublicUrl(variant.path).data.publicUrl }]
+          : [],
+    );
+    const srcSet = srcSetOf(src, media.width, variants);
     return {
-      src: data.publicUrl,
+      src,
       ...(typeof media.width === "number" ? { width: media.width } : {}),
       ...(typeof media.height === "number" ? { height: media.height } : {}),
+      ...(srcSet ? { srcSet } : {}),
     };
   }
 
@@ -196,6 +205,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       updatedAt: row.updated_at,
       minutes: row.reading_time_minutes ?? 1,
       image: this.mediaSource(row.cover)?.src ?? "",
+      imageSrcSet: this.mediaSource(row.cover)?.srcSet ?? "",
       imageAlt: row.cover_image_alt ?? "",
       popularity: row.is_trending ? 1 : 0,
       category: this.categoryRef(row, row.language),
@@ -463,14 +473,14 @@ export class SupabaseArticleRepository implements ArticleRepository {
       assetIds.length
         ? this.client
             .from("media_assets")
-            .select("id, storage_bucket, storage_path, visibility, width, height")
+            .select("id, storage_bucket, storage_path, visibility, width, height, variants")
             .in("id", assetIds)
         : Promise.resolve({ data: [] as MediaRow[], error: null }),
       this.versionsOf(row, true),
     ]);
     if (media.error) throw media.error;
 
-    const mediaAssets: Record<string, { src: string; width?: number; height?: number }> = {};
+    const mediaAssets: Record<string, PublicMediaSource> = {};
     for (const asset of (media.data ?? []) as MediaRow[]) {
       const source = this.mediaSource(asset);
       if (asset.id && source) mediaAssets[asset.id] = source;

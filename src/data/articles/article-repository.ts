@@ -2,6 +2,7 @@ import { messages } from "@/config/messages";
 import { mainLanguage } from "@/config/site";
 import { z } from "zod";
 import type { Page } from "@/domain/listing";
+import type { PublicMediaSource } from "@/domain/media";
 import type { MemberRole } from "@/lib/auth-types";
 import { articleContentDocumentSchema, type ArticleContentDocument } from "@/lib/article-content";
 import { articleStatuses, type AdminArticle, type ArticleStatus } from "@/lib/admin-data";
@@ -21,7 +22,7 @@ export type ArticleVersion = PublicArticleVersion & {
 
 export type ArticleDetail = Article & {
   content: ArticleContentDocument;
-  mediaAssets: Record<string, { src: string; width?: number; height?: number }>;
+  mediaAssets: Record<string, PublicMediaSource>;
   /** Published versions in other languages (for the language switch and hreflang). */
   translations: PublicArticleVersion[];
 };

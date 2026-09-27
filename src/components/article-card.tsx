@@ -5,6 +5,7 @@ import { categoryClass } from "@/lib/category-class";
 import { Button } from "@/components/ui/button";
 import { formatDate, useT } from "@/i18n";
 import { useLocalized } from "@/i18n/links";
+import { imageSizes } from "@/lib/image-sizes";
 
 export function ArticleCard({
   article,
@@ -26,6 +27,8 @@ export function ArticleCard({
       >
         <img
           src={article.image}
+          srcSet={article.imageSrcSet || undefined}
+          sizes={article.imageSrcSet ? imageSizes.card : undefined}
           alt=""
           width={1200}
           height={900}

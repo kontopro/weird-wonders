@@ -5,6 +5,7 @@ import { localizedPath, messagesFor, useT } from "@/i18n";
 import { langOf, sitewideAlternates } from "@/i18n/head";
 import { socialMeta } from "@/i18n/seo";
 import { useLocalized } from "@/i18n/links";
+import { imageSizes } from "@/lib/image-sizes";
 
 export const Route = createFileRoute("/{-$lang}/dimofili")({
   loader: ({ params }) => articleApi.listPopular(langOf(params), 10),
@@ -40,7 +41,13 @@ function PopularPage() {
         {articles.map((article, index) => (
           <li key={article.slug}>
             <span>{String(index + 1).padStart(2, "0")}</span>
-            <img src={article.image} alt="" />
+            <img
+              src={article.image}
+              srcSet={article.imageSrcSet || undefined}
+              sizes={article.imageSrcSet ? imageSizes.thumb : undefined}
+              alt=""
+              loading="lazy"
+            />
             <div>
               <small>
                 {article.category.name} · {t.common.readingTime(article.minutes)} ·{" "}

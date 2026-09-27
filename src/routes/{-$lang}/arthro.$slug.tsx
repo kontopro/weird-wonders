@@ -15,6 +15,8 @@ import { useLocalized } from "@/i18n/links";
 import { getArticleHeadings } from "@/lib/article-content";
 import { initialsOf } from "@/lib/auth-types";
 import { categoryClass } from "@/lib/category-class";
+import { imageSizes } from "@/lib/image-sizes";
+import { getDataSource } from "@/lib/data-source";
 
 export const Route = createFileRoute("/{-$lang}/arthro/$slug")({
   loader: async ({ params }) => {
@@ -129,6 +131,9 @@ export const Route = createFileRoute("/{-$lang}/arthro/$slug")({
   component: ArticlePage,
 });
 
+/** Articles counted during this visit (kept in memory, cleared on reload). */
+const viewedArticles = new Set<string>();
+
 function ArticlePage() {
   const { article, related } = Route.useLoaderData();
   const t = useT();
@@ -137,15 +142,10 @@ function ArticlePage() {
   const [progress, setProgress] = useState(0);
   const [reaction, setReaction] = useState<string>();
   const headings = getArticleHeadings(article.content);
-  // Count one view per article per browser session (no visitor data is stored).
+  // Count one view per article per page load; nothing is stored on the device.
   useEffect(() => {
-    const key = `viewed:${article.id}`;
-    try {
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, "1");
-    } catch {
-      // Storage unavailable (private mode): count anyway.
-    }
+    if (viewedArticles.has(article.id)) return;
+    viewedArticles.add(article.id);
     void articleApi.recordView(article.id).catch(() => undefined);
   }, [article.id]);
   useEffect(() => {
@@ -233,15 +233,26 @@ function ArticlePage() {
         </header>
         <div className="article-visual section-shell">
           {article.image && (
-            <img src={article.image} alt={article.imageAlt} width={1600} height={1000} />
+            <img
+              src={article.image}
+              srcSet={article.imageSrcSet || undefined}
+              sizes={article.imageSrcSet ? imageSizes.cover : undefined}
+              alt={article.imageAlt}
+              width={1600}
+              height={1000}
+              fetchPriority="high"
+            />
           )}
         </div>
-        <div className="demo-notice section-shell">
-          <CheckCircle2 />
-          <p>
-            <strong>{t.article.demoNoticeTitle}</strong> {t.article.demoNoticeText}
-          </p>
-        </div>
+        {/* Only the demo content (mock mode) carries this notice. */}
+        {getDataSource() === "mock" && (
+          <div className="demo-notice section-shell">
+            <CheckCircle2 />
+            <p>
+              <strong>{t.article.demoNoticeTitle}</strong> {t.article.demoNoticeText}
+            </p>
+          </div>
+        )}
         <div className="article-layout section-shell">
           <aside className="toc">
             <p>{t.article.onThisPage}</p>

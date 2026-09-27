@@ -14,6 +14,7 @@ import { localizedPath, messagesFor, useT } from "@/i18n";
 import { langOf, sitewideAlternates } from "@/i18n/head";
 import { socialMeta, websiteJsonLd } from "@/i18n/seo";
 import { useLocalized } from "@/i18n/links";
+import { imageSizes } from "@/lib/image-sizes";
 
 export const Route = createFileRoute("/{-$lang}/")({
   loader: async ({ params }) => {
@@ -96,7 +97,16 @@ function Index() {
     <div>
       <section className="hero section-shell">
         <div className="hero-lead">
-          <img src={featured.image} alt="" width={1600} height={1008} className="hero-image" />
+          <img
+            src={featured.image}
+            srcSet={featured.imageSrcSet || undefined}
+            sizes={featured.imageSrcSet ? imageSizes.hero : undefined}
+            alt=""
+            width={1600}
+            height={1008}
+            className="hero-image"
+            fetchPriority="high"
+          />
           <div className="hero-overlay">
             <span className={`category-pill ${categoryClass(featured.category)}`}>
               {featured.category.name}
@@ -129,7 +139,14 @@ function Index() {
               params={{ lang: lp, slug: article.slug }}
               className="trending-card"
             >
-              <img src={article.image} alt="" width={1200} height={900} />
+              <img
+                src={article.image}
+                srcSet={article.imageSrcSet || undefined}
+                sizes={article.imageSrcSet ? imageSizes.thumb : undefined}
+                alt=""
+                width={1200}
+                height={900}
+              />
               <div>
                 <span>
                   0{index + 1} · {article.category.name}

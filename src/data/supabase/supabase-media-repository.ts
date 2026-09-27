@@ -13,11 +13,15 @@ import {
   type MediaUpdate,
   type MediaUpload,
   type PublicMediaSource,
+  srcSetOf,
 } from "@/domain/media";
 
 const BUCKET = "blog-public";
 const COLUMNS =
-  "id, storage_bucket, storage_path, visibility, mime_type, file_size_bytes, width, height, alt_text, caption, uploaded_by, created_at";
+  "id, storage_bucket, storage_path, visibility, mime_type, file_size_bytes, width, height, variants, alt_text, caption, uploaded_by, created_at";
+
+/** Smaller copies, stored next to the original (`<name>-w<width>.webp`). */
+const variantsSchema = z.array(z.object({ width: z.number(), path: z.string() })).catch([]);
 
 const mediaRowSchema = z.object({
   id: z.string(),
@@ -28,6 +32,7 @@ const mediaRowSchema = z.object({
   file_size_bytes: z.number().nullable(),
   width: z.number().nullable(),
   height: z.number().nullable(),
+  variants: variantsSchema,
   alt_text: z.string().nullable(),
   caption: z.string().nullable(),
   uploaded_by: z.string().nullable(),
@@ -58,6 +63,16 @@ export class SupabaseMediaRepository implements MediaRepository {
       .publicUrl;
   }
 
+  private variantsOf(row: Pick<MediaRow, "visibility" | "storage_bucket" | "variants">) {
+    return row.variants
+      .map((variant) => ({
+        width: variant.width,
+        src: this.publicUrl({ ...row, storage_path: variant.path }),
+      }))
+      .filter((variant) => variant.src)
+      .sort((a, b) => a.width - b.width);
+  }
+
   /** Counts how many articles use each asset (as cover or inside the content). */
   private async usage(): Promise<Map<string, number>> {
     const { data, error } = await this.client
@@ -79,6 +94,7 @@ export class SupabaseMediaRepository implements MediaRepository {
       src: this.publicUrl(row),
       width: row.width,
       height: row.height,
+      variants: this.variantsOf(row),
       mimeType: row.mime_type,
       sizeBytes: row.file_size_bytes,
       alt: row.alt_text ?? "",
@@ -116,11 +132,35 @@ export class SupabaseMediaRepository implements MediaRepository {
     if (!isAllowedImageType(file.mimeType)) throw new DomainError(mediaMessages.type, "invalid");
     if (file.bytes.byteLength > maxImageBytes) throw new DomainError(mediaMessages.size, "invalid");
 
-    const path = `media/${context.actorId}/${crypto.randomUUID()}.${extensionOf[file.mimeType]}`;
-    const { error: uploadError } = await this.client.storage
-      .from(BUCKET)
-      .upload(path, file.bytes, { contentType: file.mimeType, upsert: false });
-    if (uploadError) throw new DomainError(uploadError.message, "invalid");
+    const base = `media/${context.actorId}/${crypto.randomUUID()}`;
+    const path = `${base}.${extensionOf[file.mimeType]}`;
+    const variants = file.variants
+      .filter((variant) => file.width === null || variant.width < file.width)
+      .map((variant) => ({
+        ...variant,
+        path: `${base}-w${variant.width}.${extensionOf[variant.mimeType]}`,
+      }));
+    const uploaded: string[] = [];
+    // Do not leave orphaned files behind when anything fails.
+    const cleanUp = () =>
+      uploaded.length ? this.client.storage.from(BUCKET).remove(uploaded) : undefined;
+    for (const item of [
+      { path, bytes: file.bytes, mimeType: file.mimeType },
+      ...variants.map((variant) => ({
+        path: variant.path,
+        bytes: variant.bytes,
+        mimeType: variant.mimeType,
+      })),
+    ]) {
+      const { error: uploadError } = await this.client.storage
+        .from(BUCKET)
+        .upload(item.path, item.bytes, { contentType: item.mimeType, upsert: false });
+      if (uploadError) {
+        await cleanUp();
+        throw new DomainError(uploadError.message, "invalid");
+      }
+      uploaded.push(item.path);
+    }
 
     const { data, error } = await this.client
       .from("media_assets")
@@ -133,13 +173,13 @@ export class SupabaseMediaRepository implements MediaRepository {
         file_size_bytes: file.bytes.byteLength,
         width: file.width,
         height: file.height,
+        variants: variants.map((variant) => ({ width: variant.width, path: variant.path })),
         alt_text: file.alt,
       })
       .select(COLUMNS)
       .single();
     if (error) {
-      // Do not leave an orphaned file behind.
-      await this.client.storage.from(BUCKET).remove([path]);
+      await cleanUp();
       throw toDomainError(error, "");
     }
     return this.toAsset(mediaRowSchema.parse(data), new Map());
@@ -170,7 +210,9 @@ export class SupabaseMediaRepository implements MediaRepository {
       .select("id");
     if (error) throw toDomainError(error, "");
     if (!data?.length) throw new DomainError(mediaMessages.forbidden, "forbidden");
-    await this.client.storage.from(row.storage_bucket).remove([row.storage_path]);
+    await this.client.storage
+      .from(row.storage_bucket)
+      .remove([row.storage_path, ...row.variants.map((variant) => variant.path)]);
   }
 
   async resolve(ids: readonly string[]) {
@@ -178,16 +220,19 @@ export class SupabaseMediaRepository implements MediaRepository {
     if (ids.length === 0) return sources;
     const { data, error } = await this.client
       .from("media_assets")
-      .select("id, storage_bucket, storage_path, visibility, width, height")
+      .select("id, storage_bucket, storage_path, visibility, width, height, variants")
       .in("id", [...ids]);
     if (error) throw toDomainError(error, "");
-    for (const row of data ?? []) {
-      const src = this.publicUrl(row as MediaRow);
+    for (const raw of data ?? []) {
+      const row = { ...(raw as MediaRow), variants: variantsSchema.parse(raw.variants) };
+      const src = this.publicUrl(row);
       if (!src) continue;
+      const srcSet = srcSetOf(src, row.width, this.variantsOf(row));
       sources[String(row.id)] = {
         src,
         ...(typeof row.width === "number" ? { width: row.width } : {}),
         ...(typeof row.height === "number" ? { height: row.height } : {}),
+        ...(srcSet ? { srcSet } : {}),
       };
     }
     return sources;

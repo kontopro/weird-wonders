@@ -11,13 +11,15 @@ import {
   type MediaUpdate,
   type MediaUpload,
   type PublicMediaSource,
+  srcSetOf,
 } from "@/domain/media";
 import { isEditorRole } from "@/domain/permissions";
 
 type MockMedia = MockStore["media"][number];
 
 /** Route that serves uploaded bytes in mock mode (`src/routes/media.demo.$id.ts`). */
-export const demoMediaPath = (id: string) => `/media/demo/${id}`;
+export const demoMediaPath = (id: string, width?: number) =>
+  `/media/demo/${id}${width ? `-w${width}` : ""}`;
 
 /** In-memory media library for mock mode, with the database's rules. */
 export class MockMediaRepository implements MediaRepository {
@@ -30,8 +32,12 @@ export class MockMediaRepository implements MediaRepository {
   }
 
   private toAsset(row: MockMedia): MediaAsset {
-    const { bytes: _bytes, ...rest } = row;
-    return { ...rest, usageCount: this.usageCount(row.id) };
+    const { bytes: _bytes, variants, ...rest } = row;
+    return {
+      ...rest,
+      variants: variants.map(({ width, src }) => ({ width, src })),
+      usageCount: this.usageCount(row.id),
+    };
   }
 
   private find(id: string) {
@@ -61,6 +67,14 @@ export class MockMediaRepository implements MediaRepository {
       id,
       src: demoMediaPath(id),
       bytes: file.bytes,
+      variants: file.variants
+        .filter((variant) => file.width === null || variant.width < file.width)
+        .map((variant) => ({
+          width: variant.width,
+          src: demoMediaPath(id, variant.width),
+          bytes: variant.bytes,
+        }))
+        .sort((a, b) => a.width - b.width),
       width: file.width,
       height: file.height,
       mimeType: file.mimeType,
@@ -94,18 +108,26 @@ export class MockMediaRepository implements MediaRepository {
     for (const id of ids) {
       const row = this.store.media.find((item) => item.id === id);
       if (!row) continue;
+      const srcSet = srcSetOf(row.src, row.width, row.variants);
       sources[id] = {
         src: row.src,
         ...(row.width ? { width: row.width } : {}),
         ...(row.height ? { height: row.height } : {}),
+        ...(srcSet ? { srcSet } : {}),
       };
     }
     return sources;
   }
 
-  /** Uploaded bytes for the demo media route. */
+  /** Uploaded bytes for the demo media route; `<id>-w<width>` is a smaller copy. */
   file(id: string) {
-    const row = this.store.media.find((item) => item.id === id);
-    return row?.bytes ? { bytes: row.bytes, mimeType: row.mimeType } : null;
+    const [, baseId = id, width] = /^(.+)-w(\d+)$/.exec(id) ?? [];
+    const row = this.store.media.find((item) => item.id === baseId);
+    if (!row) return null;
+    if (width) {
+      const variant = row.variants.find((item) => item.width === Number(width));
+      return variant?.bytes ? { bytes: variant.bytes, mimeType: "image/webp" } : null;
+    }
+    return row.bytes ? { bytes: row.bytes, mimeType: row.mimeType } : null;
   }
 }

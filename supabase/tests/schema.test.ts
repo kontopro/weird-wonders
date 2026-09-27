@@ -399,6 +399,31 @@ describe("media uploads", () => {
     expect(await rename(author, other!.id)).toHaveLength(0);
     expect(await rename(editor, asset!.id)).toHaveLength(1);
   });
+
+  test("smaller copies must be well-formed paths in the media folders", async () => {
+    const [asset] = await addAsset(author, `media/${author}/v.webp`);
+    const setVariants = (value: unknown) =>
+      t.as(
+        "authenticated",
+        author,
+        "update public.media_assets set variants = $2::jsonb where id = $1 returning id",
+        [asset!.id, JSON.stringify(value)],
+      );
+    expect(
+      await setVariants([
+        { width: 480, path: `media/${author}/v-w480.webp` },
+        { width: 960, path: `media/${author}/v-w960.webp` },
+      ]),
+    ).toHaveLength(1);
+    await expect(setVariants([{ width: 480, path: "../secret" }])).rejects.toThrow(/check/);
+    await expect(setVariants([{ width: 480, path: `media/${author}/..` }])).rejects.toThrow(
+      /check/,
+    );
+    await expect(setVariants([{ width: -1, path: `media/${author}/x.webp` }])).rejects.toThrow(
+      /check/,
+    );
+    await expect(setVariants({ width: 480 })).rejects.toThrow(/check/);
+  });
 });
 
 describe("search", () => {

@@ -7,7 +7,12 @@ import type { MockStore } from "@/data/mock/mock-store";
 
 const editor: WriteContext = { actorId: DEMO_USER_ID, actorRole: "owner" };
 const author: WriteContext = { actorId: "author-eva", actorRole: "author" };
-const png = { fileName: "a.png", mimeType: "image/png" as const, bytes: new Uint8Array(10) };
+const png = {
+  fileName: "a.png",
+  mimeType: "image/png" as const,
+  bytes: new Uint8Array(10),
+  variants: [],
+};
 
 let store: MockStore;
 let media: MockMediaRepository;
@@ -31,6 +36,36 @@ describe("MockMediaRepository", () => {
     expect(await media.resolve([asset.id, "missing"])).toEqual({
       [asset.id]: { src: asset.src, width: 10, height: 5 },
     });
+  });
+
+  test("keeps smaller copies and serves them for srcset", async () => {
+    const asset = await media.upload(
+      {
+        ...png,
+        alt: "Μεγάλη",
+        width: 1600,
+        height: 1000,
+        variants: [
+          { width: 960, mimeType: "image/webp", bytes: new Uint8Array(4) },
+          { width: 480, mimeType: "image/webp", bytes: new Uint8Array(2) },
+        ],
+      },
+      author,
+    );
+    expect(asset.variants.map((variant) => variant.width)).toEqual([480, 960]);
+    expect(media.file(`${asset.id}-w480`)?.bytes.byteLength).toBe(2);
+    expect((await media.resolve([asset.id]))[asset.id]?.srcSet).toBe(
+      `/media/demo/${asset.id}-w480 480w, /media/demo/${asset.id}-w960 960w, /media/demo/${asset.id} 1600w`,
+    );
+  });
+
+  test("demo images have smaller copies", async () => {
+    const forest = (await media.list()).find((asset) => asset.id === "demo-forest");
+    expect(forest?.variants.map((variant) => variant.src)).toEqual([
+      "/demo/forest-network-w480.jpg",
+      "/demo/forest-network-w960.jpg",
+      "/demo/forest-network-w1440.jpg",
+    ]);
   });
 
   test("rejects non-images such as SVG", async () => {

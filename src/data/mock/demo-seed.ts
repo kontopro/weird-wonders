@@ -1,3 +1,4 @@
+import { imageVariantWidths } from "@/domain/media";
 import type { ArticleContentDocument } from "@/lib/article-content";
 import type { MockStore } from "@/data/mock/mock-store";
 
@@ -35,6 +36,13 @@ const demoMedia: MockStore["media"] = [
 ].map(([id, src, width, height, sizeBytes, alt]) => ({
   id: String(id),
   src: String(src),
+  // Smaller copies in `public/demo`, named like uploads (`<name>-w<width>`).
+  variants: imageVariantWidths
+    .filter((variantWidth) => variantWidth < Number(width))
+    .map((variantWidth) => ({
+      width: variantWidth,
+      src: String(src).replace(/\.jpg$/, `-w${variantWidth}.jpg`),
+    })),
   width: Number(width),
   height: Number(height),
   mimeType: "image/jpeg",

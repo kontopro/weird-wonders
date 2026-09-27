@@ -76,6 +76,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+/**
+ * Runs before the first paint so dark mode does not flash light: the saved
+ * choice wins, otherwise the system setting. The theme button updates both.
+ */
+const themeScript = `(function(){try{var t=localStorage.getItem("theme");var d=t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d)}catch(e){}})()`;
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
@@ -90,14 +96,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap",
-      },
+      { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
+      { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
+    scripts: [{ children: themeScript }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -108,8 +111,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   const lang = useLang();
   return (
-    <html lang={lang}>
+    // The theme script may add the "dark" class before React hydrates.
+    <html lang={lang} suppressHydrationWarning>
       <head>
+        {/* Browser toolbar colour, matching the light and dark page background.
+            Written here because head() keeps only one meta per name. */}
+        <meta name="theme-color" content="#f9f7f1" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#040d1c" media="(prefers-color-scheme: dark)" />
         <HeadContent />
       </head>
       <body>

@@ -40,13 +40,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [menu, setMenu] = useState(false);
   const [dark, setDark] = useState(false);
-  const [cookies, setCookies] = useState(true);
   const [showTop, setShowTop] = useState(false);
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") === "dark";
-    setDark(savedTheme);
-    document.documentElement.classList.toggle("dark", savedTheme);
-    setCookies(localStorage.getItem("cookie-consent") !== "accepted");
+    // The theme is applied before the page paints (see `themeScript` in __root.tsx).
+    setDark(document.documentElement.classList.contains("dark"));
     const onScroll = () => setShowTop(window.scrollY > 700);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
@@ -56,7 +53,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const toggleTheme = () => {
     const next = !dark;
     setDark(next);
-    localStorage.setItem("theme", next ? "dark" : "light");
+    try {
+      localStorage.setItem("theme", next ? "dark" : "light");
+    } catch {
+      // Storage unavailable: the choice lasts until the page is reloaded.
+    }
     document.documentElement.classList.toggle("dark", next);
   };
   const random = async () => {
@@ -70,6 +71,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const nav = navRoutes.map(([key, to]) => ({ label: t.nav[key], to }));
   return (
     <div className="site-frame">
+      <a className="skip-link" href="#main">
+        {t.nav.skipToContent}
+      </a>
       <header className="site-header">
         <div className="header-inner">
           <BrandLogo showTagline />
@@ -131,7 +135,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </nav>
         )}
       </header>
-      <main>{children}</main>
+      <main id="main" tabIndex={-1}>
+        {children}
+      </main>
       <footer className="site-footer">
         <div>
           <BrandLogo />
@@ -147,23 +153,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <span>© {new Date().getFullYear()}</span>
         </div>
       </footer>
-      {cookies && (
-        <aside className="cookie-banner">
-          <p>
-            <strong>{t.cookies.title}</strong>
-            <br />
-            {t.cookies.text}
-          </p>
-          <Button
-            onClick={() => {
-              localStorage.setItem("cookie-consent", "accepted");
-              setCookies(false);
-            }}
-          >
-            {t.cookies.accept}
-          </Button>
-        </aside>
-      )}
       {showTop && (
         <Button
           size="icon"

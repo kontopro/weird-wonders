@@ -48,12 +48,8 @@ export const en: SiteMessages = {
     menu: "Menu",
     random: (singular: string) => `Random ${singular}`,
     backToTop: "Back to top",
+    skipToContent: "Skip to content",
     languages: "Languages",
-  },
-  cookies: {
-    title: "Small cookies, big curiosity.",
-    text: "We only use cookies that are essential for the site to work.",
-    accept: "OK",
   },
   common: {
     readingTime: (minutes: number) => `${minutes} min read`,

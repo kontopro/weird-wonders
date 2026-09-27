@@ -82,6 +82,9 @@ function UploadPanel({ onUploaded }: { onUploaded: (asset: MediaAsset) => void }
       form.set("alt", alt.trim());
       form.set("width", String(prepared.width));
       form.set("height", String(prepared.height));
+      for (const variant of prepared.variants) {
+        form.set(`variant:${variant.width}`, variant.file);
+      }
       onUploaded(await mediaApi.upload(form));
       toast.success("Η εικόνα ανέβηκε.");
     } catch (error) {

@@ -13,6 +13,8 @@ export type Article = {
   date: string;
   /** ISO date (`YYYY-MM-DD`). */
   dateValue: string;
+  /** ISO date-time of the last change (feeds, structured data). */
+  updatedAt: string;
   minutes: number;
   /** Cover image URL ("" when the article has none). */
   image: string;

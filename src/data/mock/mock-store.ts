@@ -75,6 +75,8 @@ export type MockStore = {
     isHighlighted: boolean;
     views: number;
     popularity: number;
+    /** ISO date-time of the last save; the demo seed leaves it out. */
+    updatedAt?: string;
     /** Demo override; otherwise calculated from the content. */
     minutes?: number;
   }>;

@@ -50,3 +50,12 @@ export function brandedTitle(title: string) {
 
 /** The blog's main language; see `SiteConfig.defaultLanguage`. */
 export const mainLanguage = siteConfig.defaultLanguage;
+
+/**
+ * Public origin used for canonical, hreflang, sitemap, RSS and social links,
+ * e.g. `https://factaki.gr`. Set `VITE_SITE_URL` per deployment (preview
+ * URLs, a staging domain); defaults to `https://<domain>`.
+ */
+export const siteUrl = (
+  (import.meta.env["VITE_SITE_URL"] as string | undefined) || `https://${siteConfig.domain}`
+).replace(/\/+$/, "");

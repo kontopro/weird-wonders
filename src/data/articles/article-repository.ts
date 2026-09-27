@@ -81,6 +81,17 @@ export type PublishedArticleFilter = {
   maxMinutes?: number;
 };
 
+/** One public article, as the sitemap needs it (every language). */
+export type PublicArticleIndexEntry = {
+  language: string;
+  slug: string;
+  /** Shared by the language versions of the same piece (hreflang alternates). */
+  translationGroupId: string;
+  authorSlug: string | null;
+  /** ISO date-time of the last change. */
+  updatedAt: string;
+};
+
 /** Who performs a write. Adapters use it for authorship and role rules. */
 export type WriteContext = { actorId: string; actorRole: MemberRole };
 
@@ -149,6 +160,8 @@ export interface ArticleRepository {
   resolveOldSlug(slug: string, language?: string): Promise<string | null>;
   /** Counts one view of a public article (no visitor data is kept). */
   recordView(articleId: string): Promise<void>;
+  /** Every public article in every language, for the sitemap. */
+  listPublicIndex(): Promise<PublicArticleIndexEntry[]>;
   /** A public article by its slug in a language (default: the main language). */
   findPublishedBySlug(slug: string, language?: string): Promise<ArticleDetail | null>;
   listAdmin(): Promise<AdminArticle[]>;

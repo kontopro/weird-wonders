@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as Char123LangChar125RouteRouteImport } from './routes/{-$lang}/route'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminArticlesRouteImport } from './routes/admin.articles'
@@ -27,6 +29,7 @@ import { Route as Char123LangChar125AnakalypseRouteImport } from './routes/{-$la
 import { Route as Char123LangChar125DimofiliRouteImport } from './routes/{-$lang}/dimofili'
 import { Route as Char123LangChar125KatigoriesRouteImport } from './routes/{-$lang}/katigories'
 import { Route as Char123LangChar125NewsletterRouteImport } from './routes/{-$lang}/newsletter'
+import { Route as Char123LangChar125RssDotxmlRouteImport } from './routes/{-$lang}/rss[.]xml'
 import { Route as Char123LangChar125SxetikaRouteImport } from './routes/{-$lang}/sxetika'
 import { Route as AdminArticlesIndexRouteImport } from './routes/admin.articles.index'
 import { Route as AdminArticlesNewRouteImport } from './routes/admin.articles.new'
@@ -45,6 +48,16 @@ const AdminRoute = AdminRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char123LangChar125RouteRoute = Char123LangChar125RouteRouteImport.update({
@@ -131,6 +144,12 @@ const Char123LangChar125NewsletterRoute =
     path: '/newsletter',
     getParentRoute: () => Char123LangChar125RouteRoute,
   } as any)
+const Char123LangChar125RssDotxmlRoute =
+  Char123LangChar125RssDotxmlRouteImport.update({
+    id: '/rss.xml',
+    path: '/rss.xml',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
 const Char123LangChar125SxetikaRoute =
   Char123LangChar125SxetikaRouteImport.update({
     id: '/sxetika',
@@ -186,6 +205,8 @@ export interface FileRoutesByFullPath {
   '/{-$lang}': typeof Char123LangChar125RouteRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/media': typeof AdminMediaRoute
@@ -199,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/{-$lang}/dimofili': typeof Char123LangChar125DimofiliRoute
   '/{-$lang}/katigories': typeof Char123LangChar125KatigoriesRoute
   '/{-$lang}/newsletter': typeof Char123LangChar125NewsletterRoute
+  '/{-$lang}/rss.xml': typeof Char123LangChar125RssDotxmlRoute
   '/{-$lang}/sxetika': typeof Char123LangChar125SxetikaRoute
   '/admin/': typeof AdminIndexRoute
   '/{-$lang}/': typeof Char123LangChar125IndexRoute
@@ -213,6 +235,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
@@ -225,6 +249,7 @@ export interface FileRoutesByTo {
   '/{-$lang}/dimofili': typeof Char123LangChar125DimofiliRoute
   '/{-$lang}/katigories': typeof Char123LangChar125KatigoriesRoute
   '/{-$lang}/newsletter': typeof Char123LangChar125NewsletterRoute
+  '/{-$lang}/rss.xml': typeof Char123LangChar125RssDotxmlRoute
   '/{-$lang}/sxetika': typeof Char123LangChar125SxetikaRoute
   '/admin': typeof AdminIndexRoute
   '/{-$lang}': typeof Char123LangChar125IndexRoute
@@ -242,6 +267,8 @@ export interface FileRoutesById {
   '/{-$lang}': typeof Char123LangChar125RouteRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/media': typeof AdminMediaRoute
@@ -255,6 +282,7 @@ export interface FileRoutesById {
   '/{-$lang}/dimofili': typeof Char123LangChar125DimofiliRoute
   '/{-$lang}/katigories': typeof Char123LangChar125KatigoriesRoute
   '/{-$lang}/newsletter': typeof Char123LangChar125NewsletterRoute
+  '/{-$lang}/rss.xml': typeof Char123LangChar125RssDotxmlRoute
   '/{-$lang}/sxetika': typeof Char123LangChar125SxetikaRoute
   '/admin/': typeof AdminIndexRoute
   '/{-$lang}/': typeof Char123LangChar125IndexRoute
@@ -273,6 +301,8 @@ export interface FileRouteTypes {
     | '/{-$lang}'
     | '/admin'
     | '/login'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/admin/articles'
     | '/admin/categories'
     | '/admin/media'
@@ -286,6 +316,7 @@ export interface FileRouteTypes {
     | '/{-$lang}/dimofili'
     | '/{-$lang}/katigories'
     | '/{-$lang}/newsletter'
+    | '/{-$lang}/rss.xml'
     | '/{-$lang}/sxetika'
     | '/admin/'
     | '/{-$lang}/'
@@ -300,6 +331,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/admin/categories'
     | '/admin/media'
     | '/admin/password'
@@ -312,6 +345,7 @@ export interface FileRouteTypes {
     | '/{-$lang}/dimofili'
     | '/{-$lang}/katigories'
     | '/{-$lang}/newsletter'
+    | '/{-$lang}/rss.xml'
     | '/{-$lang}/sxetika'
     | '/admin'
     | '/{-$lang}'
@@ -328,6 +362,8 @@ export interface FileRouteTypes {
     | '/{-$lang}'
     | '/admin'
     | '/login'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/admin/articles'
     | '/admin/categories'
     | '/admin/media'
@@ -341,6 +377,7 @@ export interface FileRouteTypes {
     | '/{-$lang}/dimofili'
     | '/{-$lang}/katigories'
     | '/{-$lang}/newsletter'
+    | '/{-$lang}/rss.xml'
     | '/{-$lang}/sxetika'
     | '/admin/'
     | '/{-$lang}/'
@@ -358,6 +395,8 @@ export interface RootRouteChildren {
   Char123LangChar125RouteRoute: typeof Char123LangChar125RouteRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   MediaDemoIdRoute: typeof MediaDemoIdRoute
 }
@@ -376,6 +415,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/{-$lang}': {
@@ -490,6 +543,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char123LangChar125NewsletterRouteImport
       parentRoute: typeof Char123LangChar125RouteRoute
     }
+    '/{-$lang}/rss.xml': {
+      id: '/{-$lang}/rss.xml'
+      path: '/rss.xml'
+      fullPath: '/{-$lang}/rss.xml'
+      preLoaderRoute: typeof Char123LangChar125RssDotxmlRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
+    }
     '/{-$lang}/sxetika': {
       id: '/{-$lang}/sxetika'
       path: '/sxetika'
@@ -561,6 +621,7 @@ interface Char123LangChar125RouteRouteChildren {
   Char123LangChar125DimofiliRoute: typeof Char123LangChar125DimofiliRoute
   Char123LangChar125KatigoriesRoute: typeof Char123LangChar125KatigoriesRoute
   Char123LangChar125NewsletterRoute: typeof Char123LangChar125NewsletterRoute
+  Char123LangChar125RssDotxmlRoute: typeof Char123LangChar125RssDotxmlRoute
   Char123LangChar125SxetikaRoute: typeof Char123LangChar125SxetikaRoute
   Char123LangChar125IndexRoute: typeof Char123LangChar125IndexRoute
   Char123LangChar125ArthroSlugRoute: typeof Char123LangChar125ArthroSlugRoute
@@ -575,6 +636,7 @@ const Char123LangChar125RouteRouteChildren: Char123LangChar125RouteRouteChildren
     Char123LangChar125DimofiliRoute: Char123LangChar125DimofiliRoute,
     Char123LangChar125KatigoriesRoute: Char123LangChar125KatigoriesRoute,
     Char123LangChar125NewsletterRoute: Char123LangChar125NewsletterRoute,
+    Char123LangChar125RssDotxmlRoute: Char123LangChar125RssDotxmlRoute,
     Char123LangChar125SxetikaRoute: Char123LangChar125SxetikaRoute,
     Char123LangChar125IndexRoute: Char123LangChar125IndexRoute,
     Char123LangChar125ArthroSlugRoute: Char123LangChar125ArthroSlugRoute,
@@ -634,6 +696,8 @@ const rootRouteChildren: RootRouteChildren = {
   Char123LangChar125RouteRoute: Char123LangChar125RouteRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   MediaDemoIdRoute: MediaDemoIdRoute,
 }

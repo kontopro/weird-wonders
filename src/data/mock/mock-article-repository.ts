@@ -29,6 +29,9 @@ import type { Article } from "@/lib/articles";
 import { formatArticleDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
 
+/** Last change; demo rows without one count as changed on their date. */
+const updatedAtOf = (row: MockArticleRow) => row.updatedAt ?? `${row.dateValue}T09:00:00.000Z`;
+
 const byNewest = (a: MockArticleRow, b: MockArticleRow) => b.dateValue.localeCompare(a.dateValue);
 
 export class MockArticleRepository implements ArticleRepository {
@@ -86,6 +89,7 @@ export class MockArticleRepository implements ArticleRepository {
       excerpt: row.excerpt,
       date: formatArticleDate(row.dateValue),
       dateValue: row.dateValue,
+      updatedAt: updatedAtOf(row),
       minutes: row.minutes ?? calculateReadingTimeMinutes(row.content),
       image: this.coverSrc(row.coverAssetId),
       imageAlt: row.imageAlt,
@@ -234,6 +238,19 @@ export class MockArticleRepository implements ArticleRepository {
     if (entry) entry.views += 1;
     else this.store.articleViews.push({ articleId, day, views: 1 });
     row.views += 1;
+  }
+
+  async listPublicIndex() {
+    return this.store.articles
+      .filter((row) => isPubliclyVisible(scheduleOf(row)))
+      .sort(byNewest)
+      .map((row) => ({
+        language: row.language,
+        slug: row.slug,
+        translationGroupId: row.translationGroupId,
+        authorSlug: this.authorRef(row.authorId).slug,
+        updatedAt: updatedAtOf(row),
+      }));
   }
 
   async findPublishedBySlug(slug: string, language = mainLanguage) {
@@ -405,6 +422,7 @@ export class MockArticleRepository implements ArticleRepository {
       isHighlighted: input.isHighlighted ?? existing?.isHighlighted ?? false,
       views: existing?.views ?? 0,
       popularity: existing?.popularity ?? 0,
+      updatedAt: new Date().toISOString(),
     };
 
     // Mirrors the database: highlighting an article moves the highlight.

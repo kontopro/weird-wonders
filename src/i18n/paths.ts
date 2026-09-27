@@ -1,5 +1,5 @@
 import { messages, type SiteMessages } from "@/config/messages";
-import { mainLanguage, siteConfig } from "@/config/site";
+import { mainLanguage, siteConfig, siteUrl } from "@/config/site";
 
 /**
  * Public URLs use each language's own words (`messages.<lang>.paths`), while
@@ -60,7 +60,8 @@ export function localizedPath(language: string, internalPath: string): string {
   return toPublicPath(path) ?? path;
 }
 
-/** Absolute URL for `hreflang`, canonical and sitemap links. */
+/** Absolute URL for canonical, hreflang, sitemap, feed and social links. */
 export function absoluteUrl(path: string): string {
-  return `https://${siteConfig.domain}${path}`;
+  if (/^https?:\/\//.test(path)) return path;
+  return `${siteUrl}${path.startsWith("/") ? path : `/${path}`}`;
 }

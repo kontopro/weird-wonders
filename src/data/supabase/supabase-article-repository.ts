@@ -193,6 +193,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       excerpt: row.excerpt ?? "",
       date: formatArticleDate(toDateValue(row)),
       dateValue: toDateValue(row),
+      updatedAt: row.updated_at,
       minutes: row.reading_time_minutes ?? 1,
       image: this.mediaSource(row.cover)?.src ?? "",
       imageAlt: row.cover_image_alt ?? "",
@@ -422,6 +423,26 @@ export class SupabaseArticleRepository implements ArticleRepository {
   async recordView(articleId: string) {
     const { error } = await this.client.rpc("record_article_view", { p_article_id: articleId });
     if (error) throw error;
+  }
+
+  async listPublicIndex() {
+    const { data, error } = await this.client
+      .from("articles")
+      .select("author_id, slug, language, translation_group_id, updated_at")
+      .or(publiclyVisibleFilter())
+      .order("public_at", { ascending: false });
+    if (error) throw error;
+    const rows = (data ?? []) as Array<
+      Pick<ArticleRow, "author_id" | "slug" | "language" | "translation_group_id" | "updated_at">
+    >;
+    const authors = await this.loadAuthors(rows as ArticleRow[]);
+    return rows.map((row) => ({
+      language: row.language,
+      slug: row.slug,
+      translationGroupId: row.translation_group_id,
+      authorSlug: (row.author_id && authors.get(row.author_id)?.slug) || null,
+      updatedAt: row.updated_at,
+    }));
   }
 
   async findPublishedBySlug(slug: string, language = mainLanguage) {

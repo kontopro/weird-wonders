@@ -3110,3 +3110,64 @@ select:focus-visible {
   font-weight: 800;
   padding: 0 4px;
 }
+
+/* Language links */
+.language-links {
+  display: flex;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.language-links a {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.language-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+.language-switch a {
+  font-weight: 700;
+  color: var(--foreground);
+  text-decoration: underline;
+}
+.translations-panel {
+  display: grid;
+  gap: 10px;
+}
+.translations-panel ul {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.translations-panel li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.translations-panel h2 svg,
+.editor-panel h2 svg {
+  width: 16px;
+  height: 16px;
+  display: inline;
+  vertical-align: -2px;
+}
+.lang-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  vertical-align: 2px;
+}

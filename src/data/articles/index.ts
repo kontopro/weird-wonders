@@ -1,4 +1,5 @@
 import {
+  createArticleTranslation,
   deleteArticle,
   duplicateArticle,
   getAdminArticle,
@@ -21,11 +22,18 @@ export type {
  * session — callers never pass identity or roles.
  */
 export const articleApi = {
-  listPublished: (filter?: { categorySlug?: string; tagSlug?: string; authorSlug?: string }) =>
-    listPublishedArticles({ data: filter }),
-  findPublishedBySlug: (slug: string) => getPublishedArticle({ data: slug }),
+  listPublished: (filter?: {
+    language?: string;
+    categorySlug?: string;
+    tagSlug?: string;
+    authorSlug?: string;
+  }) => listPublishedArticles({ data: filter }),
+  findPublishedBySlug: (slug: string, language?: string) =>
+    getPublishedArticle({ data: { slug, ...(language ? { language } : {}) } }),
   listAdmin: () => listAdminArticles(),
-  findAdminBySlug: (slug: string) => getAdminArticle({ data: slug }),
+  findAdminById: (id: string) => getAdminArticle({ data: id }),
+  createTranslation: (sourceId: string, language: string) =>
+    createArticleTranslation({ data: { sourceId, language } }),
   save: (input: Parameters<typeof saveArticle>[0]["data"]) => saveArticle({ data: input }),
   duplicate: (id: string) => duplicateArticle({ data: id }),
   delete: (id: string) => deleteArticle({ data: id }),

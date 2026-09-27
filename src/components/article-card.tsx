@@ -3,6 +3,8 @@ import { Bookmark, Clock } from "lucide-react";
 import type { Article } from "@/lib/articles";
 import { categoryClass } from "@/lib/category-class";
 import { Button } from "@/components/ui/button";
+import { formatDate, useT } from "@/i18n";
+import { useLocalized } from "@/i18n/links";
 
 export function ArticleCard({
   article,
@@ -13,9 +15,15 @@ export function ArticleCard({
   saved?: boolean;
   onBookmark?: () => void;
 }) {
+  const t = useT();
+  const { lang, lp } = useLocalized();
   return (
     <article className="story-card group">
-      <Link to="/arthro/$slug" params={{ slug: article.slug }} className="story-image-wrap">
+      <Link
+        to="/{-$lang}/arthro/$slug"
+        params={{ lang: lp, slug: article.slug }}
+        className="story-image-wrap"
+      >
         <img
           src={article.image}
           alt=""
@@ -28,8 +36,8 @@ export function ArticleCard({
       <div className="story-body">
         <div className="meta-row">
           <Link
-            to="/katigoria/$slug"
-            params={{ slug: article.category.slug }}
+            to="/{-$lang}/katigoria/$slug"
+            params={{ lang: lp, slug: article.category.slug }}
             className={`category-pill ${categoryClass(article.category)}`}
           >
             {article.category.name}
@@ -39,20 +47,20 @@ export function ArticleCard({
               variant="ghost"
               size="icon"
               onClick={onBookmark}
-              aria-label={saved ? "Αφαίρεση σελιδοδείκτη" : "Αποθήκευση άρθρου"}
+              aria-label={saved ? t.common.removeBookmark : t.common.saveArticle}
             >
               <Bookmark className={saved ? "bookmark-active" : ""} />
             </Button>
           )}
         </div>
-        <Link to="/arthro/$slug" params={{ slug: article.slug }}>
+        <Link to="/{-$lang}/arthro/$slug" params={{ lang: lp, slug: article.slug }}>
           <h3>{article.title}</h3>
         </Link>
         <p>{article.excerpt}</p>
         <div className="story-footer">
-          <span>{article.date}</span>
+          <span>{formatDate(article.dateValue, lang)}</span>
           <span>
-            <Clock /> {article.minutes} λεπτά ανάγνωσης
+            <Clock /> {t.common.readingTime(article.minutes)}
           </span>
         </div>
       </div>

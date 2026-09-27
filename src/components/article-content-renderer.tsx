@@ -1,5 +1,6 @@
 import { EmbedBlock } from "@/components/embed-block";
 import { InlineText } from "@/components/inline-text";
+import { useT } from "@/i18n";
 import type { ReactNode } from "react";
 import {
   articleBlockSchema,
@@ -67,6 +68,11 @@ function renderImage(
       )}
     </figure>
   );
+}
+
+function FactBoxTitle({ title }: { title: string | undefined }) {
+  const t = useT();
+  return <strong>{title ?? t.article.factBoxTitle}</strong>;
 }
 
 function renderBlock(
@@ -158,7 +164,7 @@ function renderBlock(
     case "factBox":
       return (
         <aside className="fact-box">
-          <strong>{block.data.title ?? "Κράτησέ το"}</strong>
+          <FactBoxTitle title={block.data.title} />
           <p>
             <InlineText text={block.data.text} />
           </p>

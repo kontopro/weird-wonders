@@ -1,4 +1,5 @@
-import { mainLanguage } from "@/config/site";
+import { mainLanguage, siteConfig } from "@/config/site";
+import { SupabaseTaxonomyRepository } from "@/data/supabase/supabase-taxonomy-repository";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   assertArticleWriteInvariants,
@@ -17,6 +18,7 @@ import { isEditorRole } from "@/domain/permissions";
 import { effectiveStatus, scheduledAtFor } from "@/domain/publishing";
 import {
   findMatchingTag,
+  localizeTaxonomy,
   newTagForbiddenMessage,
   toCategoryIconKey,
   uncategorized,
@@ -60,10 +62,21 @@ type ArticleRow = {
   reading_time_minutes: number | null;
   created_at: string;
   updated_at: string;
-  category: { slug: string; name: string; icon_key: string | null } | null;
+  category: {
+    slug: string;
+    name: string;
+    icon_key: string | null;
+    category_translations: TranslationRow[];
+  } | null;
   cover: MediaRow | null;
-  article_tags: Array<{ tag: { slug: string; name: string } | null }>;
+  article_tags: Array<{
+    tag: { id: string; slug: string; name: string; tag_translations: TranslationRow[] } | null;
+  }>;
 };
+
+type TranslationRow = { language: string; name: string; slug: string };
+
+const asTranslations = (rows: TranslationRow[]) => rows.map((row) => ({ ...row, description: "" }));
 
 const toTagInputs = (names: string[]) =>
   names.flatMap((name) => {
@@ -82,9 +95,9 @@ const LIST_COLUMNS = [
   "status, is_featured, is_trending",
   "is_highlighted, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes",
   "created_at, updated_at",
-  "category:categories(slug, name, icon_key)",
+  "category:categories(slug, name, icon_key, category_translations(language, name, slug))",
   "cover:media_assets!articles_cover_image_id_fkey(storage_bucket, storage_path, visibility, width, height)",
-  "article_tags(tag:tags(slug, name))",
+  "article_tags(tag:tags(id, slug, name, tag_translations(language, name, slug)))",
 ].join(", ");
 const DETAIL_COLUMNS = `${LIST_COLUMNS}, content_blocks`;
 
@@ -123,18 +136,45 @@ export class SupabaseArticleRepository implements ArticleRepository {
     );
   }
 
-  private categoryRef(row: ArticleRow): CategoryRef {
-    return row.category
-      ? {
-          slug: row.category.slug,
-          name: row.category.name,
-          iconKey: toCategoryIconKey(row.category.icon_key),
-        }
-      : uncategorized;
+  /** Category in a language (falling back to the main one). */
+  private categoryRef(row: ArticleRow, language: string): CategoryRef {
+    if (!row.category) return uncategorized;
+    const { slug, name } = localizeTaxonomy(
+      row.category,
+      asTranslations(row.category.category_translations),
+      language,
+    );
+    return { slug, name, iconKey: toCategoryIconKey(row.category.icon_key) };
   }
 
-  private tagRefs(row: ArticleRow): TagRef[] {
-    return row.article_tags.flatMap(({ tag }) => (tag ? [{ slug: tag.slug, name: tag.name }] : []));
+  private tagRefs(row: ArticleRow, language: string): TagRef[] {
+    return row.article_tags.flatMap(({ tag }) => {
+      if (!tag) return [];
+      const { slug, name } = localizeTaxonomy(tag, asTranslations(tag.tag_translations), language);
+      return [{ slug, name }];
+    });
+  }
+
+  /** Other language versions of the same piece that the caller may see. */
+  private async versionsOf(row: ArticleRow, publicOnly: boolean) {
+    let query = this.client
+      .from("articles")
+      .select("id, slug, language, title, status, scheduled_at")
+      .eq("translation_group_id", row.translation_group_id)
+      .neq("id", row.id);
+    if (publicOnly) query = query.or(publiclyVisibleFilter());
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []).map((item) => ({
+      id: String(item.id),
+      slug: String(item.slug),
+      language: String(item.language),
+      title: String(item.title),
+      status: effectiveStatus({
+        status: item.status as ArticleStatus,
+        scheduledAt: (item.scheduled_at as string | null) ?? null,
+      }),
+    }));
   }
 
   private toPublic(row: ArticleRow, authors: Map<string, AuthorRef>): Article {
@@ -144,26 +184,29 @@ export class SupabaseArticleRepository implements ArticleRepository {
       title: row.title,
       excerpt: row.excerpt ?? "",
       date: formatArticleDate(toDateValue(row)),
+      dateValue: toDateValue(row),
       minutes: row.reading_time_minutes ?? 1,
       image: this.mediaSource(row.cover)?.src ?? "",
       imageAlt: row.cover_image_alt ?? "",
       popularity: row.is_trending ? 1 : 0,
-      category: this.categoryRef(row),
+      category: this.categoryRef(row, row.language),
       author: (row.author_id && authors.get(row.author_id)) || editorialTeam,
-      tags: this.tagRefs(row),
+      tags: this.tagRefs(row, row.language),
       isFeatured: row.is_featured,
       isHighlighted: row.is_highlighted,
     };
   }
 
   private toAdmin(row: ArticleRow, authors: Map<string, AuthorRef>): AdminArticle {
+    // The admin always works with main-language category and tag names.
     const article = this.toPublic(row, authors);
     return {
       id: row.id,
       slug: row.slug,
+      language: row.language,
       title: row.title,
       excerpt: article.excerpt,
-      category: article.category,
+      category: this.categoryRef(row, mainLanguage),
       author: article.author,
       status: effectiveStatus({ status: row.status, scheduledAt: row.scheduled_at }),
       date: article.date,
@@ -173,16 +216,21 @@ export class SupabaseArticleRepository implements ArticleRepository {
     };
   }
 
-  private toEditable(row: ArticleRow, authors: Map<string, AuthorRef>): EditableArticle {
+  private toEditable(
+    row: ArticleRow,
+    authors: Map<string, AuthorRef>,
+    translations: EditableArticle["translations"],
+  ): EditableArticle {
     return {
       ...this.toAdmin(row, authors),
+      translations,
       authorId: row.author_id,
       coverAssetId: row.cover_image_id,
       language: row.language,
       translationGroupId: row.translation_group_id,
       content: parseArticleContent(row.content_blocks),
       imageAlt: row.cover_image_alt ?? "",
-      tags: this.tagRefs(row),
+      tags: this.tagRefs(row, mainLanguage),
       seoTitle: row.seo_title ?? "",
       seoDescription: row.seo_description ?? "",
       isFeatured: row.is_featured,
@@ -203,10 +251,22 @@ export class SupabaseArticleRepository implements ArticleRepository {
     return data ? String(data.id) : null;
   }
 
+  /** Category/tag slugs are matched in the requested language (see the taxonomy adapter). */
+  private async taxonomyId(kind: "category" | "tag", slug: string | undefined, language: string) {
+    if (!slug) return undefined;
+    const taxonomy = new SupabaseTaxonomyRepository(this.client);
+    const found =
+      kind === "category"
+        ? await taxonomy.findCategoryBySlug(slug, language)
+        : await taxonomy.findTagBySlug(slug, language);
+    return found?.id ?? null;
+  }
+
   async listPublished(filter: PublishedArticleFilter = {}) {
+    const language = filter.language ?? mainLanguage;
     const [categoryId, tagId, authorId] = await Promise.all([
-      this.idBySlug("categories", filter.categorySlug),
-      this.idBySlug("tags", filter.tagSlug),
+      this.taxonomyId("category", filter.categorySlug, language),
+      this.taxonomyId("tag", filter.tagSlug, language),
       this.idBySlug("profiles", filter.authorSlug),
     ]);
     if (categoryId === null || tagId === null || authorId === null) return [];
@@ -214,7 +274,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
     let query = this.client
       .from("articles")
       .select(LIST_COLUMNS)
-      .eq("language", filter.language ?? mainLanguage)
+      .eq("language", language)
       .or(publiclyVisibleFilter())
       .order("public_at", { ascending: false });
     if (categoryId) query = query.eq("category_id", categoryId);
@@ -237,12 +297,12 @@ export class SupabaseArticleRepository implements ArticleRepository {
     return rows.map((row) => this.toPublic(row, authors));
   }
 
-  async findPublishedBySlug(slug: string) {
+  async findPublishedBySlug(slug: string, language = mainLanguage) {
     const { data, error } = await this.client
       .from("articles")
       .select(DETAIL_COLUMNS)
       .eq("slug", slug)
-      .eq("language", mainLanguage)
+      .eq("language", language)
       .or(publiclyVisibleFilter())
       .maybeSingle();
     if (error) throw error;
@@ -250,7 +310,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
 
     const row = data as unknown as ArticleRow;
     const assetIds = [...collectAssetIds(row.content_blocks)];
-    const [authors, media] = await Promise.all([
+    const [authors, media, versions] = await Promise.all([
       this.loadAuthors([row]),
       assetIds.length
         ? this.client
@@ -258,6 +318,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
             .select("id, storage_bucket, storage_path, visibility, width, height")
             .in("id", assetIds)
         : Promise.resolve({ data: [] as MediaRow[], error: null }),
+      this.versionsOf(row, true),
     ]);
     if (media.error) throw media.error;
 
@@ -270,6 +331,10 @@ export class SupabaseArticleRepository implements ArticleRepository {
       ...this.toPublic(row, authors),
       content: parseArticleContent(row.content_blocks),
       mediaAssets,
+      translations: versions.map(({ language: version, slug: versionSlug }) => ({
+        language: version,
+        slug: versionSlug,
+      })),
     };
   }
 
@@ -284,21 +349,83 @@ export class SupabaseArticleRepository implements ArticleRepository {
     return rows.map((row) => this.toAdmin(row, authors));
   }
 
-  private async findEditable(column: "id" | "slug", value: string) {
+  private async findEditable(id: string) {
     const { data, error } = await this.client
       .from("articles")
       .select(DETAIL_COLUMNS)
-      .eq(column, value);
+      .eq("id", id)
+      .maybeSingle();
     if (error) throw error;
-    // Slugs are unique per language; the main-language version wins a tie.
-    const rows = (data ?? []) as unknown as ArticleRow[];
-    const row = rows.find((item) => item.language === mainLanguage) ?? rows[0];
-    if (!row) return null;
-    return this.toEditable(row, await this.loadAuthors([row]));
+    if (!data) return null;
+    const row = data as unknown as ArticleRow;
+    const [authors, versions] = await Promise.all([
+      this.loadAuthors([row]),
+      this.versionsOf(row, false),
+    ]);
+    return this.toEditable(row, authors, versions);
   }
 
-  async findAdminBySlug(slug: string) {
-    return this.findEditable("slug", slug);
+  async findAdminById(id: string) {
+    return this.findEditable(id);
+  }
+
+  async createTranslation(sourceId: string, language: string, context: WriteContext) {
+    const { data: source, error: readError } = await this.client
+      .from("articles")
+      .select("*, article_tags(tag_id)")
+      .eq("id", sourceId)
+      .maybeSingle();
+    if (readError) throw toDomainError(readError, "");
+    if (!source) throw new DomainError("Το άρθρο δεν βρέθηκε.", "not_found");
+    if (!siteConfig.languages.includes(language) || language === source.language) {
+      throw new DomainError("Μη έγκυρη γλώσσα μετάφρασης.", "invalid");
+    }
+
+    // Keep the slug when it is free in that language (slugs are unique per language).
+    const { data: taken, error: slugError } = await this.client
+      .from("articles")
+      .select("slug")
+      .eq("language", language)
+      .like("slug", `${source.slug}%`);
+    if (slugError) throw toDomainError(slugError, "");
+    const used = new Set((taken ?? []).map((row) => String(row.slug)));
+    let slug = String(source.slug);
+    for (let n = 2; used.has(slug); n++) slug = `${source.slug}-${n}`;
+
+    const { data, error } = await this.client
+      .from("articles")
+      .insert({
+        language,
+        translation_group_id: source.translation_group_id,
+        slug,
+        author_id: context.actorId,
+        category_id: source.category_id,
+        title: source.title,
+        excerpt: source.excerpt,
+        content_version: source.content_version,
+        content_blocks: source.content_blocks,
+        cover_image_id: source.cover_image_id,
+        cover_image_alt: source.cover_image_alt,
+        reading_time_minutes: source.reading_time_minutes,
+        status: "draft",
+      })
+      .select("id")
+      .single();
+    if (error) throw toDomainError(error, "Υπάρχει ήδη εκδοχή του άρθρου σε αυτή τη γλώσσα.");
+
+    const id = String(data.id);
+    const tagIds = ((source.article_tags ?? []) as Array<{ tag_id: string }>).map(
+      (link) => link.tag_id,
+    );
+    if (tagIds.length) {
+      const { error: tagError } = await this.client
+        .from("article_tags")
+        .insert(tagIds.map((tagId) => ({ article_id: id, tag_id: tagId })));
+      if (tagError) throw toDomainError(tagError, "");
+    }
+    const created = await this.findEditable(id);
+    if (!created) throw new DomainError("Η μετάφραση δεν βρέθηκε.", "not_found");
+    return created;
   }
 
   /**
@@ -374,13 +501,13 @@ export class SupabaseArticleRepository implements ArticleRepository {
     const id = String(data.id);
     if (input.tags) await this.setTags(id, input.tags);
 
-    const saved = await this.findEditable("id", id);
+    const saved = await this.findEditable(id);
     if (!saved) throw new DomainError("Το άρθρο δεν βρέθηκε μετά την αποθήκευση.", "not_found");
     return saved;
   }
 
   async duplicate(id: string, context: WriteContext) {
-    const source = await this.findEditable("id", id);
+    const source = await this.findEditable(id);
     if (!source) throw new DomainError("Το άρθρο δεν βρέθηκε.", "not_found");
 
     return this.save(

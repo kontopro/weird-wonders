@@ -1,4 +1,5 @@
-import { siteConfig } from "@/config/site";
+import { messages } from "@/config/messages";
+import { mainLanguage } from "@/config/site";
 import { z } from "zod";
 import type { MemberRole } from "@/lib/auth-types";
 import { articleContentDocumentSchema, type ArticleContentDocument } from "@/lib/article-content";
@@ -7,9 +8,21 @@ import type { Article } from "@/lib/articles";
 import { isSlug } from "@/lib/slug";
 import type { TagRef } from "@/domain/taxonomy";
 
+/** Another language version of the same piece, as the public site may link to it. */
+export type PublicArticleVersion = { language: string; slug: string };
+
+/** Another language version, as the admin sees it (drafts included). */
+export type ArticleVersion = PublicArticleVersion & {
+  id: string;
+  title: string;
+  status: ArticleStatus;
+};
+
 export type ArticleDetail = Article & {
   content: ArticleContentDocument;
   mediaAssets: Record<string, { src: string; width?: number; height?: number }>;
+  /** Published versions in other languages (for the language switch and hreflang). */
+  translations: PublicArticleVersion[];
 };
 
 export type EditableArticle = AdminArticle & {
@@ -19,6 +32,8 @@ export type EditableArticle = AdminArticle & {
   language: string;
   /** Shared by all language versions of the same piece. */
   translationGroupId: string;
+  /** The other language versions of this piece. */
+  translations: ArticleVersion[];
   content: ArticleContentDocument;
   imageAlt: string;
   tags: TagRef[];
@@ -102,16 +117,28 @@ export function parseArticleWriteInput(input: unknown): ArticleWriteInput {
 
 export function assertArticleWriteInvariants(input: ArticleWriteInput) {
   if (input.isHighlighted && input.status !== "published") {
-    throw new Error(`${siteConfig.contentLabels.highlight}: μόνο δημοσιευμένο άρθρο.`);
+    throw new Error(
+      `${messages[mainLanguage]?.site.contentLabels.highlight ?? "Highlight"}: μόνο δημοσιευμένο άρθρο.`,
+    );
   }
 }
 
 export interface ArticleRepository {
   listPublished(filter?: PublishedArticleFilter): Promise<Article[]>;
-  findPublishedBySlug(slug: string): Promise<ArticleDetail | null>;
+  /** A public article by its slug in a language (default: the main language). */
+  findPublishedBySlug(slug: string, language?: string): Promise<ArticleDetail | null>;
   listAdmin(): Promise<AdminArticle[]>;
-  findAdminBySlug(slug: string): Promise<EditableArticle | null>;
+  findAdminById(id: string): Promise<EditableArticle | null>;
   save(input: ArticleWriteInput, context: WriteContext): Promise<EditableArticle>;
   duplicate(id: string, context: WriteContext): Promise<EditableArticle>;
+  /**
+   * Starts a translation: a draft copy of the article in another language,
+   * linked to it (same translation group), for the actor to translate.
+   */
+  createTranslation(
+    sourceId: string,
+    language: string,
+    context: WriteContext,
+  ): Promise<EditableArticle>;
   delete(id: string): Promise<void>;
 }

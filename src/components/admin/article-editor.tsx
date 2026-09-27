@@ -14,7 +14,9 @@ import type { CategoryRef, TagRef } from "@/domain/taxonomy";
 import type { SessionUser } from "@/lib/auth-types";
 import { errorMessage } from "@/lib/error-message";
 import { slugify } from "@/lib/slug";
-import { siteConfig } from "@/config/site";
+import { mainLanguage, siteConfig } from "@/config/site";
+import { localizedPath, mainMessages, messagesFor } from "@/i18n";
+import { TranslationsPanel } from "@/components/admin/translations-panel";
 import {
   cleanArticleSources,
   createEmptyArticleContent,
@@ -151,6 +153,9 @@ export function ArticleEditor({
 }) {
   const canPublish = isEditorRole(user.role);
   const [savedId, setSavedId] = useState(article?.id);
+  // Chosen once, for new articles; translations are created from the Languages panel.
+  const [language, setLanguage] = useState(article?.language ?? mainLanguage);
+  const [translations, setTranslations] = useState(article?.translations ?? []);
   // The URL is fixed once an article has been saved; until then it follows the title.
   const [savedSlug, setSavedSlug] = useState(article?.slug);
   const [title, setTitle] = useState(article?.title ?? "");
@@ -199,7 +204,7 @@ export function ArticleEditor({
     }
     try {
       const saved = await articleApi.save({
-        ...(savedId ? { id: savedId } : {}),
+        ...(savedId ? { id: savedId } : { language }),
         slug,
         title,
         excerpt: description,
@@ -220,6 +225,8 @@ export function ArticleEditor({
         isHighlighted: canPublish && daily,
       });
       setSavedId(saved.id);
+      setLanguage(saved.language);
+      setTranslations(saved.translations);
       setSavedSlug(saved.slug);
       setStatus(nextStatus);
       setDirty(false);
@@ -265,8 +272,21 @@ export function ArticleEditor({
                   <small>{title.length}/120</small>
                 </label>
                 <p className="slug-preview">
-                  {siteConfig.domain}/arthro/<strong>{slug}</strong>
+                  {siteConfig.domain}
+                  {localizedPath(language, "/arthro/").replace(/\/$/, "")}/<strong>{slug}</strong>
                 </p>
+                {!savedId && siteConfig.languages.length > 1 && (
+                  <label className="description-field">
+                    <span>Γλώσσα άρθρου</span>
+                    <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                      {siteConfig.languages.map((code) => (
+                        <option key={code} value={code}>
+                          {messagesFor(code).languageName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label className="description-field">
                   <span>Σύντομη περιγραφή</span>
                   <textarea
@@ -303,6 +323,12 @@ export function ArticleEditor({
               </section>
             </div>
             <aside className="editor-aside">
+              {savedId && siteConfig.languages.length > 1 && (
+                <TranslationsPanel
+                  article={{ id: savedId, language, translations }}
+                  hasUnsavedChanges={dirty}
+                />
+              )}
               <PublishPanel
                 canPublish={canPublish}
                 status={status}
@@ -422,7 +448,7 @@ export function ArticleEditor({
                         />
                       </label>
                       <label>
-                        <span>{siteConfig.contentLabels.highlight}</span>
+                        <span>{mainMessages.site.contentLabels.highlight}</span>
                         <Switch
                           checked={daily}
                           disabled={status !== "published"}

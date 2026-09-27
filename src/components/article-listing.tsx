@@ -1,3 +1,4 @@
+import { useT } from "@/i18n";
 import type { ReactNode } from "react";
 import { ArticleCard } from "@/components/article-card";
 import { useBookmarks } from "@/hooks/use-bookmarks";
@@ -18,14 +19,13 @@ export function ArticleListing({
   emptyMessage: string;
 }) {
   const { bookmarks, toggle } = useBookmarks();
+  const t = useT();
   return (
     <div className="section-shell page-top">
       <p className="eyebrow">{eyebrow}</p>
       <h1 className="page-title">{title}</h1>
       {intro && <div className="listing-intro">{intro}</div>}
-      <p className="results-label">
-        {articles.length === 1 ? "1 άρθρο" : `${articles.length} άρθρα`}
-      </p>
+      <p className="results-label">{t.common.articleCount(articles.length)}</p>
       {articles.length ? (
         <div className="article-grid">
           {articles.map((article) => (

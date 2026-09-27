@@ -1,11 +1,13 @@
+import { useT } from "@/i18n";
 import type { ArticleSource } from "@/lib/article-content";
 
 /** The article's references; renders nothing when there are none. */
 export function ArticleSources({ sources }: { sources: ArticleSource[] | undefined }) {
+  const t = useT();
   if (!sources?.length) return null;
   return (
     <section className="sources">
-      <h2>Πηγές & βιβλιογραφία</h2>
+      <h2>{t.article.sources}</h2>
       <ol>
         {sources.map((source, index) => {
           const details = [source.publisher, source.date].filter(Boolean).join(", ");

@@ -13,8 +13,10 @@ import { getRepositories } from "@/server/repositories";
 
 const slugSchema = z.string().trim().min(1).max(200);
 const idSchema = z.string().trim().min(1).max(100);
+const languageSchema = z.string().regex(/^[a-z]{2,3}(-[A-Z]{2})?$/);
 const filterSchema = z
   .object({
+    language: languageSchema.optional(),
     categorySlug: slugSchema.optional(),
     tagSlug: slugSchema.optional(),
     authorSlug: slugSchema.optional(),
@@ -36,8 +38,10 @@ export const listPublishedArticles = createServerFn({ method: "GET" })
   .handler(({ data: filter }) => getRepositories().articles.listPublished(filter));
 
 export const getPublishedArticle = createServerFn({ method: "GET" })
-  .validator((slug: string) => slugSchema.parse(slug))
-  .handler(({ data: slug }) => getRepositories().articles.findPublishedBySlug(slug));
+  .validator((input: { slug: string; language?: string }) =>
+    z.object({ slug: slugSchema, language: languageSchema.optional() }).strict().parse(input),
+  )
+  .handler(({ data }) => getRepositories().articles.findPublishedBySlug(data.slug, data.language));
 
 export const listAdminArticles = createServerFn({ method: "GET" }).handler(async () => {
   await requireMember();
@@ -45,10 +49,23 @@ export const listAdminArticles = createServerFn({ method: "GET" }).handler(async
 });
 
 export const getAdminArticle = createServerFn({ method: "GET" })
-  .validator((slug: string) => slugSchema.parse(slug))
-  .handler(async ({ data: slug }) => {
+  .validator((id: string) => idSchema.parse(id))
+  .handler(async ({ data: id }) => {
     await requireMember();
-    return getRepositories().articles.findAdminBySlug(slug);
+    return getRepositories().articles.findAdminById(id);
+  });
+
+export const createArticleTranslation = createServerFn({ method: "POST" })
+  .validator((input: { sourceId: string; language: string }) =>
+    z.object({ sourceId: idSchema, language: languageSchema }).strict().parse(input),
+  )
+  .handler(async ({ data }) => {
+    const user = await requireMember();
+    return getRepositories().articles.createTranslation(
+      data.sourceId,
+      data.language,
+      contextOf(user),
+    );
   });
 
 export const saveArticle = createServerFn({ method: "POST" })

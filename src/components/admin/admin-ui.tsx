@@ -1,3 +1,5 @@
+import { siteConfig } from "@/config/site";
+import { langParam } from "@/i18n";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -42,6 +44,16 @@ const statusTone: Record<ArticleStatus, string> = {
   published: "published",
   archived: "archived",
 };
+
+/** Shows the article's language when the blog publishes in more than one. */
+function LanguageBadge({ language }: { language: string }) {
+  if (siteConfig.languages.length < 2) return null;
+  return (
+    <small className="lang-badge" title={language}>
+      {language.toUpperCase()}
+    </small>
+  );
+}
 
 export function ArticleStatusBadge({ status }: { status: ArticleStatus }) {
   return (
@@ -130,12 +142,15 @@ export function ArticleActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="admin-action-menu">
         <DropdownMenuItem asChild>
-          <Link to="/admin/articles/$slug/edit" params={{ slug: article.slug }}>
+          <Link to="/admin/articles/$id/edit" params={{ id: article.id }}>
             <Edit3 /> Επεξεργασία
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/arthro/$slug" params={{ slug: article.slug }}>
+          <Link
+            to="/{-$lang}/arthro/$slug"
+            params={{ lang: langParam(article.language), slug: article.slug }}
+          >
             <Eye /> Προεπισκόπηση
           </Link>
         </DropdownMenuItem>
@@ -184,7 +199,9 @@ export function ArticlesTable({
                 <div className="article-cell">
                   <img src={article.image} alt="" />
                   <div>
-                    <strong>{article.title}</strong>
+                    <strong>
+                      {article.title} <LanguageBadge language={article.language} />
+                    </strong>
                     <span>{article.excerpt}</span>
                   </div>
                 </div>
@@ -211,7 +228,9 @@ export function ArticlesTable({
               <ArticleStatusBadge status={article.status} />
               <ArticleActions article={article} onDelete={onDelete} onDuplicate={onDuplicate} />
             </div>
-            <strong>{article.title}</strong>
+            <strong>
+              {article.title} <LanguageBadge language={article.language} />
+            </strong>
             <div className="admin-article-card-meta">
               <span>{article.category.name}</span>
               <span>{article.date}</span>

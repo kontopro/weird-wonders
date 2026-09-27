@@ -1,22 +1,26 @@
-import { ArticleSources } from "@/components/article-sources";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Bookmark, CheckCircle2, Clock, Link2, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Bookmark, CheckCircle2, Clock, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useEffect, useState } from "react";
-import { categoryClass } from "@/lib/category-class";
-import { initialsOf } from "@/lib/auth-types";
-import { articleApi } from "@/data/articles";
 import { ArticleCard } from "@/components/article-card";
 import { ArticleContentRenderer } from "@/components/article-content-renderer";
-import { getArticleHeadings } from "@/lib/article-content";
+import { ArticleSources } from "@/components/article-sources";
 import { Button } from "@/components/ui/button";
-import { useBookmarks } from "@/hooks/use-bookmarks";
 import { brandedTitle, siteConfig } from "@/config/site";
+import { articleApi } from "@/data/articles";
+import { useBookmarks } from "@/hooks/use-bookmarks";
+import { formatDate, localizedPath, messagesFor, useT } from "@/i18n";
+import { alternateLinks, langOf, ogLocale } from "@/i18n/head";
+import { useLocalized } from "@/i18n/links";
+import { getArticleHeadings } from "@/lib/article-content";
+import { initialsOf } from "@/lib/auth-types";
+import { categoryClass } from "@/lib/category-class";
 
-export const Route = createFileRoute("/arthro/$slug")({
+export const Route = createFileRoute("/{-$lang}/arthro/$slug")({
   loader: async ({ params }) => {
-    const article = await articleApi.findPublishedBySlug(params.slug);
+    const language = langOf(params);
+    const article = await articleApi.findPublishedBySlug(params.slug, language);
     if (!article) throw notFound();
-    const articles = await articleApi.listPublished();
+    const articles = await articleApi.listPublished({ language });
     // Related: same category first, then the most recent others.
     const others = articles.filter((item) => item.slug !== article.slug);
     const related = [
@@ -25,26 +29,46 @@ export const Route = createFileRoute("/arthro/$slug")({
     ].slice(0, 3);
     return { article, related };
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: brandedTitle(loaderData?.article.title ?? "Άρθρο") },
-      {
-        name: "description",
-        content: loaderData?.article.excerpt ?? `Μια ιστορία από το ${siteConfig.name}.`,
-      },
-      { property: "og:title", content: loaderData?.article.title ?? siteConfig.name },
-      {
-        property: "og:description",
-        content: loaderData?.article.excerpt ?? "Μια απρόσμενη ιστορία.",
-      },
-      { property: "og:type", content: "article" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: ({ params, loaderData }) => {
+    const language = langOf(params);
+    const t = messagesFor(language);
+    const article = loaderData?.article;
+    // hreflang only for versions that exist and are public.
+    const versions = article
+      ? [{ language, slug: article.slug }, ...article.translations]
+      : [{ language, slug: params.slug }];
+    const pathFor = (version: string) =>
+      localizedPath(
+        version,
+        `/arthro/${versions.find((item) => item.language === version)?.slug ?? params.slug}`,
+      );
+    return {
+      meta: [
+        { title: brandedTitle(article?.title ?? t.article.fallbackTitle) },
+        {
+          name: "description",
+          content: article?.excerpt || t.article.fallbackDescription(siteConfig.name),
+        },
+        { property: "og:title", content: article?.title ?? siteConfig.name },
+        { property: "og:description", content: article?.excerpt ?? "" },
+        { property: "og:type", content: "article" },
+        ogLocale(language),
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+      links: alternateLinks(
+        language,
+        pathFor,
+        versions.map((item) => item.language),
+      ),
+    };
+  },
   component: ArticlePage,
 });
+
 function ArticlePage() {
   const { article, related } = Route.useLoaderData();
+  const t = useT();
+  const { lang, lp } = useLocalized();
   const { bookmarks, toggle } = useBookmarks();
   const [progress, setProgress] = useState(0);
   const [reaction, setReaction] = useState<string>();
@@ -63,43 +87,61 @@ function ArticlePage() {
   return (
     <>
       <div className="reading-progress" style={{ width: `${progress}%` }} />
-      <article className="article-page">
+      <article className="article-page" lang={article.language}>
         <header className="article-head section-shell">
           <div className="article-meta">
             <Link
-              to="/katigoria/$slug"
-              params={{ slug: article.category.slug }}
+              to="/{-$lang}/katigoria/$slug"
+              params={{ lang: lp, slug: article.category.slug }}
               className={`category-pill ${categoryClass(article.category)}`}
             >
               {article.category.name}
             </Link>
-            <span>{article.date}</span>
+            <span>{formatDate(article.dateValue, lang)}</span>
             <span>
-              <Clock /> {article.minutes} λεπτά ανάγνωσης
+              <Clock /> {t.common.readingTime(article.minutes)}
             </span>
           </div>
           <h1>{article.title}</h1>
           <p className="article-deck">{article.excerpt}</p>
+          {article.translations.length > 0 && (
+            <p className="language-switch">
+              <span>{t.article.alsoIn}</span>
+              {article.translations.map((version) => (
+                <a
+                  key={version.language}
+                  href={localizedPath(version.language, `/arthro/${version.slug}`)}
+                  hrefLang={version.language}
+                  lang={version.language}
+                >
+                  {messagesFor(version.language).languageName}
+                </a>
+              ))}
+            </p>
+          )}
           <div className="author-row">
             <div className="author-avatar" aria-hidden="true">
               {initialsOf(article.author.name)}
             </div>
             <div>
               {article.author.slug ? (
-                <Link to="/syntaktis/$slug" params={{ slug: article.author.slug }}>
+                <Link
+                  to="/{-$lang}/syntaktis/$slug"
+                  params={{ lang: lp, slug: article.author.slug }}
+                >
                   <strong>{article.author.name}</strong>
                 </Link>
               ) : (
                 <strong>{article.author.name}</strong>
               )}
-              <small>Συντάκτης</small>
+              <small>{t.article.author}</small>
             </div>
             <div className="article-actions">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => navigator.share?.({ title: article.title, url: location.href })}
-                aria-label="Κοινοποίηση"
+                aria-label={t.common.share}
               >
                 <Share2 />
               </Button>
@@ -107,7 +149,7 @@ function ArticlePage() {
                 variant="outline"
                 size="icon"
                 onClick={() => toggle(article.slug)}
-                aria-label="Σελιδοδείκτης"
+                aria-label={t.common.bookmark}
               >
                 <Bookmark className={bookmarks.includes(article.slug) ? "bookmark-active" : ""} />
               </Button>
@@ -122,13 +164,12 @@ function ArticlePage() {
         <div className="demo-notice section-shell">
           <CheckCircle2 />
           <p>
-            <strong>Demo περιεχόμενο.</strong> Οι πληροφορίες ελέγχονται και συνοδεύονται από πηγές
-            πριν από τη δημοσίευση.
+            <strong>{t.article.demoNoticeTitle}</strong> {t.article.demoNoticeText}
           </p>
         </div>
         <div className="article-layout section-shell">
           <aside className="toc">
-            <p>Σε αυτό το άρθρο</p>
+            <p>{t.article.onThisPage}</p>
             {headings.map((heading) => (
               <a key={heading.id} href={`#${heading.id}`}>
                 {heading.text}
@@ -142,29 +183,33 @@ function ArticlePage() {
             />
             <ArticleSources sources={article.content.sources} />
             {article.tags.length > 0 && (
-              <div className="tags" aria-label="Ετικέτες">
+              <div className="tags" aria-label={t.common.tags}>
                 {article.tags.map((tag) => (
-                  <Link key={tag.slug} to="/etiketa/$slug" params={{ slug: tag.slug }}>
+                  <Link
+                    key={tag.slug}
+                    to="/{-$lang}/etiketa/$slug"
+                    params={{ lang: lp, slug: tag.slug }}
+                  >
                     {tag.name}
                   </Link>
                 ))}
               </div>
             )}
             <section className="reaction">
-              <h2>Το γνώριζες;</h2>
-              <p>Η απάντησή σου παραμένει μόνο σε αυτή τη συσκευή.</p>
+              <h2>{t.article.didYouKnow}</h2>
+              <p>{t.article.reactionNote}</p>
               <div>
                 <Button
                   variant={reaction === "yes" ? "default" : "outline"}
                   onClick={() => setReaction("yes")}
                 >
-                  <ThumbsUp /> Ναι
+                  <ThumbsUp /> {t.article.yes}
                 </Button>
                 <Button
                   variant={reaction === "no" ? "default" : "outline"}
                   onClick={() => setReaction("no")}
                 >
-                  <ThumbsDown /> Όχι
+                  <ThumbsDown /> {t.article.no}
                 </Button>
               </div>
             </section>
@@ -173,12 +218,14 @@ function ArticlePage() {
       </article>
       <section className="section-shell section-block">
         <header className="section-heading">
-          <h2>Συνέχισε την ανακάλυψη</h2>
-          <Link to="/anakalypse">Όλα τα άρθρα</Link>
+          <h2>{t.article.continue}</h2>
+          <Link to="/{-$lang}/anakalypse" params={{ lang: lp }}>
+            {t.article.allArticles}
+          </Link>
         </header>
         <div className="article-grid related">
-          {related.map((a) => (
-            <ArticleCard key={a.slug} article={a} />
+          {related.map((item) => (
+            <ArticleCard key={item.slug} article={item} />
           ))}
         </div>
       </section>

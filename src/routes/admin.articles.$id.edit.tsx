@@ -4,10 +4,10 @@ import { brandedTitle } from "@/config/site";
 import { articleApi } from "@/data/articles";
 import { taxonomyApi } from "@/data/taxonomy";
 
-export const Route = createFileRoute("/admin/articles/$slug/edit")({
+export const Route = createFileRoute("/admin/articles/$id/edit")({
   loader: async ({ params }) => {
     const [article, categories, tags] = await Promise.all([
-      articleApi.findAdminBySlug(params.slug),
+      articleApi.findAdminById(params.id),
       taxonomyApi.listCategories(),
       taxonomyApi.listTags(),
     ]);

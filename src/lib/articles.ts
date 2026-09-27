@@ -8,7 +8,10 @@ export type Article = {
   language: string;
   title: string;
   excerpt: string;
+  /** Display date in the main language (admin). Public pages format `dateValue` per language. */
   date: string;
+  /** ISO date (`YYYY-MM-DD`). */
+  dateValue: string;
   minutes: number;
   /** Cover image URL ("" when the article has none). */
   image: string;

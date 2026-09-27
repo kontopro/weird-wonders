@@ -85,7 +85,12 @@ export function AdminSidebar({ user, onNavigate }: SidebarProps) {
         </div>
       </div>
       <div className="admin-sidebar-actions">
-        <Link to="/" className="admin-view-site" onClick={onNavigate}>
+        <Link
+          to="/{-$lang}"
+          params={{ lang: undefined }}
+          className="admin-view-site"
+          onClick={onNavigate}
+        >
           <Eye /> Προβολή site
         </Link>
         <Button variant="ghost" onClick={onSignOut} disabled={signingOut}>

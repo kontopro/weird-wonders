@@ -1,7 +1,7 @@
 import type { ArticleStatus } from "@/lib/admin-data";
 import { scheduledAtFor } from "@/domain/publishing";
 import type { ArticleContentDocument } from "@/lib/article-content";
-import type { CategoryIconKey } from "@/domain/taxonomy";
+import type { CategoryIconKey, TaxonomyTranslation } from "@/domain/taxonomy";
 import type { MemberRole } from "@/lib/auth-types";
 
 /**
@@ -18,6 +18,9 @@ export type MockStore = {
     sortOrder: number;
   }>;
   tags: Array<{ id: string; slug: string; name: string }>;
+  /** Like `public.category_translations` / `public.tag_translations`. */
+  categoryTranslations: Array<TaxonomyTranslation & { categoryId: string }>;
+  tagTranslations: Array<TaxonomyTranslation & { tagId: string }>;
   profiles: Array<{ id: string; slug: string; displayName: string; bio: string }>;
   /** Media library, like `public.media_assets` (+ Storage for uploaded bytes). */
   media: Array<{

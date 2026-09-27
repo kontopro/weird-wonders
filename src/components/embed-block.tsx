@@ -1,6 +1,7 @@
 import { Play } from "lucide-react";
 import { useState } from "react";
 import type { ArticleBlock } from "@/lib/article-content";
+import { useT } from "@/i18n";
 import { videoPlayerUrl } from "@/lib/video-embed";
 
 type EmbedData = Extract<ArticleBlock, { type: "embed" }>["data"];
@@ -10,16 +11,17 @@ type EmbedData = Extract<ArticleBlock, { type: "embed" }>["data"];
  * (or cookie) happens before the reader chooses to play. Other embeds are links.
  */
 export function EmbedBlock({ data }: { data: EmbedData }) {
+  const t = useT();
   const [playing, setPlaying] = useState(false);
   const player = videoPlayerUrl(data.provider, data.url);
-  const title = data.title ?? "Βίντεο";
+  const title = data.title ?? t.article.videoFallbackTitle;
 
   if (!player) {
     return (
       <aside className="content-embed">
         <span>{data.provider}</span>
         <a href={data.url} rel="noopener noreferrer">
-          {data.title ?? "Άνοιγμα εξωτερικού περιεχομένου"}
+          {data.title ?? t.article.externalContent}
         </a>
       </aside>
     );

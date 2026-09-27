@@ -9,13 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AnakalypseRouteImport } from './routes/anakalypse'
-import { Route as DimofiliRouteImport } from './routes/dimofili'
-import { Route as KatigoriesRouteImport } from './routes/katigories'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as SxetikaRouteImport } from './routes/sxetika'
+import { Route as Char123LangChar125RouteRouteImport } from './routes/{-$lang}/route'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminArticlesRouteImport } from './routes/admin.articles'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
@@ -23,39 +19,24 @@ import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminPasswordRouteImport } from './routes/admin.password'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminTeamRouteImport } from './routes/admin.team'
-import { Route as ArthroSlugRouteImport } from './routes/arthro.$slug'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
-import { Route as EtiketaSlugRouteImport } from './routes/etiketa.$slug'
-import { Route as KatigoriaSlugRouteImport } from './routes/katigoria.$slug'
-import { Route as SyntaktisSlugRouteImport } from './routes/syntaktis.$slug'
+import { Route as Char123LangChar125IndexRouteImport } from './routes/{-$lang}/index'
+import { Route as Char123LangChar125AnakalypseRouteImport } from './routes/{-$lang}/anakalypse'
+import { Route as Char123LangChar125DimofiliRouteImport } from './routes/{-$lang}/dimofili'
+import { Route as Char123LangChar125KatigoriesRouteImport } from './routes/{-$lang}/katigories'
+import { Route as Char123LangChar125SxetikaRouteImport } from './routes/{-$lang}/sxetika'
 import { Route as AdminArticlesIndexRouteImport } from './routes/admin.articles.index'
 import { Route as AdminArticlesNewRouteImport } from './routes/admin.articles.new'
 import { Route as MediaDemoIdRouteImport } from './routes/media.demo.$id'
-import { Route as AdminArticlesSlugEditRouteImport } from './routes/admin.articles.$slug.edit'
+import { Route as Char123LangChar125ArthroSlugRouteImport } from './routes/{-$lang}/arthro.$slug'
+import { Route as Char123LangChar125EtiketaSlugRouteImport } from './routes/{-$lang}/etiketa.$slug'
+import { Route as Char123LangChar125KatigoriaSlugRouteImport } from './routes/{-$lang}/katigoria.$slug'
+import { Route as Char123LangChar125SyntaktisSlugRouteImport } from './routes/{-$lang}/syntaktis.$slug'
+import { Route as AdminArticlesIdEditRouteImport } from './routes/admin.articles.$id.edit'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnakalypseRoute = AnakalypseRouteImport.update({
-  id: '/anakalypse',
-  path: '/anakalypse',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DimofiliRoute = DimofiliRouteImport.update({
-  id: '/dimofili',
-  path: '/dimofili',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KatigoriesRoute = KatigoriesRouteImport.update({
-  id: '/katigories',
-  path: '/katigories',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -63,9 +44,9 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SxetikaRoute = SxetikaRouteImport.update({
-  id: '/sxetika',
-  path: '/sxetika',
+const Char123LangChar125RouteRoute = Char123LangChar125RouteRouteImport.update({
+  id: '/{-$lang}',
+  path: '/{-$lang}',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -103,31 +84,40 @@ const AdminTeamRoute = AdminTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => AdminRoute,
 } as any)
-const ArthroSlugRoute = ArthroSlugRouteImport.update({
-  id: '/arthro/$slug',
-  path: '/arthro/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthConfirmRoute = AuthConfirmRouteImport.update({
   id: '/auth/confirm',
   path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EtiketaSlugRoute = EtiketaSlugRouteImport.update({
-  id: '/etiketa/$slug',
-  path: '/etiketa/$slug',
-  getParentRoute: () => rootRouteImport,
+const Char123LangChar125IndexRoute = Char123LangChar125IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => Char123LangChar125RouteRoute,
 } as any)
-const KatigoriaSlugRoute = KatigoriaSlugRouteImport.update({
-  id: '/katigoria/$slug',
-  path: '/katigoria/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SyntaktisSlugRoute = SyntaktisSlugRouteImport.update({
-  id: '/syntaktis/$slug',
-  path: '/syntaktis/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const Char123LangChar125AnakalypseRoute =
+  Char123LangChar125AnakalypseRouteImport.update({
+    id: '/anakalypse',
+    path: '/anakalypse',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
+const Char123LangChar125DimofiliRoute =
+  Char123LangChar125DimofiliRouteImport.update({
+    id: '/dimofili',
+    path: '/dimofili',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
+const Char123LangChar125KatigoriesRoute =
+  Char123LangChar125KatigoriesRouteImport.update({
+    id: '/katigories',
+    path: '/katigories',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
+const Char123LangChar125SxetikaRoute =
+  Char123LangChar125SxetikaRouteImport.update({
+    id: '/sxetika',
+    path: '/sxetika',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
 const AdminArticlesIndexRoute = AdminArticlesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -143,213 +133,205 @@ const MediaDemoIdRoute = MediaDemoIdRouteImport.update({
   path: '/media/demo/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminArticlesSlugEditRoute = AdminArticlesSlugEditRouteImport.update({
-  id: '/$slug/edit',
-  path: '/$slug/edit',
+const Char123LangChar125ArthroSlugRoute =
+  Char123LangChar125ArthroSlugRouteImport.update({
+    id: '/arthro/$slug',
+    path: '/arthro/$slug',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
+const Char123LangChar125EtiketaSlugRoute =
+  Char123LangChar125EtiketaSlugRouteImport.update({
+    id: '/etiketa/$slug',
+    path: '/etiketa/$slug',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
+const Char123LangChar125KatigoriaSlugRoute =
+  Char123LangChar125KatigoriaSlugRouteImport.update({
+    id: '/katigoria/$slug',
+    path: '/katigoria/$slug',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
+const Char123LangChar125SyntaktisSlugRoute =
+  Char123LangChar125SyntaktisSlugRouteImport.update({
+    id: '/syntaktis/$slug',
+    path: '/syntaktis/$slug',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
+const AdminArticlesIdEditRoute = AdminArticlesIdEditRouteImport.update({
+  id: '/$id/edit',
+  path: '/$id/edit',
   getParentRoute: () => AdminArticlesRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/{-$lang}': typeof Char123LangChar125RouteRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
-  '/anakalypse': typeof AnakalypseRoute
-  '/dimofili': typeof DimofiliRoute
-  '/katigories': typeof KatigoriesRoute
   '/login': typeof LoginRoute
-  '/sxetika': typeof SxetikaRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/team': typeof AdminTeamRoute
-  '/arthro/$slug': typeof ArthroSlugRoute
   '/auth/confirm': typeof AuthConfirmRoute
-  '/etiketa/$slug': typeof EtiketaSlugRoute
-  '/katigoria/$slug': typeof KatigoriaSlugRoute
-  '/syntaktis/$slug': typeof SyntaktisSlugRoute
+  '/{-$lang}/anakalypse': typeof Char123LangChar125AnakalypseRoute
+  '/{-$lang}/dimofili': typeof Char123LangChar125DimofiliRoute
+  '/{-$lang}/katigories': typeof Char123LangChar125KatigoriesRoute
+  '/{-$lang}/sxetika': typeof Char123LangChar125SxetikaRoute
   '/admin/': typeof AdminIndexRoute
+  '/{-$lang}/': typeof Char123LangChar125IndexRoute
   '/admin/articles/new': typeof AdminArticlesNewRoute
   '/media/demo/$id': typeof MediaDemoIdRoute
+  '/{-$lang}/arthro/$slug': typeof Char123LangChar125ArthroSlugRoute
+  '/{-$lang}/etiketa/$slug': typeof Char123LangChar125EtiketaSlugRoute
+  '/{-$lang}/katigoria/$slug': typeof Char123LangChar125KatigoriaSlugRoute
+  '/{-$lang}/syntaktis/$slug': typeof Char123LangChar125SyntaktisSlugRoute
   '/admin/articles/': typeof AdminArticlesIndexRoute
-  '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
+  '/admin/articles/$id/edit': typeof AdminArticlesIdEditRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/anakalypse': typeof AnakalypseRoute
-  '/dimofili': typeof DimofiliRoute
-  '/katigories': typeof KatigoriesRoute
   '/login': typeof LoginRoute
-  '/sxetika': typeof SxetikaRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/team': typeof AdminTeamRoute
-  '/arthro/$slug': typeof ArthroSlugRoute
   '/auth/confirm': typeof AuthConfirmRoute
-  '/etiketa/$slug': typeof EtiketaSlugRoute
-  '/katigoria/$slug': typeof KatigoriaSlugRoute
-  '/syntaktis/$slug': typeof SyntaktisSlugRoute
+  '/{-$lang}/anakalypse': typeof Char123LangChar125AnakalypseRoute
+  '/{-$lang}/dimofili': typeof Char123LangChar125DimofiliRoute
+  '/{-$lang}/katigories': typeof Char123LangChar125KatigoriesRoute
+  '/{-$lang}/sxetika': typeof Char123LangChar125SxetikaRoute
   '/admin': typeof AdminIndexRoute
+  '/{-$lang}': typeof Char123LangChar125IndexRoute
   '/admin/articles/new': typeof AdminArticlesNewRoute
   '/media/demo/$id': typeof MediaDemoIdRoute
+  '/{-$lang}/arthro/$slug': typeof Char123LangChar125ArthroSlugRoute
+  '/{-$lang}/etiketa/$slug': typeof Char123LangChar125EtiketaSlugRoute
+  '/{-$lang}/katigoria/$slug': typeof Char123LangChar125KatigoriaSlugRoute
+  '/{-$lang}/syntaktis/$slug': typeof Char123LangChar125SyntaktisSlugRoute
   '/admin/articles': typeof AdminArticlesIndexRoute
-  '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
+  '/admin/articles/$id/edit': typeof AdminArticlesIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/{-$lang}': typeof Char123LangChar125RouteRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
-  '/anakalypse': typeof AnakalypseRoute
-  '/dimofili': typeof DimofiliRoute
-  '/katigories': typeof KatigoriesRoute
   '/login': typeof LoginRoute
-  '/sxetika': typeof SxetikaRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/team': typeof AdminTeamRoute
-  '/arthro/$slug': typeof ArthroSlugRoute
   '/auth/confirm': typeof AuthConfirmRoute
-  '/etiketa/$slug': typeof EtiketaSlugRoute
-  '/katigoria/$slug': typeof KatigoriaSlugRoute
-  '/syntaktis/$slug': typeof SyntaktisSlugRoute
+  '/{-$lang}/anakalypse': typeof Char123LangChar125AnakalypseRoute
+  '/{-$lang}/dimofili': typeof Char123LangChar125DimofiliRoute
+  '/{-$lang}/katigories': typeof Char123LangChar125KatigoriesRoute
+  '/{-$lang}/sxetika': typeof Char123LangChar125SxetikaRoute
   '/admin/': typeof AdminIndexRoute
+  '/{-$lang}/': typeof Char123LangChar125IndexRoute
   '/admin/articles/new': typeof AdminArticlesNewRoute
   '/media/demo/$id': typeof MediaDemoIdRoute
+  '/{-$lang}/arthro/$slug': typeof Char123LangChar125ArthroSlugRoute
+  '/{-$lang}/etiketa/$slug': typeof Char123LangChar125EtiketaSlugRoute
+  '/{-$lang}/katigoria/$slug': typeof Char123LangChar125KatigoriaSlugRoute
+  '/{-$lang}/syntaktis/$slug': typeof Char123LangChar125SyntaktisSlugRoute
   '/admin/articles/': typeof AdminArticlesIndexRoute
-  '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
+  '/admin/articles/$id/edit': typeof AdminArticlesIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
+    | '/{-$lang}'
     | '/admin'
-    | '/anakalypse'
-    | '/dimofili'
-    | '/katigories'
     | '/login'
-    | '/sxetika'
     | '/admin/articles'
     | '/admin/categories'
     | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
     | '/admin/team'
-    | '/arthro/$slug'
     | '/auth/confirm'
-    | '/etiketa/$slug'
-    | '/katigoria/$slug'
-    | '/syntaktis/$slug'
+    | '/{-$lang}/anakalypse'
+    | '/{-$lang}/dimofili'
+    | '/{-$lang}/katigories'
+    | '/{-$lang}/sxetika'
     | '/admin/'
+    | '/{-$lang}/'
     | '/admin/articles/new'
     | '/media/demo/$id'
+    | '/{-$lang}/arthro/$slug'
+    | '/{-$lang}/etiketa/$slug'
+    | '/{-$lang}/katigoria/$slug'
+    | '/{-$lang}/syntaktis/$slug'
     | '/admin/articles/'
-    | '/admin/articles/$slug/edit'
+    | '/admin/articles/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/anakalypse'
-    | '/dimofili'
-    | '/katigories'
     | '/login'
-    | '/sxetika'
     | '/admin/categories'
     | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
     | '/admin/team'
-    | '/arthro/$slug'
     | '/auth/confirm'
-    | '/etiketa/$slug'
-    | '/katigoria/$slug'
-    | '/syntaktis/$slug'
+    | '/{-$lang}/anakalypse'
+    | '/{-$lang}/dimofili'
+    | '/{-$lang}/katigories'
+    | '/{-$lang}/sxetika'
     | '/admin'
+    | '/{-$lang}'
     | '/admin/articles/new'
     | '/media/demo/$id'
+    | '/{-$lang}/arthro/$slug'
+    | '/{-$lang}/etiketa/$slug'
+    | '/{-$lang}/katigoria/$slug'
+    | '/{-$lang}/syntaktis/$slug'
     | '/admin/articles'
-    | '/admin/articles/$slug/edit'
+    | '/admin/articles/$id/edit'
   id:
     | '__root__'
-    | '/'
+    | '/{-$lang}'
     | '/admin'
-    | '/anakalypse'
-    | '/dimofili'
-    | '/katigories'
     | '/login'
-    | '/sxetika'
     | '/admin/articles'
     | '/admin/categories'
     | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
     | '/admin/team'
-    | '/arthro/$slug'
     | '/auth/confirm'
-    | '/etiketa/$slug'
-    | '/katigoria/$slug'
-    | '/syntaktis/$slug'
+    | '/{-$lang}/anakalypse'
+    | '/{-$lang}/dimofili'
+    | '/{-$lang}/katigories'
+    | '/{-$lang}/sxetika'
     | '/admin/'
+    | '/{-$lang}/'
     | '/admin/articles/new'
     | '/media/demo/$id'
+    | '/{-$lang}/arthro/$slug'
+    | '/{-$lang}/etiketa/$slug'
+    | '/{-$lang}/katigoria/$slug'
+    | '/{-$lang}/syntaktis/$slug'
     | '/admin/articles/'
-    | '/admin/articles/$slug/edit'
+    | '/admin/articles/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  Char123LangChar125RouteRoute: typeof Char123LangChar125RouteRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
-  AnakalypseRoute: typeof AnakalypseRoute
-  DimofiliRoute: typeof DimofiliRoute
-  KatigoriesRoute: typeof KatigoriesRoute
   LoginRoute: typeof LoginRoute
-  SxetikaRoute: typeof SxetikaRoute
-  ArthroSlugRoute: typeof ArthroSlugRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
-  EtiketaSlugRoute: typeof EtiketaSlugRoute
-  KatigoriaSlugRoute: typeof KatigoriaSlugRoute
-  SyntaktisSlugRoute: typeof SyntaktisSlugRoute
   MediaDemoIdRoute: typeof MediaDemoIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/anakalypse': {
-      id: '/anakalypse'
-      path: '/anakalypse'
-      fullPath: '/anakalypse'
-      preLoaderRoute: typeof AnakalypseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dimofili': {
-      id: '/dimofili'
-      path: '/dimofili'
-      fullPath: '/dimofili'
-      preLoaderRoute: typeof DimofiliRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/katigories': {
-      id: '/katigories'
-      path: '/katigories'
-      fullPath: '/katigories'
-      preLoaderRoute: typeof KatigoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -359,11 +341,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sxetika': {
-      id: '/sxetika'
-      path: '/sxetika'
-      fullPath: '/sxetika'
-      preLoaderRoute: typeof SxetikaRouteImport
+    '/{-$lang}': {
+      id: '/{-$lang}'
+      path: '/{-$lang}'
+      fullPath: '/{-$lang}'
+      preLoaderRoute: typeof Char123LangChar125RouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -415,13 +397,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTeamRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/arthro/$slug': {
-      id: '/arthro/$slug'
-      path: '/arthro/$slug'
-      fullPath: '/arthro/$slug'
-      preLoaderRoute: typeof ArthroSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth/confirm': {
       id: '/auth/confirm'
       path: '/auth/confirm'
@@ -429,26 +404,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/etiketa/$slug': {
-      id: '/etiketa/$slug'
-      path: '/etiketa/$slug'
-      fullPath: '/etiketa/$slug'
-      preLoaderRoute: typeof EtiketaSlugRouteImport
-      parentRoute: typeof rootRouteImport
+    '/{-$lang}/': {
+      id: '/{-$lang}/'
+      path: '/'
+      fullPath: '/{-$lang}/'
+      preLoaderRoute: typeof Char123LangChar125IndexRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
     }
-    '/katigoria/$slug': {
-      id: '/katigoria/$slug'
-      path: '/katigoria/$slug'
-      fullPath: '/katigoria/$slug'
-      preLoaderRoute: typeof KatigoriaSlugRouteImport
-      parentRoute: typeof rootRouteImport
+    '/{-$lang}/anakalypse': {
+      id: '/{-$lang}/anakalypse'
+      path: '/anakalypse'
+      fullPath: '/{-$lang}/anakalypse'
+      preLoaderRoute: typeof Char123LangChar125AnakalypseRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
     }
-    '/syntaktis/$slug': {
-      id: '/syntaktis/$slug'
-      path: '/syntaktis/$slug'
-      fullPath: '/syntaktis/$slug'
-      preLoaderRoute: typeof SyntaktisSlugRouteImport
-      parentRoute: typeof rootRouteImport
+    '/{-$lang}/dimofili': {
+      id: '/{-$lang}/dimofili'
+      path: '/dimofili'
+      fullPath: '/{-$lang}/dimofili'
+      preLoaderRoute: typeof Char123LangChar125DimofiliRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
+    }
+    '/{-$lang}/katigories': {
+      id: '/{-$lang}/katigories'
+      path: '/katigories'
+      fullPath: '/{-$lang}/katigories'
+      preLoaderRoute: typeof Char123LangChar125KatigoriesRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
+    }
+    '/{-$lang}/sxetika': {
+      id: '/{-$lang}/sxetika'
+      path: '/sxetika'
+      fullPath: '/{-$lang}/sxetika'
+      preLoaderRoute: typeof Char123LangChar125SxetikaRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
     }
     '/admin/articles/': {
       id: '/admin/articles/'
@@ -471,26 +460,84 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MediaDemoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/articles/$slug/edit': {
-      id: '/admin/articles/$slug/edit'
-      path: '/$slug/edit'
-      fullPath: '/admin/articles/$slug/edit'
-      preLoaderRoute: typeof AdminArticlesSlugEditRouteImport
+    '/{-$lang}/arthro/$slug': {
+      id: '/{-$lang}/arthro/$slug'
+      path: '/arthro/$slug'
+      fullPath: '/{-$lang}/arthro/$slug'
+      preLoaderRoute: typeof Char123LangChar125ArthroSlugRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
+    }
+    '/{-$lang}/etiketa/$slug': {
+      id: '/{-$lang}/etiketa/$slug'
+      path: '/etiketa/$slug'
+      fullPath: '/{-$lang}/etiketa/$slug'
+      preLoaderRoute: typeof Char123LangChar125EtiketaSlugRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
+    }
+    '/{-$lang}/katigoria/$slug': {
+      id: '/{-$lang}/katigoria/$slug'
+      path: '/katigoria/$slug'
+      fullPath: '/{-$lang}/katigoria/$slug'
+      preLoaderRoute: typeof Char123LangChar125KatigoriaSlugRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
+    }
+    '/{-$lang}/syntaktis/$slug': {
+      id: '/{-$lang}/syntaktis/$slug'
+      path: '/syntaktis/$slug'
+      fullPath: '/{-$lang}/syntaktis/$slug'
+      preLoaderRoute: typeof Char123LangChar125SyntaktisSlugRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
+    }
+    '/admin/articles/$id/edit': {
+      id: '/admin/articles/$id/edit'
+      path: '/$id/edit'
+      fullPath: '/admin/articles/$id/edit'
+      preLoaderRoute: typeof AdminArticlesIdEditRouteImport
       parentRoute: typeof AdminArticlesRoute
     }
   }
 }
 
+interface Char123LangChar125RouteRouteChildren {
+  Char123LangChar125AnakalypseRoute: typeof Char123LangChar125AnakalypseRoute
+  Char123LangChar125DimofiliRoute: typeof Char123LangChar125DimofiliRoute
+  Char123LangChar125KatigoriesRoute: typeof Char123LangChar125KatigoriesRoute
+  Char123LangChar125SxetikaRoute: typeof Char123LangChar125SxetikaRoute
+  Char123LangChar125IndexRoute: typeof Char123LangChar125IndexRoute
+  Char123LangChar125ArthroSlugRoute: typeof Char123LangChar125ArthroSlugRoute
+  Char123LangChar125EtiketaSlugRoute: typeof Char123LangChar125EtiketaSlugRoute
+  Char123LangChar125KatigoriaSlugRoute: typeof Char123LangChar125KatigoriaSlugRoute
+  Char123LangChar125SyntaktisSlugRoute: typeof Char123LangChar125SyntaktisSlugRoute
+}
+
+const Char123LangChar125RouteRouteChildren: Char123LangChar125RouteRouteChildren =
+  {
+    Char123LangChar125AnakalypseRoute: Char123LangChar125AnakalypseRoute,
+    Char123LangChar125DimofiliRoute: Char123LangChar125DimofiliRoute,
+    Char123LangChar125KatigoriesRoute: Char123LangChar125KatigoriesRoute,
+    Char123LangChar125SxetikaRoute: Char123LangChar125SxetikaRoute,
+    Char123LangChar125IndexRoute: Char123LangChar125IndexRoute,
+    Char123LangChar125ArthroSlugRoute: Char123LangChar125ArthroSlugRoute,
+    Char123LangChar125EtiketaSlugRoute: Char123LangChar125EtiketaSlugRoute,
+    Char123LangChar125KatigoriaSlugRoute: Char123LangChar125KatigoriaSlugRoute,
+    Char123LangChar125SyntaktisSlugRoute: Char123LangChar125SyntaktisSlugRoute,
+  }
+
+const Char123LangChar125RouteRouteWithChildren =
+  Char123LangChar125RouteRoute._addFileChildren(
+    Char123LangChar125RouteRouteChildren,
+  )
+
 interface AdminArticlesRouteChildren {
   AdminArticlesNewRoute: typeof AdminArticlesNewRoute
   AdminArticlesIndexRoute: typeof AdminArticlesIndexRoute
-  AdminArticlesSlugEditRoute: typeof AdminArticlesSlugEditRoute
+  AdminArticlesIdEditRoute: typeof AdminArticlesIdEditRoute
 }
 
 const AdminArticlesRouteChildren: AdminArticlesRouteChildren = {
   AdminArticlesNewRoute: AdminArticlesNewRoute,
   AdminArticlesIndexRoute: AdminArticlesIndexRoute,
-  AdminArticlesSlugEditRoute: AdminArticlesSlugEditRoute,
+  AdminArticlesIdEditRoute: AdminArticlesIdEditRoute,
 }
 
 const AdminArticlesRouteWithChildren = AdminArticlesRoute._addFileChildren(
@@ -520,18 +567,10 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  Char123LangChar125RouteRoute: Char123LangChar125RouteRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
-  AnakalypseRoute: AnakalypseRoute,
-  DimofiliRoute: DimofiliRoute,
-  KatigoriesRoute: KatigoriesRoute,
   LoginRoute: LoginRoute,
-  SxetikaRoute: SxetikaRoute,
-  ArthroSlugRoute: ArthroSlugRoute,
   AuthConfirmRoute: AuthConfirmRoute,
-  EtiketaSlugRoute: EtiketaSlugRoute,
-  KatigoriaSlugRoute: KatigoriaSlugRoute,
-  SyntaktisSlugRoute: SyntaktisSlugRoute,
   MediaDemoIdRoute: MediaDemoIdRoute,
 }
 export const routeTree = rootRouteImport

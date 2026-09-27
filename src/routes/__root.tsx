@@ -15,24 +15,27 @@ import { SiteShell } from "../components/site-shell";
 import { Button } from "../components/ui/button";
 import { Toaster } from "../components/ui/sonner";
 import { siteConfig } from "../config/site";
+import { mainMessages, useLang, useT } from "../i18n";
+import { useLocalized } from "../i18n/links";
 
 function NotFoundComponent() {
+  const t = useT();
+  const { lp } = useLocalized();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">
-          {siteConfig.name}: αυτή η σελίδα δεν υπάρχει.
+          {t.common.notFoundTitle(siteConfig.name)}
         </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Μόλις το έμαθες. Υπάρχουν όμως πολλές αληθινές ιστορίες στην αρχική.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{t.common.notFoundText}</p>
         <div className="mt-6">
           <Link
-            to="/"
+            to="/{-$lang}"
+            params={{ lang: lp }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Πίσω στις ανακαλύψεις
+            {t.common.notFoundBack}
           </Link>
         </div>
       </div>
@@ -43,30 +46,29 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const t = useT();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          {t.common.errorTitle}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">{t.common.errorText}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button
             onClick={() => {
-              router.invalidate();
+              void router.invalidate();
               reset();
             }}
           >
-            Try again
+            {t.common.tryAgain}
           </Button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            {t.common.goHome}
           </a>
         </div>
       </div>
@@ -80,10 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: siteConfig.name },
-      { name: "description", content: siteConfig.seo.description },
+      { name: "description", content: mainMessages.site.seo.description },
       { name: "author", content: siteConfig.name },
-      { property: "og:title", content: siteConfig.seo.socialTitle },
-      { property: "og:description", content: siteConfig.seo.socialDescription },
+      { property: "og:title", content: mainMessages.site.seo.socialTitle },
+      { property: "og:description", content: mainMessages.site.seo.socialDescription },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -108,8 +110,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const lang = useLang();
   return (
-    <html lang={siteConfig.defaultLanguage}>
+    <html lang={lang}>
       <head>
         <HeadContent />
       </head>

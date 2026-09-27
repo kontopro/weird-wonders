@@ -1,22 +1,23 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { LogIn, LogOut } from "lucide-react";
+import { LogIn, LogOut, UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { brandedTitle } from "@/config/site";
-import { getAuthState, signIn, signOut } from "@/functions/auth";
-import { getDataSource } from "@/lib/data-source";
+import type { SignInInput } from "@/data/auth/auth-provider";
+import { getAuthState, getLoginOptions, signIn, signOut } from "@/functions/auth";
+import { memberRoleLabels } from "@/lib/auth-types";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 
 export const Route = createFileRoute("/login")({
   validateSearch: z.object({ redirect: z.string().optional() }),
   beforeLoad: async ({ search }) => {
-    const auth = await getAuthState();
+    const [auth, loginOptions] = await Promise.all([getAuthState(), getLoginOptions()]);
     if (auth.status === "member") {
       throw redirect({ href: safeRedirectPath(search.redirect) });
     }
-    return { auth };
+    return { auth, loginOptions };
   },
   component: LoginPage,
   head: () => ({
@@ -25,25 +26,17 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { auth } = Route.useRouteContext();
+  const { auth, loginOptions } = Route.useRouteContext();
   const search = Route.useSearch();
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isSupabase = getDataSource() === "supabase";
 
-  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
+  const submit = async (input: SignInInput) => {
     setPending(true);
     setError(null);
     try {
-      const result = await signIn({
-        data: {
-          email: String(form.get("email") ?? ""),
-          password: String(form.get("password") ?? ""),
-        },
-      });
+      const result = await signIn({ data: input });
       if (!result.ok) {
         setError(result.message);
         return;
@@ -57,10 +50,26 @@ function LoginPage() {
     }
   };
 
+  const onPasswordSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    void submit({
+      method: "password",
+      email: String(form.get("email") ?? ""),
+      password: String(form.get("password") ?? ""),
+    });
+  };
+
   const onSignOut = async () => {
     await signOut();
     await router.invalidate();
   };
+
+  const errorNote = error && (
+    <p className="login-error" role="alert">
+      {error}
+    </p>
+  );
 
   return (
     <main className="login-page">
@@ -68,12 +77,7 @@ function LoginPage() {
         <BrandLogo />
         <h1 id="login-title">Σύνδεση συντακτικής ομάδας</h1>
 
-        {!isSupabase ? (
-          <p className="login-note">
-            Το site τρέχει με demo δεδομένα, χωρίς λογαριασμούς. Η διαχείριση ανοίγει μόνο σε τοπική
-            ανάπτυξη ή όταν οριστεί <code>VITE_ENABLE_DEMO_ADMIN=true</code>.
-          </p>
-        ) : auth.status === "not_member" ? (
+        {auth.status === "not_member" ? (
           <>
             <p className="login-note" role="alert">
               Ο λογαριασμός {auth.email ?? ""} δεν έχει ενεργή πρόσβαση στη διαχείριση. Ζήτησε
@@ -83,8 +87,33 @@ function LoginPage() {
               <LogOut /> Αποσύνδεση
             </Button>
           </>
+        ) : loginOptions.method === "disabled" ? (
+          <p className="login-note">{loginOptions.reason}</p>
+        ) : loginOptions.method === "demo" ? (
+          <>
+            <p className="login-note">
+              Demo λειτουργία: διάλεξε λογαριασμό για να δοκιμάσεις τη διαχείριση με τον αντίστοιχο
+              ρόλο. Οι αλλαγές κρατιούνται μέχρι την επανεκκίνηση του server.
+            </p>
+            <ul className="demo-accounts">
+              {loginOptions.accounts.map((account) => (
+                <li key={account.id}>
+                  <Button
+                    variant="outline"
+                    disabled={pending}
+                    onClick={() => void submit({ method: "demo", userId: account.id })}
+                  >
+                    <UserRound />
+                    <span>{account.displayName}</span>
+                    <small>{memberRoleLabels[account.role]}</small>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            {errorNote}
+          </>
         ) : (
-          <form className="admin-form-grid login-form" onSubmit={onSubmit} noValidate>
+          <form className="admin-form-grid login-form" onSubmit={onPasswordSubmit} noValidate>
             <label className="full">
               <span>Email</span>
               <input name="email" type="email" autoComplete="username" required />
@@ -93,11 +122,7 @@ function LoginPage() {
               <span>Κωδικός</span>
               <input name="password" type="password" autoComplete="current-password" required />
             </label>
-            {error && (
-              <p className="login-error full" role="alert">
-                {error}
-              </p>
-            )}
+            {error && <div className="full">{errorNote}</div>}
             <Button type="submit" className="full" disabled={pending}>
               <LogIn /> {pending ? "Σύνδεση…" : "Σύνδεση"}
             </Button>

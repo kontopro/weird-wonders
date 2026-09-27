@@ -29,6 +29,7 @@
 - [x] Pre-Supabase hardening: άμεσο RLS, deterministic site/category seed και ασφαλές category/status/reading-time mapping
 - [x] Ενιαίο article repository με ενεργό mock και ανενεργό Supabase adapter
 - [x] Authentication: cookie sessions ανά request, server functions, admin guard, login/logout
+- [x] Authentication πίσω από `AuthProvider` (demo λογαριασμοί ανά ρόλο στο mock, Supabase Auth ως adapter)
 - [x] Ασφαλές bootstrap πρώτου owner (χωρίς self-service claim) και invite-only sign-ups
 - [x] Κατηγορίες (CRUD), ετικέτες και σελίδες συντακτών μέσω repositories, ανεξάρτητα από βάση
 - [x] Σελίδες /katigoria, /etiketa, /syntaktis και ελληνικά → λατινικά slugs

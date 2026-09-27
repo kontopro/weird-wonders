@@ -1,26 +1,5 @@
-import { z } from "zod";
-import { getDataSource, isDemoAdminEnabled } from "@/lib/data-source";
-import { memberRoles, type AuthState, type MemberRole, type SessionUser } from "@/lib/auth-types";
-import { DEMO_USER_ID } from "@/data/mock/demo-seed";
-import { getRepositories } from "@/server/repositories";
-import { createSupabaseServerClient } from "@/server/supabase";
-
-async function demoUser(): Promise<SessionUser> {
-  const profile = await getRepositories().authors.getProfile(DEMO_USER_ID);
-  return {
-    id: DEMO_USER_ID,
-    email: null,
-    displayName: profile?.displayName ?? "Demo διαχειριστής",
-    role: "owner",
-    isDemo: true,
-  };
-}
-
-const memberRowSchema = z.object({
-  role: z.enum(memberRoles),
-  status: z.enum(["active", "suspended"]),
-  profile: z.object({ display_name: z.string() }).nullable(),
-});
+import type { AuthState, MemberRole, SessionUser } from "@/lib/auth-types";
+import { getAuthProvider } from "@/server/repositories";
 
 export class AuthorizationError extends Error {
   constructor(message = "Δεν έχεις πρόσβαση σε αυτή την ενέργεια.") {
@@ -30,47 +9,13 @@ export class AuthorizationError extends Error {
 }
 
 /** Resolves the visitor of the current request. Server-only. */
-export async function resolveAuthState(): Promise<AuthState> {
-  if (getDataSource() === "mock") {
-    return isDemoAdminEnabled()
-      ? { status: "member", user: await demoUser() }
-      : { status: "anonymous" };
-  }
-
-  const supabase = createSupabaseServerClient();
-  // getClaims() verifies the JWT signature; never trust getSession() on the server.
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-  if (claimsError || !claims?.sub) return { status: "anonymous" };
-
-  const email = typeof claims.email === "string" ? claims.email : null;
-  const { data, error } = await supabase
-    .from("members")
-    .select("role, status, profile:profiles(display_name)")
-    .eq("user_id", claims.sub)
-    .maybeSingle();
-  if (error) throw error;
-
-  const member = data ? memberRowSchema.safeParse(data) : null;
-  if (!member?.success || member.data.status !== "active") {
-    return { status: "not_member", email };
-  }
-
-  return {
-    status: "member",
-    user: {
-      id: claims.sub,
-      email,
-      displayName: member.data.profile?.display_name ?? email ?? "Μέλος",
-      role: member.data.role,
-      isDemo: false,
-    },
-  };
+export function resolveAuthState(): Promise<AuthState> {
+  return getAuthProvider().getAuthState();
 }
 
 /**
- * Guards server functions. The database RLS policies remain the real security
- * boundary; this check gives a clear error before any query runs.
+ * Guards server functions. With a real database, its access rules (e.g. RLS)
+ * remain the final security boundary; this check fails early with a clear error.
  */
 export async function requireMember(allowedRoles?: readonly MemberRole[]): Promise<SessionUser> {
   const state = await resolveAuthState();

@@ -322,6 +322,14 @@ const demoSeed: MockStore = {
   categories,
   tags,
   profiles,
+  members: [
+    { userId: DEMO_USER_ID, role: "owner", status: "active" },
+    { userId: "author-aris", role: "editor", status: "active" },
+    { userId: "author-eva", role: "author", status: "active" },
+    { userId: "author-nikos", role: "author", status: "active" },
+    { userId: "author-lida", role: "author", status: "active" },
+    { userId: "author-iason", role: "author", status: "suspended" },
+  ],
   articles: seedArticles.map((article) => ({
     ...article,
     content: demoArticleContent satisfies ArticleContentDocument,

@@ -2866,3 +2866,19 @@ select:focus-visible {
   padding: 20px 0;
   color: var(--muted-foreground);
 }
+.demo-accounts {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.demo-accounts button {
+  width: 100%;
+  justify-content: flex-start;
+}
+.demo-accounts small {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-weight: 600;
+}

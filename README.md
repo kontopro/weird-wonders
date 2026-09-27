@@ -42,7 +42,14 @@ Public URLs: `/arthro/<slug>`, `/katigoria/<slug>`, `/etiketa/<slug>`, `/syntakt
 
 ## Authentication
 
-All data access runs on the server through TanStack Start server functions (`src/functions`). Each request gets its own Supabase client (`src/server/supabase.ts`) that reads and refreshes the session from HTTP-only cookies, so RLS always sees the correct user. `/admin` redirects to `/login` unless the visitor is an active member; server functions check membership again, and RLS remains the final security boundary.
+Authentication sits behind the `AuthProvider` interface (`src/data/auth/auth-provider.ts`), just like data sits behind the repositories. `src/server/repositories.ts` is the only place that picks the adapters:
+
+- **Mock mode** (`MockAuthProvider`): sign in as one of the seeded demo members (owner, editor, author) to try every role without a database. There are no passwords, so it is available only in `bun run dev`, or on a deployed demo when `VITE_ENABLE_DEMO_ADMIN=true` is set.
+- **Supabase mode** (`SupabaseAuthProvider`): email and password. Each request gets its own Supabase client (`src/server/supabase.ts`) that reads and refreshes the session from HTTP-only cookies, so RLS always sees the correct user.
+
+All data access runs on the server through TanStack Start server functions (`src/functions`). `/admin` redirects to `/login` unless the visitor is an active member; server functions check membership and role again, and in Supabase mode RLS remains the final security boundary. A new backend needs only a new `AuthProvider` and repository adapters.
+
+### Supabase: first owner
 
 Blogs are invite-only. Before anyone can reach the project:
 
@@ -51,8 +58,6 @@ Blogs are invite-only. Before anyone can reach the project:
 3. In the **SQL editor**, run once: `select private.bootstrap_owner('owner@example.com');`
 
 The bootstrap runs only as the database owner, is concurrency-safe, and refuses to run once any member exists.
-
-In mock mode there are no accounts. The admin is open during `bun run dev`; a deployed demo keeps it closed unless `VITE_ENABLE_DEMO_ADMIN=true` is set.
 
 When a fresh hosted project is available:
 

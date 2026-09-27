@@ -81,11 +81,9 @@ export function AdminSidebar({ user, onNavigate }: SidebarProps) {
         <Link to="/" className="admin-view-site" onClick={onNavigate}>
           <Eye /> Προβολή site
         </Link>
-        {!user.isDemo && (
-          <Button variant="ghost" onClick={onSignOut} disabled={signingOut}>
-            <LogOut /> Αποσύνδεση
-          </Button>
-        )}
+        <Button variant="ghost" onClick={onSignOut} disabled={signingOut}>
+          <LogOut /> Αποσύνδεση
+        </Button>
       </div>
     </aside>
   );

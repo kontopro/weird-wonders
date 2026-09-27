@@ -1,6 +1,7 @@
 import type { ArticleStatus } from "@/lib/admin-data";
 import type { ArticleContentDocument } from "@/lib/article-content";
 import type { CategoryIconKey } from "@/domain/taxonomy";
+import type { MemberRole } from "@/lib/auth-types";
 
 /**
  * In-memory tables for mock mode, shaped like the database schema so that the
@@ -17,6 +18,8 @@ export type MockStore = {
   }>;
   tags: Array<{ id: string; slug: string; name: string }>;
   profiles: Array<{ id: string; slug: string; displayName: string; bio: string }>;
+  /** Editorial team access, like `public.members`. */
+  members: Array<{ userId: string; role: MemberRole; status: "active" | "suspended" }>;
   articles: Array<{
     id: string;
     slug: string;

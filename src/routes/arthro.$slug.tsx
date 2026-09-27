@@ -1,8 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Bookmark, CheckCircle2, Clock, Link2, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useEffect, useState } from "react";
-import { categoryStyles } from "@/lib/articles";
-import { articleRepository } from "@/data/articles";
+import { categoryClass } from "@/lib/category-class";
+import { initialsOf } from "@/lib/auth-types";
+import { articleApi } from "@/data/articles";
 import { ArticleCard } from "@/components/article-card";
 import { ArticleContentRenderer } from "@/components/article-content-renderer";
 import { getArticleHeadings } from "@/lib/article-content";
@@ -12,12 +13,16 @@ import { brandedTitle, siteConfig } from "@/config/site";
 
 export const Route = createFileRoute("/arthro/$slug")({
   loader: async ({ params }) => {
-    const [article, articles] = await Promise.all([
-      articleRepository.findPublishedBySlug(params.slug),
-      articleRepository.listPublished(),
-    ]);
+    const article = await articleApi.findPublishedBySlug(params.slug);
     if (!article) throw notFound();
-    return { article, related: articles.filter((item) => item.slug !== article.slug).slice(0, 3) };
+    const articles = await articleApi.listPublished();
+    // Related: same category first, then the most recent others.
+    const others = articles.filter((item) => item.slug !== article.slug);
+    const related = [
+      ...others.filter((item) => item.category.slug === article.category.slug),
+      ...others.filter((item) => item.category.slug !== article.category.slug),
+    ].slice(0, 3);
+    return { article, related };
   },
   head: ({ loaderData }) => ({
     meta: [
@@ -60,9 +65,13 @@ function ArticlePage() {
       <article className="article-page">
         <header className="article-head section-shell">
           <div className="article-meta">
-            <span className={`category-pill ${categoryStyles[article.category] ?? ""}`}>
-              {article.category}
-            </span>
+            <Link
+              to="/katigoria/$slug"
+              params={{ slug: article.category.slug }}
+              className={`category-pill ${categoryClass(article.category)}`}
+            >
+              {article.category.name}
+            </Link>
             <span>{article.date}</span>
             <span>
               <Clock /> {article.minutes} λεπτά ανάγνωσης
@@ -71,10 +80,18 @@ function ArticlePage() {
           <h1>{article.title}</h1>
           <p className="article-deck">{article.excerpt}</p>
           <div className="author-row">
-            <div className="author-avatar">{article.author.slice(0, 1)}</div>
+            <div className="author-avatar" aria-hidden="true">
+              {initialsOf(article.author.name)}
+            </div>
             <div>
-              <strong>{article.author}</strong>
-              <small>Συντάκτρια περιεχομένου</small>
+              {article.author.slug ? (
+                <Link to="/syntaktis/$slug" params={{ slug: article.author.slug }}>
+                  <strong>{article.author.name}</strong>
+                </Link>
+              ) : (
+                <strong>{article.author.name}</strong>
+              )}
+              <small>Συντάκτης</small>
             </div>
             <div className="article-actions">
               <Button
@@ -127,11 +144,15 @@ function ArticlePage() {
                 <li>Demo αναφορά — ανασκόπηση μυκορριζικών δικτύων.</li>
               </ol>
             </section>
-            <div className="tags">
-              <span>δάσος</span>
-              <span>μύκητες</span>
-              <span>οικοσύστημα</span>
-            </div>
+            {article.tags.length > 0 && (
+              <div className="tags" aria-label="Ετικέτες">
+                {article.tags.map((tag) => (
+                  <Link key={tag.slug} to="/etiketa/$slug" params={{ slug: tag.slug }}>
+                    {tag.name}
+                  </Link>
+                ))}
+              </div>
+            )}
             <section className="reaction">
               <h2>Το γνώριζες;</h2>
               <p>Η απάντησή σου παραμένει μόνο σε αυτή τη συσκευή.</p>
@@ -156,7 +177,7 @@ function ArticlePage() {
       <section className="section-shell section-block">
         <header className="section-heading">
           <h2>Συνέχισε την ανακάλυψη</h2>
-          <Link to="/anakalyψε">Όλα τα άρθρα</Link>
+          <Link to="/anakalypse">Όλα τα άρθρα</Link>
         </header>
         <div className="article-grid related">
           {related.map((a) => (

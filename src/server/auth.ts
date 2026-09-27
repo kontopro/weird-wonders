@@ -1,15 +1,20 @@
 import { z } from "zod";
 import { getDataSource, isDemoAdminEnabled } from "@/lib/data-source";
 import { memberRoles, type AuthState, type MemberRole, type SessionUser } from "@/lib/auth-types";
+import { DEMO_USER_ID } from "@/data/mock/demo-seed";
+import { getRepositories } from "@/server/repositories";
 import { createSupabaseServerClient } from "@/server/supabase";
 
-const demoUser: SessionUser = {
-  id: "00000000-0000-4000-8000-000000000000",
-  email: null,
-  displayName: "Demo διαχειριστής",
-  role: "owner",
-  isDemo: true,
-};
+async function demoUser(): Promise<SessionUser> {
+  const profile = await getRepositories().authors.getProfile(DEMO_USER_ID);
+  return {
+    id: DEMO_USER_ID,
+    email: null,
+    displayName: profile?.displayName ?? "Demo διαχειριστής",
+    role: "owner",
+    isDemo: true,
+  };
+}
 
 const memberRowSchema = z.object({
   role: z.enum(memberRoles),
@@ -27,7 +32,9 @@ export class AuthorizationError extends Error {
 /** Resolves the visitor of the current request. Server-only. */
 export async function resolveAuthState(): Promise<AuthState> {
   if (getDataSource() === "mock") {
-    return isDemoAdminEnabled() ? { status: "member", user: demoUser } : { status: "anonymous" };
+    return isDemoAdminEnabled()
+      ? { status: "member", user: await demoUser() }
+      : { status: "anonymous" };
   }
 
   const supabase = createSupabaseServerClient();

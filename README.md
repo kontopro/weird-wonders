@@ -23,6 +23,23 @@ Nothing in the repository applies migrations automatically. No local database se
 
 Article reads and writes use a shared repository contract. The default `VITE_DATA_SOURCE=mock` keeps the application entirely on demo data. The Supabase adapter is activated only when `VITE_DATA_SOURCE=supabase` is set together with a hosted project URL and publishable key.
 
+## Architecture
+
+The app never talks to a database directly. Every read and write goes through repository interfaces, so the same pages run on demo data today and on Supabase later without changes.
+
+| Layer                                                  | Folder                       | Knows about the database? |
+| ------------------------------------------------------ | ---------------------------- | ------------------------- |
+| Domain types, validation, role rules                   | `src/domain`, `src/lib`      | No                        |
+| Repository contracts                                   | `src/data/*/…-repository.ts` | No                        |
+| Mock adapter (in-memory tables shaped like the schema) | `src/data/mock`              | No                        |
+| Supabase adapter                                       | `src/data/supabase`          | Yes — the only place      |
+| Adapter selection (one function)                       | `src/server/repositories.ts` | Picks one                 |
+| Server functions called by pages                       | `src/functions`              | No                        |
+
+Mock mode mirrors the database rules (unique slugs, one fact of the day, author vs editor permissions, `on delete set null` for categories), and the tests in `src/data/mock` pin that behaviour so the Supabase adapter can be checked against the same expectations.
+
+Public URLs: `/arthro/<slug>`, `/katigoria/<slug>`, `/etiketa/<slug>`, `/syntaktis/<slug>`. Slugs are Latin; Greek titles and names are transliterated (`src/lib/slug.ts`).
+
 ## Authentication
 
 All data access runs on the server through TanStack Start server functions (`src/functions`). Each request gets its own Supabase client (`src/server/supabase.ts`) that reads and refreshes the session from HTTP-only cookies, so RLS always sees the correct user. `/admin` redirects to `/login` unless the visitor is an active member; server functions check membership again, and RLS remains the final security boundary.

@@ -73,4 +73,14 @@ describe("Supabase migration baseline", () => {
     const config = await Bun.file(new URL("../../supabase/config.toml", import.meta.url)).text();
     expect(config).not.toMatch(/^enable_signup = true$/m);
   });
+
+  test("adds unique, normalized author slugs and an atomic, RLS-respecting tag setter", async () => {
+    const sql = await migrationFile("20260927130000_profile_slugs_and_article_tags.sql");
+    expect(sql).toContain("add constraint profiles_slug_key unique (slug)");
+    expect(sql).toMatch(/set_article_tags[\s\S]*security invoker/);
+    expect(sql).toContain("private.can_edit_article(p_article_id)");
+    expect(sql).toContain(
+      "revoke all on function public.set_article_tags(uuid, jsonb) from public, anon;",
+    );
+  });
 });

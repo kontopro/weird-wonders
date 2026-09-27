@@ -183,8 +183,8 @@ export function ArticlesTable({
                   </div>
                 </div>
               </td>
-              <td>{article.category}</td>
-              {!compact && <td>{article.author}</td>}
+              <td>{article.category.name}</td>
+              {!compact && <td>{article.author.name}</td>}
               <td>
                 <ArticleStatusBadge status={article.status} />
               </td>
@@ -207,7 +207,7 @@ export function ArticlesTable({
             </div>
             <strong>{article.title}</strong>
             <div className="admin-article-card-meta">
-              <span>{article.category}</span>
+              <span>{article.category.name}</span>
               <span>{article.date}</span>
               <span>{formatViews(article.views)} προβολές</span>
             </div>

@@ -1,47 +1,236 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { GripVertical, Plus } from "lucide-react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/admin/admin-ui";
+import { categoryClass } from "@/lib/category-class";
 import { Button } from "@/components/ui/button";
-import { categories, categoryStyles } from "@/lib/articles";
-import { brandedTitle, siteConfig } from "@/config/site";
+import { brandedTitle } from "@/config/site";
+import { taxonomyApi } from "@/data/taxonomy";
+import { canManageTaxonomy } from "@/domain/permissions";
+import {
+  categoryIconKeys,
+  categoryIconLabels,
+  toCategoryIconKey,
+  type Category,
+  type CategoryInput,
+} from "@/domain/taxonomy";
+import { errorMessage } from "@/lib/error-message";
+import { slugify } from "@/lib/slug";
+
 export const Route = createFileRoute("/admin/categories")({
+  loader: () => taxonomyApi.listCategories(),
   component: CategoriesAdmin,
-  head: () => ({
-    meta: [
-      { title: brandedTitle("Κατηγορίες") },
-      { name: "description", content: `Οργάνωση κατηγοριών του ${siteConfig.name}.` },
-      { property: "og:title", content: brandedTitle("Κατηγορίες") },
-      { property: "og:description", content: `Οργάνωση κατηγοριών του ${siteConfig.name}.` },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () => ({ meta: [{ title: brandedTitle("Κατηγορίες") }] }),
 });
+
+const emptyDraft = (sortOrder: number): CategoryInput => ({
+  name: "",
+  slug: "",
+  description: "",
+  iconKey: null,
+  sortOrder,
+});
+
 function CategoriesAdmin() {
+  const categories = Route.useLoaderData();
+  const { user } = Route.useRouteContext();
+  const router = useRouter();
+  const canManage = canManageTaxonomy(user.role);
+  const nextSortOrder = (categories.at(-1)?.sortOrder ?? 0) + 10;
+
+  const [draft, setDraft] = useState<CategoryInput | null>(null);
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [target, setTarget] = useState<Category>();
+
+  const startCreate = () => {
+    setDraft(emptyDraft(nextSortOrder));
+    setSlugTouched(false);
+  };
+  const startEdit = (category: Category) => {
+    setDraft({
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      iconKey: category.iconKey,
+      sortOrder: category.sortOrder,
+    });
+    setSlugTouched(true);
+  };
+
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!draft) return;
+    setSaving(true);
+    try {
+      await taxonomyApi.saveCategory(draft);
+      toast.success(draft.id ? "Η κατηγορία ενημερώθηκε." : "Η κατηγορία δημιουργήθηκε.");
+      setDraft(null);
+      await router.invalidate();
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!target) return;
+    try {
+      await taxonomyApi.deleteCategory(target.id);
+      toast.success("Η κατηγορία διαγράφηκε.");
+      await router.invalidate();
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setTarget(undefined);
+    }
+  };
+
   return (
     <div className="admin-page">
       <header className="admin-page-header">
         <div>
           <p className="admin-overline">Ταξινόμηση</p>
           <h1>Κατηγορίες</h1>
-          <p>Η χρωματική γλώσσα του περιοδικού σε μία καθαρή λίστα.</p>
+          <p>{categories.length} κατηγορίες. Η σειρά καθορίζει πώς εμφανίζονται στο site.</p>
         </div>
-        <Button onClick={() => undefined}>
-          <Plus /> Νέα κατηγορία
-        </Button>
+        {canManage && !draft && (
+          <Button onClick={startCreate}>
+            <Plus /> Νέα κατηγορία
+          </Button>
+        )}
       </header>
-      <section className="admin-panel category-admin-list">
-        {categories.map((category, index) => (
-          <article key={category}>
-            <GripVertical />
-            <i className={categoryStyles[category]} />
-            <div>
-              <strong>{category}</strong>
-              <span>{8 + index * 3} άρθρα</span>
+
+      {draft && (
+        <section className="admin-panel category-form">
+          <form onSubmit={onSubmit}>
+            <h2>{draft.id ? "Επεξεργασία κατηγορίας" : "Νέα κατηγορία"}</h2>
+            <div className="admin-form-grid">
+              <label>
+                <span>Όνομα</span>
+                <input
+                  required
+                  maxLength={100}
+                  value={draft.name}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      name: e.target.value,
+                      ...(slugTouched ? {} : { slug: slugify(e.target.value) }),
+                    })
+                  }
+                />
+              </label>
+              <label>
+                <span>Slug (διεύθυνση)</span>
+                <input
+                  required
+                  maxLength={120}
+                  pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                  value={draft.slug}
+                  onChange={(e) => {
+                    setSlugTouched(true);
+                    setDraft({ ...draft, slug: e.target.value });
+                  }}
+                />
+              </label>
+              <label>
+                <span>Χρώμα & εικονίδιο</span>
+                <select
+                  value={draft.iconKey ?? ""}
+                  onChange={(e) =>
+                    setDraft({ ...draft, iconKey: toCategoryIconKey(e.target.value) })
+                  }
+                >
+                  <option value="">Χωρίς</option>
+                  {categoryIconKeys.map((key) => (
+                    <option key={key} value={key}>
+                      {categoryIconLabels[key]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Σειρά εμφάνισης</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={10}
+                  value={draft.sortOrder}
+                  onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value) || 0 })}
+                />
+              </label>
+              <label className="full">
+                <span>Περιγραφή</span>
+                <textarea
+                  maxLength={1000}
+                  value={draft.description}
+                  onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                />
+              </label>
             </div>
-            <Button variant="ghost">Επεξεργασία</Button>
+            <div className="form-actions">
+              <Button type="button" variant="outline" onClick={() => setDraft(null)}>
+                Ακύρωση
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Αποθήκευση…" : "Αποθήκευση"}
+              </Button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      <section className="admin-panel category-admin-list">
+        {categories.length === 0 && <p className="admin-empty-note">Δεν υπάρχουν κατηγορίες.</p>}
+        {categories.map((category) => (
+          <article key={category.id}>
+            <span aria-hidden="true" />
+            <i className={categoryClass(category)} />
+            <div>
+              <strong>{category.name}</strong>
+              <span>
+                /{category.slug} ·{" "}
+                {category.publishedCount === 1
+                  ? "1 δημοσιευμένο άρθρο"
+                  : `${category.publishedCount} δημοσιευμένα άρθρα`}
+              </span>
+            </div>
+            {canManage && (
+              <div className="row-actions">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => startEdit(category)}
+                  aria-label={`Επεξεργασία: ${category.name}`}
+                >
+                  <Pencil />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setTarget(category)}
+                  aria-label={`Διαγραφή: ${category.name}`}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
+            )}
           </article>
         ))}
       </section>
+
+      <ConfirmDialog
+        open={!!target}
+        onOpenChange={(open) => !open && setTarget(undefined)}
+        title={`Διαγραφή της κατηγορίας «${target?.name ?? ""}»;`}
+        description="Τα άρθρα της δεν διαγράφονται· θα εμφανίζονται «Χωρίς κατηγορία» μέχρι να τους δώσεις νέα."
+        confirmLabel="Διαγραφή"
+        onConfirm={onDelete}
+      />
     </div>
   );
 }

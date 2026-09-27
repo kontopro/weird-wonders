@@ -2,14 +2,20 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { categories } from "@/lib/articles";
-import { articleRepository } from "@/data/articles";
+import { articleApi } from "@/data/articles";
+import { taxonomyApi } from "@/data/taxonomy";
 import { ArticleCard } from "@/components/article-card";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { brandedTitle } from "@/config/site";
 
-export const Route = createFileRoute("/anakalyψε")({
-  loader: () => articleRepository.listPublished(),
+export const Route = createFileRoute("/anakalypse")({
+  loader: async () => {
+    const [articles, categories] = await Promise.all([
+      articleApi.listPublished(),
+      taxonomyApi.listCategories(),
+    ]);
+    return { articles, categories };
+  },
   validateSearch: z.object({ category: z.string().optional() }),
   head: () => ({
     meta: [
@@ -27,10 +33,11 @@ export const Route = createFileRoute("/anakalyψε")({
   component: Discover,
 });
 function Discover() {
-  const articles = Route.useLoaderData();
+  const { articles, categories } = Route.useLoaderData();
   const initial = Route.useSearch();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState(initial.category ?? "Όλες");
+  // Category filter holds a slug; "" means all categories.
+  const [category, setCategory] = useState(initial.category ?? "");
   const [duration, setDuration] = useState("Όλοι");
   const [sort, setSort] = useState("recent");
   const { bookmarks, toggle } = useBookmarks();
@@ -39,8 +46,11 @@ function Discover() {
       articles
         .filter(
           (a) =>
-            `${a.title} ${a.excerpt}`.toLowerCase().includes(query.toLowerCase()) &&
-            (category === "Όλες" || a.category === category) &&
+            [a.title, a.excerpt, ...a.tags.map((tag) => tag.name)]
+              .join(" ")
+              .toLocaleLowerCase("el")
+              .includes(query.toLocaleLowerCase("el")) &&
+            (category === "" || a.category.slug === category) &&
             (duration === "Όλοι" || (duration === "Σύντομα" ? a.minutes <= 5 : a.minutes > 5)),
         )
         .sort((a, b) =>
@@ -66,9 +76,11 @@ function Discover() {
         <label>
           <span>Κατηγορία</span>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option>Όλες</option>
+            <option value="">Όλες</option>
             {categories.map((c) => (
-              <option key={c}>{c}</option>
+              <option key={c.slug} value={c.slug}>
+                {c.name}
+              </option>
             ))}
           </select>
         </label>

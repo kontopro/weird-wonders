@@ -1,4 +1,3 @@
-import type { ArticleRepository } from "@/data/articles/article-repository";
 import {
   deleteArticle,
   duplicateArticle,
@@ -11,21 +10,23 @@ import {
 
 export type {
   ArticleDetail,
-  ArticleRepository,
   ArticleWriteInput,
   EditableArticle,
+  PublishedArticleFilter,
 } from "@/data/articles/article-repository";
 
 /**
  * Isomorphic entry point for pages and components. Every call runs on the
- * server (as a server function), where the repository is created per request.
+ * server (as a server function), where the acting user is resolved from the
+ * session — callers never pass identity or roles.
  */
-export const articleRepository: ArticleRepository = {
-  listPublished: () => listPublishedArticles(),
-  findPublishedBySlug: (slug) => getPublishedArticle({ data: slug }),
+export const articleApi = {
+  listPublished: (filter?: { categorySlug?: string; tagSlug?: string; authorSlug?: string }) =>
+    listPublishedArticles({ data: filter }),
+  findPublishedBySlug: (slug: string) => getPublishedArticle({ data: slug }),
   listAdmin: () => listAdminArticles(),
-  findAdminBySlug: (slug) => getAdminArticle({ data: slug }),
-  save: (input) => saveArticle({ data: input }),
-  duplicate: (id) => duplicateArticle({ data: id }),
-  delete: (id) => deleteArticle({ data: id }),
+  findAdminBySlug: (slug: string) => getAdminArticle({ data: slug }),
+  save: (input: Parameters<typeof saveArticle>[0]["data"]) => saveArticle({ data: input }),
+  duplicate: (id: string) => duplicateArticle({ data: id }),
+  delete: (id: string) => deleteArticle({ data: id }),
 };

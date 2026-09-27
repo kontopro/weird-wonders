@@ -1,31 +1,35 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { ArticleEditor } from "@/components/admin/article-editor";
-import { articleRepository } from "@/data/articles";
-import { brandedTitle, siteConfig } from "@/config/site";
+import { brandedTitle } from "@/config/site";
+import { articleApi } from "@/data/articles";
+import { taxonomyApi } from "@/data/taxonomy";
+
 export const Route = createFileRoute("/admin/articles/$slug/edit")({
   loader: async ({ params }) => {
-    const article = await articleRepository.findAdminBySlug(params.slug);
+    const [article, categories, tags] = await Promise.all([
+      articleApi.findAdminBySlug(params.slug),
+      taxonomyApi.listCategories(),
+      taxonomyApi.listTags(),
+    ]);
     if (!article) throw notFound();
-    return article;
+    return { article, categories, tags };
   },
   component: EditArticle,
   head: ({ loaderData }) => ({
-    meta: [
-      { title: brandedTitle(loaderData?.title ?? "Επεξεργασία") },
-      {
-        name: "description",
-        content: `Επεξεργασία άρθρου στο frontend prototype του ${siteConfig.name}.`,
-      },
-      { property: "og:title", content: brandedTitle("Επεξεργασία άρθρου") },
-      {
-        property: "og:description",
-        content: `Επεξεργασία άρθρου στο frontend prototype του ${siteConfig.name}.`,
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
+    meta: [{ title: brandedTitle(loaderData?.article.title ?? "Επεξεργασία") }],
   }),
 });
+
 function EditArticle() {
-  return <ArticleEditor article={Route.useLoaderData()} />;
+  const { article, categories, tags } = Route.useLoaderData();
+  const { user } = Route.useRouteContext();
+  return (
+    <ArticleEditor
+      key={article.id}
+      article={article}
+      categories={categories}
+      tagSuggestions={tags}
+      user={user}
+    />
+  );
 }

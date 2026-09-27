@@ -1,31 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  BookOpen,
-  Brain,
-  Check,
-  Clipboard,
-  Clock,
-  FlaskConical,
-  Globe2,
-  History,
-  Laptop,
-  Leaf,
-  Orbit,
-  Share2,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { ArrowRight, Check, Clipboard, Clock, Share2, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { categories, categoryStyles } from "@/lib/articles";
-import { articleRepository } from "@/data/articles";
+import { articleApi } from "@/data/articles";
+import { taxonomyApi } from "@/data/taxonomy";
 import { ArticleCard } from "@/components/article-card";
+import { CategoryIcon } from "@/components/category-icon";
+import { categoryClass } from "@/lib/category-class";
 import { Button } from "@/components/ui/button";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { siteConfig } from "@/config/site";
 
 export const Route = createFileRoute("/")({
-  loader: () => articleRepository.listPublished(),
+  loader: async () => {
+    const [articles, categories] = await Promise.all([
+      articleApi.listPublished(),
+      taxonomyApi.listCategories(),
+    ]);
+    return { articles, categories };
+  },
   head: () => ({
     meta: [
       { title: siteConfig.seo.title },
@@ -40,15 +32,26 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const articles = Route.useLoaderData();
+  const { articles, categories } = Route.useLoaderData();
   const { bookmarks, toggle } = useBookmarks();
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const featured = articles[0];
-  if (!featured) return null;
-  const categoryIcons = [FlaskConical, History, Laptop, Leaf, Orbit, Globe2, Users, Brain];
+  // A freshly created blog has no articles yet: show a friendly empty state
+  // instead of a blank page.
+  if (!featured) {
+    return (
+      <div className="section-shell page-top">
+        <div className="empty-state">
+          <span>✦</span>
+          <h2>Τα πρώτα {siteConfig.contentLabels.plural} έρχονται σύντομα.</h2>
+          <p>Δεν έχει δημοσιευτεί ακόμα κανένα άρθρο.</p>
+        </div>
+      </div>
+    );
+  }
   const fact =
     "Οι μέλισσες μπορούν να αναγνωρίσουν ανθρώπινα πρόσωπα συνδυάζοντας τα χαρακτηριστικά τους σαν παζλ.";
   const subscribe = (event: React.FormEvent) => {
@@ -63,15 +66,11 @@ function Index() {
     <div>
       <section className="hero section-shell">
         <div className="hero-lead">
-          <img
-            src={featured.image}
-            alt="Πυκνές κορυφές δέντρων που συναντιούνται"
-            width={1600}
-            height={1008}
-            className="hero-image"
-          />
+          <img src={featured.image} alt="" width={1600} height={1008} className="hero-image" />
           <div className="hero-overlay">
-            <span className="category-pill nature">Φύση</span>
+            <span className={`category-pill ${categoryClass(featured.category)}`}>
+              {featured.category.name}
+            </span>
             <h1>{featured.title}</h1>
             <p>{featured.excerpt}</p>
             <div className="hero-meta">
@@ -99,7 +98,7 @@ function Index() {
               <img src={article.image} alt="" width={1200} height={900} />
               <div>
                 <span>
-                  0{index + 1} · {article.category}
+                  0{index + 1} · {article.category.name}
                 </span>
                 <h2>{article.title}</h2>
                 <p>{article.minutes} λεπτά ανάγνωσης</p>
@@ -159,21 +158,18 @@ function Index() {
           </Link>
         </header>
         <div className="category-grid">
-          {categories.map((category, index) => {
-            const Icon = categoryIcons[index] ?? BookOpen;
-            return (
-              <Link
-                key={category}
-                to="/anakalyψε"
-                search={{ category }}
-                className={`category-tile ${categoryStyles[category]}`}
-              >
-                <Icon />
-                <span>{category}</span>
-                <small>Ανακάλυψε</small>
-              </Link>
-            );
-          })}
+          {categories.map((category) => (
+            <Link
+              key={category.slug}
+              to="/katigoria/$slug"
+              params={{ slug: category.slug }}
+              className={`category-tile ${categoryClass(category)}`}
+            >
+              <CategoryIcon iconKey={category.iconKey} />
+              <span>{category.name}</span>
+              <small>Ανακάλυψε</small>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -183,7 +179,7 @@ function Index() {
             <p className="eyebrow">Νέα γνώση, χωρίς θόρυβο</p>
             <h2>Νέα {siteConfig.contentLabels.plural}</h2>
           </div>
-          <Link to="/anakalyψε">
+          <Link to="/anakalypse">
             Δες τα όλα <ArrowRight />
           </Link>
         </header>
@@ -212,7 +208,7 @@ function Index() {
                 <Link to="/arthro/$slug" params={{ slug: article.slug }}>
                   {article.title}
                 </Link>
-                <small>{article.category}</small>
+                <small>{article.category.name}</small>
               </li>
             ))}
           </ol>

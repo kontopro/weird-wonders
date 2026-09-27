@@ -12,7 +12,7 @@ This checklist is intentionally hosted-only. It does not start, reset or depend 
 
 ## Baseline verification
 
-- Confirm migrations `20260921132001` through `20260927120000` are recorded as applied.
+- Confirm migrations `20260921132001` through `20260927130000` are recorded as applied.
 - Confirm RLS is enabled on `profiles`, `members`, `media_assets`, `site_settings`, `categories`, `tags`, `articles` and `article_tags`.
 - Confirm `site_settings` contains exactly one row.
 - Confirm the eight configured categories exist with their expected normalized slugs.
@@ -65,3 +65,11 @@ Do not set `VITE_DATA_SOURCE=supabase` in a public deployment until all of the f
 - media upload, metadata and publication workflow;
 - hosted RLS and Storage checks above;
 - confirmation that no service credential appears in the browser bundle.
+
+## Taxonomy and author checks
+
+- Every profile has a unique slug; new sign-ups get an `author-…` slug they can change in the admin profile page.
+- As an editor, save an article with a new tag and confirm the tag and link are created by `set_article_tags`.
+- As an author, confirm attaching an existing tag works and creating a new tag is refused with a clear message.
+- Confirm `/katigoria/<slug>`, `/etiketa/<slug>` and `/syntaktis/<slug>` show only published articles to anonymous visitors.
+- Delete a category that has articles and confirm the articles remain, shown as «Χωρίς κατηγορία».

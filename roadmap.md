@@ -30,6 +30,8 @@
 - [x] Ενιαίο article repository με ενεργό mock και ανενεργό Supabase adapter
 - [x] Authentication: cookie sessions ανά request, server functions, admin guard, login/logout
 - [x] Ασφαλές bootstrap πρώτου owner (χωρίς self-service claim) και invite-only sign-ups
+- [x] Κατηγορίες (CRUD), ετικέτες και σελίδες συντακτών μέσω repositories, ανεξάρτητα από βάση
+- [x] Σελίδες /katigoria, /etiketa, /syntaktis και ελληνικά → λατινικά slugs
 - [ ] RLS και role/storage integration tests σε hosted project
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports
 - [ ] Ενεργοποίηση πραγματικού Supabase CRUD μετά τη δημιουργία hosted project

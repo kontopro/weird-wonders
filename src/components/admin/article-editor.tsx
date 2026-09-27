@@ -15,24 +15,19 @@ import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/admin/admin-ui";
 import { BlockEditor } from "@/components/admin/block-editor";
-import { categories } from "@/lib/articles";
 import { articleStatuses, type ArticleStatus } from "@/lib/admin-data";
+import { authorEditableStatuses, isEditorRole } from "@/domain/permissions";
+import type { CategoryRef, TagRef } from "@/domain/taxonomy";
+import type { SessionUser } from "@/lib/auth-types";
+import { errorMessage } from "@/lib/error-message";
+import { slugify } from "@/lib/slug";
 import { siteConfig } from "@/config/site";
 import {
   createEmptyArticleContent,
   safeParseArticleContent,
   type ArticleContentDocument,
 } from "@/lib/article-content";
-import { articleRepository, type EditableArticle } from "@/data/articles";
-
-const slugify = (value: string) =>
-  value
-    .toLocaleLowerCase("el")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ς/g, "σ")
-    .replace(/[^a-zα-ω0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+import { articleApi, type EditableArticle } from "@/data/articles";
 
 export function ImageUploadPlaceholder({
   image,
@@ -170,7 +165,9 @@ export function PublishPanel({
   onDraft,
   onPreview,
   onPublish,
+  canPublish,
 }: {
+  canPublish: boolean;
   status: ArticleStatus;
   date: string;
   onStatus: (v: ArticleStatus) => void;
@@ -188,7 +185,7 @@ export function PublishPanel({
         <label>
           <span>Κατάσταση</span>
           <select value={status} onChange={(e) => onStatus(e.target.value as ArticleStatus)}>
-            {articleStatuses.map((articleStatus) => (
+            {(canPublish ? articleStatuses : authorEditableStatuses).map((articleStatus) => (
               <option key={articleStatus}>{articleStatus}</option>
             ))}
           </select>
@@ -207,7 +204,7 @@ export function PublishPanel({
             <Eye /> Προεπισκόπηση
           </Button>
           <Button type="button" onClick={onPublish}>
-            Δημοσίευση
+            {canPublish ? "Δημοσίευση" : "Υποβολή για έλεγχο"}
           </Button>
         </div>
       </div>
@@ -215,8 +212,21 @@ export function PublishPanel({
   );
 }
 
-export function ArticleEditor({ article }: { article?: EditableArticle }) {
+export function ArticleEditor({
+  article,
+  categories,
+  tagSuggestions,
+  user,
+}: {
+  article?: EditableArticle;
+  categories: CategoryRef[];
+  tagSuggestions: TagRef[];
+  user: SessionUser;
+}) {
+  const canPublish = isEditorRole(user.role);
   const [savedId, setSavedId] = useState(article?.id);
+  // The URL is fixed once an article has been saved; until then it follows the title.
+  const [savedSlug, setSavedSlug] = useState(article?.slug);
   const [title, setTitle] = useState(article?.title ?? "");
   const [description, setDescription] = useState(article?.excerpt ?? "");
   const [contentDocument, setContentDocument] = useState<ArticleContentDocument>(
@@ -226,18 +236,20 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
   const [alt, setAlt] = useState(article?.imageAlt ?? "");
   const [status, setStatus] = useState<ArticleStatus>(article?.status ?? "Πρόχειρο");
   const [date, setDate] = useState(article?.dateValue ?? new Date().toISOString().slice(0, 10));
-  const [category, setCategory] = useState(article?.category ?? "Επιστήμη");
-  const [tags, setTags] = useState(article?.tags.join(", ") ?? "");
+  const [category, setCategory] = useState(article?.category.slug ?? categories[0]?.slug ?? "");
+  const [tags, setTags] = useState(article?.tags.map((tag) => tag.name).join(", ") ?? "");
   const [featured, setFeatured] = useState(article?.isFeatured ?? false);
   const [popular, setPopular] = useState(article?.isTrending ?? false);
   const [daily, setDaily] = useState(article?.isFactOfDay ?? false);
-  const [seoTitle, setSeoTitle] = useState(article?.seoTitle ?? article?.title ?? "");
+  const [seoTitle, setSeoTitle] = useState(
+    (article?.seoTitle || article?.title || "").slice(0, 60),
+  );
   const [seoDescription, setSeoDescription] = useState(
-    article?.seoDescription ?? article?.excerpt ?? "",
+    (article?.seoDescription || article?.excerpt || "").slice(0, 160),
   );
   const [publishOpen, setPublishOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const slug = useMemo(() => slugify(title) || "titlos-arthrou", [title]);
+  const slug = useMemo(() => savedSlug ?? (slugify(title) || "neo-arthro"), [savedSlug, title]);
   const contentIsValid = () => {
     const result = safeParseArticleContent(contentDocument);
     if (result.success) return true;
@@ -250,14 +262,17 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
       return false;
     }
     if (!contentIsValid()) return false;
+    if (!category) {
+      toast.error("Δημιούργησε πρώτα μια κατηγορία.");
+      return false;
+    }
     try {
-      const saved = await articleRepository.save({
+      const saved = await articleApi.save({
         ...(savedId ? { id: savedId } : {}),
-        ...(article?.authorId ? { authorId: article.authorId } : {}),
         slug,
         title,
         excerpt: description,
-        category,
+        categorySlug: category,
         status: nextStatus,
         dateValue: date,
         ...(image ? { image } : {}),
@@ -267,25 +282,24 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
           .map((tag) => tag.trim())
           .filter(Boolean),
         content: contentDocument,
-        seoTitle,
-        seoDescription,
-        isFeatured: featured,
-        isTrending: popular,
-        isFactOfDay: daily,
+        seoTitle: seoTitle.slice(0, 60),
+        seoDescription: seoDescription.slice(0, 160),
+        isFeatured: canPublish && featured,
+        isTrending: canPublish && popular,
+        isFactOfDay: canPublish && daily,
       });
       setSavedId(saved.id);
+      setSavedSlug(saved.slug);
       setStatus(nextStatus);
       setDirty(false);
       return true;
     } catch (error) {
-      console.error(error);
-      toast.error("Η αποθήκευση απέτυχε. Δοκίμασε ξανά.");
+      toast.error(errorMessage(error, "Η αποθήκευση απέτυχε. Δοκίμασε ξανά."));
       return false;
     }
   };
   const save = async () => {
-    if (await persist("Πρόχειρο"))
-      toast.success("Το άρθρο αποθηκεύτηκε μέσω του article repository.");
+    if (await persist("Πρόχειρο")) toast.success("Το άρθρο αποθηκεύτηκε ως πρόχειρο.");
   };
   return (
     <TooltipProvider>
@@ -311,7 +325,7 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
                   value={title}
                   onChange={(e) => {
                     setTitle(e.target.value);
-                    setSeoTitle(e.target.value);
+                    setSeoTitle(e.target.value.slice(0, 60));
                     setDirty(true);
                   }}
                   placeholder="Γράψε έναν τίτλο που γεννά περιέργεια…"
@@ -328,7 +342,7 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
                   value={description}
                   onChange={(e) => {
                     setDescription(e.target.value);
-                    setSeoDescription(e.target.value);
+                    setSeoDescription(e.target.value.slice(0, 160));
                     setDirty(true);
                   }}
                   placeholder="Μια σύντομη εισαγωγή για τον αναγνώστη…"
@@ -344,6 +358,7 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
           </div>
           <aside className="editor-aside">
             <PublishPanel
+              canPublish={canPublish}
               status={status}
               date={date}
               onStatus={(value) => {
@@ -394,18 +409,21 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
                   <select
                     value={category}
                     onChange={(e) => {
-                      setCategory(e.target.value as typeof category);
+                      setCategory(e.target.value);
                       setDirty(true);
                     }}
                   >
                     {categories.map((c) => (
-                      <option key={c}>{c}</option>
+                      <option key={c.slug} value={c.slug}>
+                        {c.name}
+                      </option>
                     ))}
                   </select>
                 </label>
                 <label>
-                  <span>Tags</span>
+                  <span>Ετικέτες</span>
                   <input
+                    list="tag-suggestions"
                     value={tags}
                     onChange={(e) => {
                       setTags(e.target.value);
@@ -413,44 +431,52 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
                     }}
                     placeholder="π.χ. φύση, δάσος"
                   />
+                  <datalist id="tag-suggestions">
+                    {tagSuggestions.map((tag) => (
+                      <option key={tag.slug} value={tag.name} />
+                    ))}
+                  </datalist>
+                  {!canPublish && <small>Νέες ετικέτες δημιουργούν μόνο οι επιμελητές.</small>}
                 </label>
                 <label>
                   <span>Συντάκτης</span>
-                  <input value={article?.author ?? "Τρέχων χρήστης"} readOnly />
+                  <input value={article?.author.name ?? user.displayName} readOnly />
                 </label>
-                <div className="switch-list">
-                  <label>
-                    <span>Featured άρθρο</span>
-                    <Switch
-                      checked={featured}
-                      onCheckedChange={(value) => {
-                        setFeatured(value);
-                        setDirty(true);
-                      }}
-                    />
-                  </label>
-                  <label>
-                    <span>Δημοφιλές</span>
-                    <Switch
-                      checked={popular}
-                      onCheckedChange={(value) => {
-                        setPopular(value);
-                        setDirty(true);
-                      }}
-                    />
-                  </label>
-                  <label>
-                    <span>{siteConfig.contentLabels.singular} της ημέρας</span>
-                    <Switch
-                      checked={daily}
-                      disabled={status !== "Δημοσιευμένο"}
-                      onCheckedChange={(value) => {
-                        setDaily(value);
-                        setDirty(true);
-                      }}
-                    />
-                  </label>
-                </div>
+                {canPublish && (
+                  <div className="switch-list">
+                    <label>
+                      <span>Featured άρθρο</span>
+                      <Switch
+                        checked={featured}
+                        onCheckedChange={(value) => {
+                          setFeatured(value);
+                          setDirty(true);
+                        }}
+                      />
+                    </label>
+                    <label>
+                      <span>Δημοφιλές</span>
+                      <Switch
+                        checked={popular}
+                        onCheckedChange={(value) => {
+                          setPopular(value);
+                          setDirty(true);
+                        }}
+                      />
+                    </label>
+                    <label>
+                      <span>{siteConfig.contentLabels.singular} της ημέρας</span>
+                      <Switch
+                        checked={daily}
+                        disabled={status !== "Δημοσιευμένο"}
+                        onCheckedChange={(value) => {
+                          setDaily(value);
+                          setDirty(true);
+                        }}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
             </section>
             <SeoPanel
@@ -470,13 +496,20 @@ export function ArticleEditor({ article }: { article?: EditableArticle }) {
         <ConfirmDialog
           open={publishOpen}
           onOpenChange={setPublishOpen}
-          title="Έτοιμο για δημοσίευση;"
-          description="Το block content είναι έγκυρο και θα αποθηκευτεί μέσω του ενεργού article repository."
-          confirmLabel="Δημοσίευση"
+          title={canPublish ? "Έτοιμο για δημοσίευση;" : "Υποβολή για έλεγχο;"}
+          description={
+            canPublish
+              ? "Το άρθρο θα γίνει ορατό στους αναγνώστες."
+              : "Ένας επιμελητής θα ελέγξει και θα δημοσιεύσει το άρθρο."
+          }
+          confirmLabel={canPublish ? "Δημοσίευση" : "Υποβολή"}
           onConfirm={async () => {
-            if (await persist("Δημοσιευμένο")) {
+            const nextStatus = canPublish ? "Δημοσιευμένο" : "Σε έλεγχο";
+            if (await persist(nextStatus)) {
               setPublishOpen(false);
-              toast.success("Το άρθρο δημοσιεύτηκε στο prototype.");
+              toast.success(
+                canPublish ? "Το άρθρο δημοσιεύτηκε." : "Το άρθρο στάλθηκε για έλεγχο.",
+              );
             }
           }}
         />

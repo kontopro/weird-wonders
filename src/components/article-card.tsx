@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Bookmark, Clock } from "lucide-react";
 import type { Article } from "@/lib/articles";
-import { categoryStyles } from "@/lib/articles";
+import { categoryClass } from "@/lib/category-class";
 import { Button } from "@/components/ui/button";
 
 export function ArticleCard({
@@ -27,9 +27,13 @@ export function ArticleCard({
       </Link>
       <div className="story-body">
         <div className="meta-row">
-          <span className={`category-pill ${categoryStyles[article.category] ?? ""}`}>
-            {article.category}
-          </span>
+          <Link
+            to="/katigoria/$slug"
+            params={{ slug: article.category.slug }}
+            className={`category-pill ${categoryClass(article.category)}`}
+          >
+            {article.category.name}
+          </Link>
           {onBookmark && (
             <Button
               variant="ghost"

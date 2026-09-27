@@ -5,7 +5,7 @@ const validInput: ArticleWriteInput = {
   slug: "neo-arthro",
   title: "Νέο άρθρο",
   excerpt: "Περίληψη",
-  category: "Επιστήμη",
+  categorySlug: "epistimi",
   status: "Πρόχειρο",
   dateValue: "2026-09-27",
   content: { version: 1, blocks: [] },

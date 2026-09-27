@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { articleRepository } from "@/data/articles";
-import { categories, categoryStyles } from "@/lib/articles";
+import { categoryClass } from "@/lib/category-class";
+import { taxonomyApi } from "@/data/taxonomy";
 import { brandedTitle, siteConfig } from "@/config/site";
 
 export const Route = createFileRoute("/katigories")({
-  loader: () => articleRepository.listPublished(),
+  loader: () => taxonomyApi.listCategories(),
   head: () => ({
     meta: [
       { title: brandedTitle("Κατηγορίες") },
@@ -19,17 +19,22 @@ export const Route = createFileRoute("/katigories")({
 });
 
 function CategoriesPage() {
-  const articles = Route.useLoaderData();
+  const categories = Route.useLoaderData();
   return (
     <div className="section-shell page-top">
-      <p className="eyebrow">Οκτώ δρόμοι προς το απρόσμενο</p>
+      <p className="eyebrow">Διάλεξε τη δική σου περιοχή περιέργειας</p>
       <h1 className="page-title">Κατηγορίες</h1>
       <div className="category-list">
         {categories.map((c) => (
-          <Link key={c} to="/anakalyψε" search={{ category: c }} className={categoryStyles[c]}>
-            <span>{String(articles.filter((a) => a.category === c).length).padStart(2, "0")}</span>
-            <h2>{c}</h2>
-            <p>Ιστορίες που αλλάζουν τον τρόπο που κοιτάς τον κόσμο.</p>
+          <Link
+            key={c.slug}
+            to="/katigoria/$slug"
+            params={{ slug: c.slug }}
+            className={categoryClass(c)}
+          >
+            <span>{String(c.publishedCount).padStart(2, "0")}</span>
+            <h2>{c.name}</h2>
+            {c.description && <p>{c.description}</p>}
           </Link>
         ))}
       </div>

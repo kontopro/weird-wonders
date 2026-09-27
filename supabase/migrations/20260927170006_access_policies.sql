@@ -1,46 +1,46 @@
-create or replace function private.is_active_member_id(target_user_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select exists (
-    select 1
-    from public.members
-    where user_id = target_user_id
-      and status = 'active'
-  );
-$$;
-
-revoke all on function private.is_active_member_id(uuid) from public;
-grant execute on function private.is_active_member_id(uuid) to authenticated;
+-- Baseline 6/7 — API grants and row-level security policies.
+--
+-- Roles: anonymous visitors read what is public; members work according to
+-- their role (owner > admin > editor > author). Every rule here has a mirror
+-- in `src/domain/permissions.ts` so mock mode behaves the same.
 
 revoke all on table public.profiles from anon, authenticated;
 revoke all on table public.members from anon, authenticated;
 revoke all on table public.media_assets from anon, authenticated;
-revoke all on table public.site_settings from anon, authenticated;
 revoke all on table public.categories from anon, authenticated;
 revoke all on table public.tags from anon, authenticated;
 revoke all on table public.articles from anon, authenticated;
 revoke all on table public.article_tags from anon, authenticated;
 
 grant select on table public.profiles to anon, authenticated;
-grant update on table public.profiles to authenticated;
+-- Column-level: people edit their public details, never ids or timestamps.
+grant update (slug, display_name, avatar_path, bio) on table public.profiles to authenticated;
 
 grant select, insert, update, delete on table public.members to authenticated;
 
 grant select on table public.media_assets to anon, authenticated;
 grant insert, update, delete on table public.media_assets to authenticated;
 
-grant select on table public.site_settings to anon, authenticated;
-grant insert, update on table public.site_settings to authenticated;
-
 grant select on table public.categories, public.tags to anon, authenticated;
 grant insert, update, delete on table public.categories, public.tags to authenticated;
 
 grant select on table public.articles, public.article_tags to anon, authenticated;
-grant insert, update, delete on table public.articles, public.article_tags to authenticated;
+-- Column-level: `published_at`, `updated_at` and `public_at` are maintained by
+-- the database, never written by the API.
+grant insert (
+  author_id, category_id, title, slug, excerpt, content_version, content_blocks,
+  cover_image_id, cover_image_alt, status, is_featured, is_trending, is_highlighted,
+  scheduled_at, seo_title, seo_description, social_image_id, reading_time_minutes
+) on table public.articles to authenticated;
+grant update (
+  author_id, category_id, title, slug, excerpt, content_version, content_blocks,
+  cover_image_id, cover_image_alt, status, is_featured, is_trending, is_highlighted,
+  scheduled_at, seo_title, seo_description, social_image_id, reading_time_minutes
+) on table public.articles to authenticated;
+grant delete on table public.articles to authenticated;
+grant insert, delete on table public.article_tags to authenticated;
+
+-- Profiles ---------------------------------------------------------------
 
 create policy profiles_public_authors_read
 on public.profiles
@@ -51,7 +51,10 @@ using (
     select 1
     from public.articles
     where articles.author_id = profiles.id
-      and articles.status = 'published'
+      and (
+        articles.status = 'published'
+        or (articles.status = 'scheduled' and articles.scheduled_at <= now())
+      )
   )
 );
 
@@ -73,6 +76,8 @@ for update
 to authenticated
 using (id = (select auth.uid()))
 with check (id = (select auth.uid()));
+
+-- Members ----------------------------------------------------------------
 
 create policy members_read
 on public.members
@@ -101,6 +106,8 @@ on public.members
 for delete
 to authenticated
 using ((select private.can_manage_member(role)));
+
+-- Media ------------------------------------------------------------------
 
 create policy media_assets_public_read
 on public.media_assets
@@ -159,24 +166,7 @@ using (
   or (select private.has_role(array['owner', 'admin', 'editor']))
 );
 
-create policy site_settings_public_read
-on public.site_settings
-for select
-to anon, authenticated
-using (true);
-
-create policy site_settings_insert
-on public.site_settings
-for insert
-to authenticated
-with check ((select private.has_role(array['owner', 'admin'])));
-
-create policy site_settings_update
-on public.site_settings
-for update
-to authenticated
-using ((select private.has_role(array['owner', 'admin'])))
-with check ((select private.has_role(array['owner', 'admin'])));
+-- Taxonomy ---------------------------------------------------------------
 
 create policy categories_public_read
 on public.categories
@@ -228,11 +218,16 @@ for delete
 to authenticated
 using ((select private.has_role(array['owner', 'admin', 'editor'])));
 
+-- Articles ---------------------------------------------------------------
+
 create policy articles_public_read
 on public.articles
 for select
 to anon, authenticated
-using (status = 'published');
+using (
+  status = 'published'
+  or (status = 'scheduled' and scheduled_at <= now())
+);
 
 create policy articles_members_read
 on public.articles
@@ -252,9 +247,8 @@ with check (
     and status = 'draft'
     and not is_featured
     and not is_trending
-    and not is_fact_of_day
+    and not is_highlighted
     and scheduled_at is null
-    and published_at is null
   )
 );
 
@@ -278,9 +272,8 @@ with check (
     and status in ('draft', 'in_review')
     and not is_featured
     and not is_trending
-    and not is_fact_of_day
+    and not is_highlighted
     and scheduled_at is null
-    and published_at is null
   )
 );
 
@@ -299,7 +292,10 @@ using (
     select 1
     from public.articles
     where articles.id = article_tags.article_id
-      and articles.status = 'published'
+      and (
+        articles.status = 'published'
+        or (articles.status = 'scheduled' and articles.scheduled_at <= now())
+      )
   )
 );
 

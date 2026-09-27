@@ -1,3 +1,6 @@
+-- Baseline 4/7 — categories (one per article) and tags (many per article).
+-- The categories of a specific blog are data: see `supabase/seed.sql`.
+
 create table public.categories (
   id uuid primary key default gen_random_uuid(),
   name text not null check (char_length(name) between 1 and 100),

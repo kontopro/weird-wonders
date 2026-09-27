@@ -38,7 +38,10 @@ function Index() {
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-  const featured = articles[0];
+  // Editors choose the lead story; otherwise the newest article leads.
+  const featured = articles.find((article) => article.isFeatured) ?? articles[0];
+  const others = articles.filter((article) => article !== featured);
+  const highlighted = articles.find((article) => article.isHighlighted);
   // A freshly created blog has no articles yet: show a friendly empty state
   // instead of a blank page.
   if (!featured) {
@@ -52,8 +55,7 @@ function Index() {
       </div>
     );
   }
-  const fact =
-    "Οι μέλισσες μπορούν να αναγνωρίσουν ανθρώπινα πρόσωπα συνδυάζοντας τα χαρακτηριστικά τους σαν παζλ.";
+  const highlightText = highlighted ? highlighted.excerpt || highlighted.title : "";
   const subscribe = (event: React.FormEvent) => {
     event.preventDefault();
     setMessage(
@@ -88,7 +90,7 @@ function Index() {
             <span>Τώρα διαβάζονται</span>
             <Sparkles />
           </div>
-          {articles.slice(1, 3).map((article, index) => (
+          {others.slice(0, 2).map((article, index) => (
             <Link
               key={article.slug}
               to="/arthro/$slug"
@@ -108,44 +110,56 @@ function Index() {
         </div>
       </section>
 
-      <section className="fact-band">
-        <div className="section-shell fact-layout">
-          <div>
-            <p className="eyebrow">
-              Το <span className="brand-literal">{siteConfig.contentLabels.singular}</span> της
-              ημέρας
-            </p>
-            <h2>{revealed ? fact : "Έτοιμος να ανακαλύψεις κάτι απρόσμενο;"}</h2>
-            <div className="fact-actions">
-              <Button onClick={() => setRevealed(true)}>
-                {revealed ? "Αποκαλύφθηκε" : "Αποκάλυψέ το"}
-              </Button>
-              {revealed && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(fact);
-                      setCopied(true);
-                    }}
-                  >
-                    <Clipboard /> {copied ? "Αντιγράφηκε" : "Αντιγραφή"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => navigator.share?.({ title: siteConfig.name, text: fact })}
-                    aria-label="Κοινοποίηση"
-                  >
-                    <Share2 />
-                  </Button>
-                </>
-              )}
+      {/* Shown only when an editor has highlighted a published article. */}
+      {highlighted && (
+        <section className="fact-band">
+          <div className="section-shell fact-layout">
+            <div>
+              <p className="eyebrow">
+                Το <span className="brand-literal">{siteConfig.contentLabels.singular}</span> της
+                ημέρας
+              </p>
+              <h2>{revealed ? highlightText : "Έτοιμος να ανακαλύψεις κάτι απρόσμενο;"}</h2>
+              <div className="fact-actions">
+                <Button onClick={() => setRevealed(true)}>
+                  {revealed ? "Αποκαλύφθηκε" : "Αποκάλυψέ το"}
+                </Button>
+                {revealed && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(highlightText);
+                        setCopied(true);
+                      }}
+                    >
+                      <Clipboard /> {copied ? "Αντιγράφηκε" : "Αντιγραφή"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        navigator.share?.({ title: siteConfig.name, text: highlightText })
+                      }
+                      aria-label="Κοινοποίηση"
+                    >
+                      <Share2 />
+                    </Button>
+                    <Link
+                      to="/arthro/$slug"
+                      params={{ slug: highlighted.slug }}
+                      className="link-button"
+                    >
+                      Διάβασε το άρθρο <ArrowRight />
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
+            <div className={`fact-mark ${revealed ? "revealed" : ""}`}>F</div>
           </div>
-          <div className={`fact-mark ${revealed ? "revealed" : ""}`}>F</div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="section-shell section-block">
         <header className="section-heading">

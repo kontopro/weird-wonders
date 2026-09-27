@@ -84,3 +84,21 @@ export function parseCategoryInput(input: unknown): CategoryInput {
 export function sortCategories<T extends Pick<Category, "sortOrder" | "name">>(items: T[]) {
   return [...items].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "el"));
 }
+
+/**
+ * An existing tag matches a requested one by slug or by name, ignoring case —
+ * the same rule as `public.set_article_tags`, so no tag is silently dropped.
+ */
+export function findMatchingTag<T extends { slug: string; name: string }>(
+  existing: readonly T[],
+  wanted: { slug: string; name: string },
+): T | undefined {
+  const name = wanted.name.trim().toLocaleLowerCase();
+  return existing.find(
+    (tag) => tag.slug === wanted.slug || tag.name.trim().toLocaleLowerCase() === name,
+  );
+}
+
+/** Only editors and above create new tags; authors reuse existing ones. */
+export const newTagForbiddenMessage =
+  "Μόνο οι επιμελητές δημιουργούν νέες ετικέτες. Διάλεξε από τις υπάρχουσες.";

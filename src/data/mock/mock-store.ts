@@ -38,7 +38,7 @@ export type MockStore = {
     seoDescription: string;
     isFeatured: boolean;
     isTrending: boolean;
-    isFactOfDay: boolean;
+    isHighlighted: boolean;
     views: number;
     popularity: number;
     /** Demo override; otherwise calculated from the content. */

@@ -1,6 +1,18 @@
 # Cloneable Supabase MVP design
 
-Status: **approved architecture — initial migrations created but not applied to any database**.
+Status: **approved architecture — baseline squashed on 2026-09-27, not yet applied to any database**.
+
+> **Baseline revision (2026-09-27).** The 13 incremental migrations were squashed into a seven-file baseline (`supabase/migrations/20260927170001…07`) before the first deploy. Changes against the design below:
+>
+> - `site_settings` was removed: the site's identity lives in `src/config/site.ts`. A settings table returns only for settings the owner edits from the admin.
+> - Blog-specific data (the categories) moved from a migration to `supabase/seed.sql`, applied with `db push --include-seed`.
+> - `is_highlighted` became the generic `is_highlighted`; highlighting an article moves the highlight instead of failing.
+> - `profiles.slug` for public author pages; `public_at` orders public lists; due `scheduled` articles are public (no job needed).
+> - The first owner is assigned by `private.bootstrap_owner(email)` from the SQL editor; `claim_initial_owner()` is gone.
+> - Column-level grants: the API cannot write `published_at`, `public_at`, ids or timestamps.
+> - `set_article_tags(article, tags)` replaces tags atomically; existing tags match by slug or name.
+> - Buckets accept images only (no SVG), up to 10 MB.
+> - The migrations are tested in an in-process Postgres (PGlite): `supabase/tests`.
 
 This document defines the database contract for a reusable blog starter. FACTάκι is the first real implementation, but every new blog will be created as an independent repository with an independent Supabase project. The same version-controlled migrations will initialize each project.
 
@@ -9,7 +21,7 @@ This document defines the database contract for a reusable blog starter. FACTά�
 1. One repository and one Supabase project represent exactly one blog.
 2. The React application and Supabase migrations form a reusable starter that can be cloned for a new blog.
 3. There is no runtime multi-tenancy and no `site_id` column. Project-level isolation replaces row-level tenant isolation.
-4. `site_settings` is a singleton row for the current blog. Public branding defaults may also live in `src/config/site.ts` so the application has a safe build-time fallback.
+4. The blog's identity (name, SEO, labels, theme) lives in `src/config/site.ts`. (A `site_settings` table was designed but removed in the 2026-09-27 baseline.)
 5. Roles live in `members`; `profiles` contains no authorization role.
 6. Use `text` columns with `check` constraints for workflow values instead of PostgreSQL enums.
 7. Article content is stored as versioned JSON and validated by the application Zod schema before every write.
@@ -38,8 +50,6 @@ For the current phase, FACTάκι remains the source implementation. Once the ap
 auth.users 1──1 profiles
     │
     └──1 members
-
-site_settings 1──1 current project/blog
 
 categories 1──< articles >── profiles
                       │
@@ -106,7 +116,7 @@ Constraints:
 - `visibility in ('private', 'public')`
 - positive size and dimensions when present
 
-### `site_settings`
+### `site_settings` (removed in the 2026-09-27 baseline)
 
 ```text
 id boolean primary key default true check (id)
@@ -171,7 +181,7 @@ cover_image_alt text null
 status text not null default 'draft'
 is_featured boolean not null default false
 is_trending boolean not null default false
-is_fact_of_day boolean not null default false
+is_highlighted boolean not null default false
 scheduled_at timestamptz null
 published_at timestamptz null
 seo_title text null
@@ -190,7 +200,7 @@ Constraints and invariants:
 - published rows require `published_at`
 - scheduled rows require `scheduled_at`
 - cover alt text is required when a cover exists on a published article
-- a partial unique index permits at most one `is_fact_of_day = true` article
+- a partial unique index permits at most one `is_highlighted = true` article
 
 Detailed block validation remains versioned application logic. Database checks validate only the document envelope and critical relational/workflow invariants.
 
@@ -217,7 +227,7 @@ admin/owner: editor permissions plus project configuration and members
 - Admins manage settings and non-owner members.
 - Ownership changes go through protected database logic.
 - `published_at` is set by trusted database logic on first publication and remains immutable across unpublish/republish transitions.
-- `is_fact_of_day` may be true only for a published article, with at most one such article at a time.
+- `is_highlighted` may be true only for a published article, with at most one such article at a time.
 - Automatic scheduled publication requires a later trusted scheduled job.
 
 ## RLS approach
@@ -231,16 +241,15 @@ has_role(allowed_roles text[]) → boolean
 
 Security-definer helpers must have a fixed empty `search_path`, fully qualified references, minimum execution grants and direct tests. No service-role credential is exposed through `VITE_*` variables or browser code.
 
-| Table           | Anonymous              | Author                                 | Editor                    | Admin             | Owner                  |
-| --------------- | ---------------------- | -------------------------------------- | ------------------------- | ----------------- | ---------------------- |
-| `profiles`      | published authors only | read members, update self              | same                      | same              | same                   |
-| `members`       | —                      | read self                              | read active members       | manage non-owners | protected full control |
-| `site_settings` | read                   | read                                   | read                      | read/update       | read/update            |
-| `media_assets`  | public metadata        | own uploads                            | manage all                | manage all        | manage all             |
-| `categories`    | read                   | read                                   | create/read/update/delete | same              | same                   |
-| `tags`          | read                   | read                                   | create/read/update/delete | same              | same                   |
-| `articles`      | published only         | create/read, update own drafts/reviews | full editorial scope      | same              | same                   |
-| `article_tags`  | published links only   | own editable articles                  | full editorial scope      | same              | same                   |
+| Table          | Anonymous              | Author                                 | Editor                    | Admin             | Owner                  |
+| -------------- | ---------------------- | -------------------------------------- | ------------------------- | ----------------- | ---------------------- |
+| `profiles`     | published authors only | read members, update self              | same                      | same              | same                   |
+| `members`      | —                      | read self                              | read active members       | manage non-owners | protected full control |
+| `media_assets` | public metadata        | own uploads                            | manage all                | manage all        | manage all             |
+| `categories`   | read                   | read                                   | create/read/update/delete | same              | same                   |
+| `tags`         | read                   | read                                   | create/read/update/delete | same              | same                   |
+| `articles`     | published only         | create/read, update own drafts/reviews | full editorial scope      | same              | same                   |
+| `article_tags` | published links only   | own editable articles                  | full editorial scope      | same              | same                   |
 
 ## Storage
 
@@ -281,16 +290,15 @@ Query plans should be measured before adding more indexes.
 
 ## Migration sequence
 
-1. `0001_extensions_and_helpers` — extensions, generic `updated_at` trigger and checks.
-2. `0002_profiles_and_members` — profiles, members, Auth profile bootstrap and role helpers.
-3. `0003_media_assets` — media metadata and relational constraints.
-4. `0004_site_settings` — singleton public-safe blog configuration.
-5. `0005_taxonomy` — categories and tags.
-6. `0006_articles` — articles, workflow rules and media references.
-7. `0007_article_tags` — article/tag join table.
-8. `0008_rls` — add explicit grants and policies; RLS is already enabled in each table-creation migration so an interrupted initial push never leaves a table exposed.
-9. `0009_storage` — buckets and Storage object policies.
-10. `0010_seed` — deterministic public site settings and taxonomy for the current blog; never users, credentials or article content.
+1. `20260927170001_foundation` — extensions, `private` schema, generic helpers.
+2. `20260927170002_people` — profiles, members, role helpers, owner bootstrap, last-owner protection.
+3. `20260927170003_media` — media metadata and relational constraints.
+4. `20260927170004_taxonomy` — categories and tags.
+5. `20260927170005_articles` — articles, publishing rules, article tags and `set_article_tags`.
+6. `20260927170006_access_policies` — explicit grants and RLS policies; RLS is already enabled in each table-creation migration so an interrupted initial push never leaves a table exposed.
+7. `20260927170007_storage` — buckets (images only, 10 MB) and Storage object policies.
+
+`supabase/seed.sql` holds the current blog's categories; never users, credentials or article content.
 
 Generated TypeScript database types follow migrations and are committed separately from hand-written application domain types.
 

@@ -4,9 +4,7 @@ import { isSlug } from "@/lib/slug";
 
 describe("demo seed", () => {
   test("matches the categories seeded into a fresh database", async () => {
-    const seedSql = await Bun.file(
-      new URL("../../../supabase/migrations/20260921132010_seed.sql", import.meta.url),
-    ).text();
+    const seedSql = await Bun.file(new URL("../../../supabase/seed.sql", import.meta.url)).text();
     for (const { name, slug, iconKey, sortOrder } of createDemoStore().categories) {
       expect(seedSql).toContain(`('${name}', '${slug}', '${iconKey}', ${sortOrder})`);
     }

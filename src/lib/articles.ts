@@ -13,4 +13,8 @@ export type Article = {
   category: CategoryRef;
   author: AuthorRef;
   tags: TagRef[];
+  /** Lead story on the homepage (the newest article when none is featured). */
+  isFeatured: boolean;
+  /** The single highlighted article (e.g. "article of the day"). */
+  isHighlighted: boolean;
 };

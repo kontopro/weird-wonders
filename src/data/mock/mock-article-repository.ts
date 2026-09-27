@@ -11,7 +11,13 @@ import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
 import { effectiveStatus, isPubliclyVisible } from "@/domain/publishing";
 import { authorEditableStatuses, canEditArticle, isEditorRole } from "@/domain/permissions";
-import { uncategorized, type CategoryRef, type TagRef } from "@/domain/taxonomy";
+import {
+  findMatchingTag,
+  newTagForbiddenMessage,
+  uncategorized,
+  type CategoryRef,
+  type TagRef,
+} from "@/domain/taxonomy";
 import type { AdminArticle } from "@/lib/admin-data";
 import { calculateReadingTimeMinutes } from "@/lib/article-content";
 import type { Article } from "@/lib/articles";
@@ -54,6 +60,8 @@ export class MockArticleRepository implements ArticleRepository {
       category: this.categoryRef(row.categoryId),
       author: this.authorRef(row.authorId),
       tags: this.tagRefs(row.tagIds),
+      isFeatured: row.isFeatured,
+      isHighlighted: row.isHighlighted,
     };
   }
 
@@ -84,7 +92,7 @@ export class MockArticleRepository implements ArticleRepository {
       seoDescription: row.seoDescription,
       isFeatured: row.isFeatured,
       isTrending: row.isTrending,
-      isFactOfDay: row.isFactOfDay,
+      isHighlighted: row.isHighlighted,
     };
   }
 
@@ -137,13 +145,10 @@ export class MockArticleRepository implements ArticleRepository {
     for (const name of names) {
       const slug = slugify(name);
       if (!slug) continue;
-      let tag = this.store.tags.find((item) => item.slug === slug);
+      let tag = findMatchingTag(this.store.tags, { slug, name });
       if (!tag) {
         if (!isEditorRole(context.actorRole)) {
-          throw new DomainError(
-            `Η ετικέτα «${name}» δεν υπάρχει. Μόνο οι επιμελητές δημιουργούν νέες ετικέτες.`,
-            "forbidden",
-          );
+          throw new DomainError(`«${name.trim()}»: ${newTagForbiddenMessage}`, "forbidden");
         }
         tag = { id: crypto.randomUUID(), slug, name: name.trim() };
         this.store.tags.push(tag);
@@ -170,7 +175,7 @@ export class MockArticleRepository implements ArticleRepository {
       (!authorEditableStatuses.includes(input.status) ||
         input.isFeatured ||
         input.isTrending ||
-        input.isFactOfDay)
+        input.isHighlighted)
     ) {
       throw new DomainError(
         "Οι συντάκτες αποθηκεύουν πρόχειρα ή τα στέλνουν για έλεγχο· τη δημοσίευση την κάνει επιμελητής.",
@@ -204,14 +209,14 @@ export class MockArticleRepository implements ArticleRepository {
       seoDescription: input.seoDescription ?? existing?.seoDescription ?? "",
       isFeatured: input.isFeatured ?? existing?.isFeatured ?? false,
       isTrending: input.isTrending ?? existing?.isTrending ?? false,
-      isFactOfDay: input.isFactOfDay ?? existing?.isFactOfDay ?? false,
+      isHighlighted: input.isHighlighted ?? existing?.isHighlighted ?? false,
       views: existing?.views ?? 0,
       popularity: existing?.popularity ?? 0,
     };
 
-    // Mirrors the database's single "fact of the day" constraint.
-    if (next.isFactOfDay) {
-      for (const item of this.store.articles) item.isFactOfDay = false;
+    // Mirrors the database: highlighting an article moves the highlight.
+    if (next.isHighlighted) {
+      for (const item of this.store.articles) item.isHighlighted = false;
     }
 
     if (existing) {
@@ -238,7 +243,7 @@ export class MockArticleRepository implements ArticleRepository {
       views: 0,
       isFeatured: false,
       isTrending: false,
-      isFactOfDay: false,
+      isHighlighted: false,
     };
     this.store.articles.unshift(copy);
     return this.toEditable(copy);

@@ -35,7 +35,9 @@
 - [x] Σελίδες /katigoria, /etiketa, /syntaktis και ελληνικά → λατινικά slugs
 - [x] Status ως σταθεροί κωδικοί (`draft`, `published`…) με ελληνικές ετικέτες μόνο στην προβολή
 - [x] Προγραμματισμένη δημοσίευση χωρίς background job (ίδιος κανόνας σε mock, Supabase adapter και RLS)
-- [ ] RLS και role/storage integration tests σε hosted project
+- [x] Ενιαίο καθαρό baseline 7 migrations, seed εκτός migrations, `is_highlighted`, column-level grants
+- [x] Tests του schema σε in-process Postgres (PGlite): RLS ανά ρόλο, triggers, bootstrap
+- [ ] Έλεγχος σε hosted project (`docs/hosted-supabase-validation.md`)
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports
 - [ ] Ενεργοποίηση πραγματικού Supabase CRUD μετά τη δημιουργία hosted project
 - [ ] Εξαγωγή ουδέτερου `reusable-blog-starter` μετά τη σταθεροποίηση του FACTάκι

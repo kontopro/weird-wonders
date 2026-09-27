@@ -7,14 +7,15 @@ This checklist is intentionally hosted-only. It does not start, reset or depend 
 - Keep `VITE_DATA_SOURCE=mock`; do not point a public deployment at the new project.
 - Create a fresh hosted Supabase project for this blog.
 - Use only the project URL and publishable key in `VITE_*` variables. Never expose a secret or service-role key.
-- Link the repository to the intended project and review `bunx supabase db push --dry-run` before `bunx supabase db push`.
+- Link the repository to the intended project and review `bunx supabase db push --dry-run` before `bunx supabase db push --include-seed`.
+- Run `bun test` first: it applies the same migrations to an in-process Postgres and checks the access rules.
 - Never run `db reset --linked` against a project containing data.
 
 ## Baseline verification
 
-- Confirm migrations `20260921132001` through `20260927130000` are recorded as applied.
-- Confirm RLS is enabled on `profiles`, `members`, `media_assets`, `site_settings`, `categories`, `tags`, `articles` and `article_tags`.
-- Confirm `site_settings` contains exactly one row.
+- Confirm migrations `20260927170001` through `20260927170007` are recorded as applied.
+- Confirm RLS is enabled on `profiles`, `members`, `media_assets`, `categories`, `tags`, `articles` and `article_tags`.
+- Confirm both buckets accept only images up to 10 MB.
 - Confirm the eight configured categories exist with their expected normalized slugs.
 - Confirm `blog-private` is private and `blog-public` is public.
 - Confirm no users, members, article content or credentials were seeded.

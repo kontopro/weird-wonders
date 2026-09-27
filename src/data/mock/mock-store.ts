@@ -30,6 +30,8 @@ export type MockStore = {
   articles: Array<{
     id: string;
     slug: string;
+    language: string;
+    translationGroupId: string;
     title: string;
     excerpt: string;
     categoryId: string | null;

@@ -31,6 +31,7 @@ const article = (title: string, extra: Record<string, unknown> = {}) =>
     slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
     author_id: author,
     category_id: categoryId,
+    language: "el",
     ...extra,
   });
 
@@ -134,16 +135,16 @@ describe("editorial roles", () => {
     await t.as(
       "authenticated",
       author,
-      `insert into public.articles (title, slug, author_id, category_id)
-       values ('Mine', 'mine', $1, $2)`,
+      `insert into public.articles (title, slug, language, author_id, category_id)
+       values ('Mine', 'mine', 'el', $1, $2)`,
       [author, categoryId],
     );
     await expect(
       t.as(
         "authenticated",
         author,
-        `insert into public.articles (title, slug, author_id, status)
-         values ('Live', 'live', $1, 'published')`,
+        `insert into public.articles (title, slug, language, author_id, status)
+         values ('Live', 'live', 'el', $1, 'published')`,
         [author],
       ),
     ).rejects.toThrow(/row-level security/);
@@ -310,5 +311,50 @@ describe("team management", () => {
     await expect(
       t.as("authenticated", admin, "delete from public.members where user_id = $1", [author]),
     ).rejects.toThrow(/foreign key/);
+  });
+});
+
+describe("languages and translations", () => {
+  test("slugs are unique per language, and each language appears once per group", async () => {
+    const greek = await article("Trees", { slug: "dentra" });
+    const { rows } = await t.db.query<{ translation_group_id: string }>(
+      "select translation_group_id from public.articles where id = $1",
+      [greek],
+    );
+    const group = rows[0]!.translation_group_id;
+
+    await article("Trees EN", { slug: "dentra", language: "en", translation_group_id: group });
+    await expect(article("Again", { slug: "dentra" })).rejects.toThrow(/unique/);
+    await expect(
+      article("Second EN", { slug: "other", language: "en", translation_group_id: group }),
+    ).rejects.toThrow(/unique/);
+  });
+
+  test("category translations are public to read and editor-only to write", async () => {
+    await t.as(
+      "authenticated",
+      editor,
+      `insert into public.category_translations (category_id, language, name, slug)
+       values ($1, 'en', 'Science', 'science')`,
+      [categoryId],
+    );
+    const rows = await t.as<{ name: string }>(
+      "anon",
+      null,
+      "select name from public.category_translations where language = 'en'",
+    );
+    expect(rows.map((row) => row.name)).toEqual(["Science"]);
+    const tag = await t.db.query<{ id: string }>(
+      "insert into public.tags (slug, name) values ('zoa', 'Ζώα') returning id",
+    );
+    await expect(
+      t.as(
+        "authenticated",
+        author,
+        `insert into public.tag_translations (tag_id, language, name, slug)
+         values ($1, 'en', 'Animals', 'animals')`,
+        [tag.rows[0]!.id],
+      ),
+    ).rejects.toThrow(/row-level security/);
   });
 });

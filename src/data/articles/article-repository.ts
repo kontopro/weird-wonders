@@ -14,6 +14,9 @@ export type ArticleDetail = Article & {
 
 export type EditableArticle = AdminArticle & {
   authorId: string | null;
+  language: string;
+  /** Shared by all language versions of the same piece. */
+  translationGroupId: string;
   content: ArticleContentDocument;
   imageAlt: string;
   tags: TagRef[];
@@ -27,6 +30,10 @@ export type EditableArticle = AdminArticle & {
 export type ArticleWriteInput = {
   id?: string;
   slug: string;
+  /** Defaults to the blog's main language. */
+  language?: string;
+  /** Set to create a translation of an existing piece; omitted for new pieces. */
+  translationGroupId?: string;
   title: string;
   excerpt: string;
   categorySlug: string;
@@ -45,6 +52,8 @@ export type ArticleWriteInput = {
 };
 
 export type PublishedArticleFilter = {
+  /** Defaults to the blog's main language. */
+  language?: string;
   categorySlug?: string;
   tagSlug?: string;
   authorSlug?: string;
@@ -56,6 +65,11 @@ export type WriteContext = { actorId: string; actorRole: MemberRole };
 const articleWriteInputSchema = z
   .object({
     id: z.string().min(1).max(100).optional(),
+    language: z
+      .string()
+      .regex(/^[a-z]{2,3}(-[A-Z]{2})?$/)
+      .optional(),
+    translationGroupId: z.string().min(1).max(100).optional(),
     slug: z.string().refine(isSlug, "Μη έγκυρο slug."),
     title: z.string().trim().min(1).max(200),
     excerpt: z.string().max(500),

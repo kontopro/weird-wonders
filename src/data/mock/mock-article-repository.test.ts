@@ -177,3 +177,36 @@ describe("MockArticleRepository — scheduled publishing", () => {
     expect((await repository.findAdminBySlug(row.slug))?.status).toBe("published");
   });
 });
+
+describe("MockArticleRepository — languages", () => {
+  test("new articles use the main language; public lists show only that language", async () => {
+    const saved = await repository.save(draftInput({ status: "published" }), editor);
+    expect(saved.language).toBe("el");
+
+    await repository.save(
+      draftInput({
+        slug: "trees-talk",
+        language: "en",
+        translationGroupId: saved.translationGroupId,
+        status: "published",
+      }),
+      editor,
+    );
+    const greek = await repository.listPublished();
+    expect(greek.every((article) => article.language === "el")).toBe(true);
+    const english = await repository.listPublished({ language: "en" });
+    expect(english.map((article) => article.slug)).toEqual(["trees-talk"]);
+  });
+
+  test("slugs are unique per language and a piece has one version per language", async () => {
+    const saved = await repository.save(draftInput(), editor);
+    await repository.save(draftInput({ language: "en" }), editor);
+    await expect(repository.save(draftInput(), editor)).rejects.toThrow("slug");
+    await expect(
+      repository.save(
+        draftInput({ slug: "other", language: "el", translationGroupId: saved.translationGroupId }),
+        editor,
+      ),
+    ).rejects.toThrow("γλώσσα");
+  });
+});

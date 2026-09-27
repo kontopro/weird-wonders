@@ -1,3 +1,4 @@
+import { mainLanguage } from "@/config/site";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   assertArticleWriteInvariants,
@@ -41,6 +42,8 @@ type ArticleRow = {
   author_id: string | null;
   title: string;
   slug: string;
+  language: string;
+  translation_group_id: string;
   excerpt: string | null;
   content_blocks?: unknown;
   cover_image_alt: string | null;
@@ -72,7 +75,8 @@ const toTagInputs = (names: string[]) =>
 // Relations are embedded in one request. The cover FK is named because
 // `articles` has two foreign keys to `media_assets` (cover and social image).
 const LIST_COLUMNS = [
-  "id, author_id, title, slug, excerpt, cover_image_alt, status, is_featured, is_trending",
+  "id, author_id, title, slug, language, translation_group_id, excerpt, cover_image_alt",
+  "status, is_featured, is_trending",
   "is_highlighted, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes",
   "created_at, updated_at",
   "category:categories(slug, name, icon_key)",
@@ -146,6 +150,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
   private toPublic(row: ArticleRow, authors: Map<string, AuthorRef>): Article {
     return {
       slug: row.slug,
+      language: row.language,
       title: row.title,
       excerpt: row.excerpt ?? "",
       date: formatArticleDate(toDateValue(row)),
@@ -181,6 +186,8 @@ export class SupabaseArticleRepository implements ArticleRepository {
     return {
       ...this.toAdmin(row, authors),
       authorId: row.author_id,
+      language: row.language,
+      translationGroupId: row.translation_group_id,
       content: parseArticleContent(row.content_blocks),
       imageAlt: row.cover_image_alt ?? "",
       tags: this.tagRefs(row),
@@ -215,6 +222,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
     let query = this.client
       .from("articles")
       .select(LIST_COLUMNS)
+      .eq("language", filter.language ?? mainLanguage)
       .or(publiclyVisibleFilter())
       .order("public_at", { ascending: false });
     if (categoryId) query = query.eq("category_id", categoryId);
@@ -242,6 +250,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       .from("articles")
       .select(DETAIL_COLUMNS)
       .eq("slug", slug)
+      .eq("language", mainLanguage)
       .or(publiclyVisibleFilter())
       .maybeSingle();
     if (error) throw error;
@@ -287,11 +296,12 @@ export class SupabaseArticleRepository implements ArticleRepository {
     const { data, error } = await this.client
       .from("articles")
       .select(DETAIL_COLUMNS)
-      .eq(column, value)
-      .maybeSingle();
+      .eq(column, value);
     if (error) throw error;
-    if (!data) return null;
-    const row = data as unknown as ArticleRow;
+    // Slugs are unique per language; the main-language version wins a tie.
+    const rows = (data ?? []) as unknown as ArticleRow[];
+    const row = rows.find((item) => item.language === mainLanguage) ?? rows[0];
+    if (!row) return null;
     return this.toEditable(row, await this.loadAuthors([row]));
   }
 
@@ -341,6 +351,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
     const payload = {
       category_id: categoryId,
       slug: input.slug,
+      ...(input.language ? { language: input.language } : {}),
       title: input.title,
       excerpt: input.excerpt,
       content_version: input.content.version,
@@ -358,7 +369,12 @@ export class SupabaseArticleRepository implements ArticleRepository {
 
     const query = input.id
       ? this.client.from("articles").update(payload).eq("id", input.id)
-      : this.client.from("articles").insert({ ...payload, author_id: context.actorId });
+      : this.client.from("articles").insert({
+          language: mainLanguage,
+          ...payload,
+          ...(input.translationGroupId ? { translation_group_id: input.translationGroupId } : {}),
+          author_id: context.actorId,
+        });
     const { data, error } = await query.select("id").single();
     if (error) throw toDomainError(error, "Υπάρχει ήδη άρθρο με αυτό το slug.");
 

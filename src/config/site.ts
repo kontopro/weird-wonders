@@ -7,7 +7,17 @@ export type SiteConfig = {
   };
   tagline: string;
   domain: string;
+  /**
+   * The blog's main language (BCP 47, e.g. "el", "en"). Articles are written in
+   * it by default and public pages without a language prefix show it.
+   */
   defaultLanguage: string;
+  /**
+   * Languages the blog publishes in, main language first. Translations are
+   * linked articles (same `translationGroupId`); add e.g. "en" when a blog
+   * starts publishing English versions.
+   */
+  languages: readonly string[];
   themeKey: string;
   layoutKey: string;
   contentLabels: {
@@ -34,6 +44,7 @@ export const factakiSite = {
   tagline: "Μικρό fact. Μεγάλη έκπληξη.",
   domain: "factaki.gr",
   defaultLanguage: "el",
+  languages: ["el"],
   themeKey: "factaki",
   layoutKey: "editorial",
   contentLabels: {
@@ -57,3 +68,6 @@ export const siteConfig: SiteConfig = factakiSite;
 export function brandedTitle(title: string) {
   return `${title} — ${siteConfig.name}`;
 }
+
+/** The blog's main language; see `SiteConfig.defaultLanguage`. */
+export const mainLanguage = siteConfig.defaultLanguage;

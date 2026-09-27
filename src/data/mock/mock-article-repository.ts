@@ -1,3 +1,4 @@
+import { mainLanguage } from "@/config/site";
 import {
   assertArticleWriteInvariants,
   type ArticleRepository,
@@ -51,6 +52,7 @@ export class MockArticleRepository implements ArticleRepository {
   private toPublic(row: MockArticleRow): Article {
     return {
       slug: row.slug,
+      language: row.language,
       title: row.title,
       excerpt: row.excerpt,
       date: formatArticleDate(row.dateValue),
@@ -85,6 +87,8 @@ export class MockArticleRepository implements ArticleRepository {
     return {
       ...this.toAdmin(row),
       authorId: row.authorId,
+      language: row.language,
+      translationGroupId: row.translationGroupId,
       content: structuredClone(row.content),
       imageAlt: row.imageAlt,
       tags: this.tagRefs(row.tagIds),
@@ -96,12 +100,14 @@ export class MockArticleRepository implements ArticleRepository {
     };
   }
 
-  private published() {
-    return this.store.articles.filter((row) => isPubliclyVisible(scheduleOf(row)));
+  private published(language: string = mainLanguage) {
+    return this.store.articles.filter(
+      (row) => row.language === language && isPubliclyVisible(scheduleOf(row)),
+    );
   }
 
   async listPublished(filter: PublishedArticleFilter = {}) {
-    const { categorySlug, tagSlug, authorSlug } = filter;
+    const { categorySlug, tagSlug, authorSlug, language } = filter;
     const categoryId = categorySlug
       ? this.store.categories.find((item) => item.slug === categorySlug)?.id
       : undefined;
@@ -113,7 +119,7 @@ export class MockArticleRepository implements ArticleRepository {
       return [];
     }
 
-    return this.published()
+    return this.published(language)
       .filter(
         (row) =>
           (!categoryId || row.categoryId === categoryId) &&
@@ -135,7 +141,9 @@ export class MockArticleRepository implements ArticleRepository {
   }
 
   async findAdminBySlug(slug: string) {
-    const row = this.store.articles.find((item) => item.slug === slug);
+    // Slugs are unique per language; the main-language version wins a tie.
+    const matches = this.store.articles.filter((item) => item.slug === slug);
+    const row = matches.find((item) => item.language === mainLanguage) ?? matches[0];
     return row ? this.toEditable(row) : null;
   }
 
@@ -186,8 +194,20 @@ export class MockArticleRepository implements ArticleRepository {
     const category = this.store.categories.find((item) => item.slug === input.categorySlug);
     if (!category) throw new DomainError("Η κατηγορία δεν υπάρχει.", "invalid");
 
-    if (this.store.articles.some((item) => item.slug === input.slug && item.id !== input.id)) {
+    // Mirrors the database: unique (language, slug) and one version per language per group.
+    const language = input.language ?? existing?.language ?? mainLanguage;
+    const translationGroupId =
+      existing?.translationGroupId ?? input.translationGroupId ?? crypto.randomUUID();
+    const others = this.store.articles.filter((item) => item.id !== input.id);
+    if (others.some((item) => item.language === language && item.slug === input.slug)) {
       throw new DomainError("Υπάρχει ήδη άρθρο με αυτό το slug.", "conflict");
+    }
+    if (
+      others.some(
+        (item) => item.translationGroupId === translationGroupId && item.language === language,
+      )
+    ) {
+      throw new DomainError("Υπάρχει ήδη εκδοχή του άρθρου σε αυτή τη γλώσσα.", "conflict");
     }
 
     const tagIds = input.tags ? this.resolveTagIds(input.tags, context) : (existing?.tagIds ?? []);
@@ -195,6 +215,8 @@ export class MockArticleRepository implements ArticleRepository {
     const next: MockArticleRow = {
       id: existing?.id ?? crypto.randomUUID(),
       slug: input.slug,
+      language,
+      translationGroupId,
       title: input.title,
       excerpt: input.excerpt,
       categoryId: category.id,
@@ -236,6 +258,8 @@ export class MockArticleRepository implements ArticleRepository {
     const copy: MockArticleRow = {
       ...structuredClone(source),
       id: crypto.randomUUID(),
+      // A copy is a new piece, not a translation.
+      translationGroupId: crypto.randomUUID(),
       slug: `${source.slug}-copy-${Date.now()}`,
       title: `${source.title} — αντίγραφο`,
       authorId: context.actorId,

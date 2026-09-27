@@ -9,6 +9,8 @@ revoke all on table public.members from anon, authenticated;
 revoke all on table public.media_assets from anon, authenticated;
 revoke all on table public.categories from anon, authenticated;
 revoke all on table public.tags from anon, authenticated;
+revoke all on table public.category_translations from anon, authenticated;
+revoke all on table public.tag_translations from anon, authenticated;
 revoke all on table public.articles from anon, authenticated;
 revoke all on table public.article_tags from anon, authenticated;
 
@@ -23,17 +25,22 @@ grant insert, update, delete on table public.media_assets to authenticated;
 
 grant select on table public.categories, public.tags to anon, authenticated;
 grant insert, update, delete on table public.categories, public.tags to authenticated;
+grant select on table public.category_translations, public.tag_translations to anon, authenticated;
+grant insert, update, delete on table public.category_translations, public.tag_translations
+to authenticated;
 
 grant select on table public.articles, public.article_tags to anon, authenticated;
 -- Column-level: `published_at`, `updated_at` and `public_at` are maintained by
 -- the database, never written by the API.
 grant insert (
-  author_id, category_id, title, slug, excerpt, content_version, content_blocks,
+  author_id, category_id, title, slug, language, translation_group_id, excerpt,
+  content_version, content_blocks,
   cover_image_id, cover_image_alt, status, is_featured, is_trending, is_highlighted,
   scheduled_at, seo_title, seo_description, social_image_id, reading_time_minutes
 ) on table public.articles to authenticated;
 grant update (
-  author_id, category_id, title, slug, excerpt, content_version, content_blocks,
+  author_id, category_id, title, slug, language, translation_group_id, excerpt,
+  content_version, content_blocks,
   cover_image_id, cover_image_alt, status, is_featured, is_trending, is_highlighted,
   scheduled_at, seo_title, seo_description, social_image_id, reading_time_minutes
 ) on table public.articles to authenticated;
@@ -221,6 +228,56 @@ with check ((select private.has_role(array['owner', 'admin', 'editor'])));
 
 create policy tags_editor_delete
 on public.tags
+for delete
+to authenticated
+using ((select private.has_role(array['owner', 'admin', 'editor'])));
+
+create policy category_translations_public_read
+on public.category_translations
+for select
+to anon, authenticated
+using (true);
+
+create policy category_translations_editor_insert
+on public.category_translations
+for insert
+to authenticated
+with check ((select private.has_role(array['owner', 'admin', 'editor'])));
+
+create policy category_translations_editor_update
+on public.category_translations
+for update
+to authenticated
+using ((select private.has_role(array['owner', 'admin', 'editor'])))
+with check ((select private.has_role(array['owner', 'admin', 'editor'])));
+
+create policy category_translations_editor_delete
+on public.category_translations
+for delete
+to authenticated
+using ((select private.has_role(array['owner', 'admin', 'editor'])));
+
+create policy tag_translations_public_read
+on public.tag_translations
+for select
+to anon, authenticated
+using (true);
+
+create policy tag_translations_editor_insert
+on public.tag_translations
+for insert
+to authenticated
+with check ((select private.has_role(array['owner', 'admin', 'editor'])));
+
+create policy tag_translations_editor_update
+on public.tag_translations
+for update
+to authenticated
+using ((select private.has_role(array['owner', 'admin', 'editor'])))
+with check ((select private.has_role(array['owner', 'admin', 'editor'])));
+
+create policy tag_translations_editor_delete
+on public.tag_translations
 for delete
 to authenticated
 using ((select private.has_role(array['owner', 'admin', 'editor'])));

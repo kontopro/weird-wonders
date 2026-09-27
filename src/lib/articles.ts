@@ -4,6 +4,8 @@ import type { CategoryRef, TagRef } from "@/domain/taxonomy";
 /** A published article as shown on public pages. */
 export type Article = {
   slug: string;
+  /** BCP 47 language of this version, e.g. "el". */
+  language: string;
   title: string;
   excerpt: string;
   date: string;

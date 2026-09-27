@@ -6,13 +6,19 @@
 -- * `published_at` records when an article first went live and never moves.
 -- * At most one article is highlighted (shown prominently on the homepage);
 --   highlighting another one moves the highlight.
+--
+-- Languages: every article has a `language` (the blog's main language is set
+-- in the app's site config). Translations of the same piece share a
+-- `translation_group_id`; each translation has its own slug, SEO and status.
 
 create table public.articles (
   id uuid primary key default gen_random_uuid(),
   author_id uuid references public.members(user_id) on delete restrict,
   category_id uuid references public.categories(id) on delete set null,
   title text not null check (char_length(title) between 1 and 200),
-  slug text not null unique check (private.is_normalized_slug(slug)),
+  slug text not null check (private.is_normalized_slug(slug)),
+  language text not null check (language ~ '^[a-z]{2,3}(-[A-Z]{2})?$'),
+  translation_group_id uuid not null default gen_random_uuid(),
   excerpt text check (excerpt is null or char_length(excerpt) <= 500),
   content_version integer not null default 1 check (content_version > 0),
   content_blocks jsonb not null default '{"version":1,"blocks":[]}'::jsonb,
@@ -32,6 +38,10 @@ create table public.articles (
   reading_time_minutes integer check (reading_time_minutes is null or reading_time_minutes > 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  -- Slugs are unique per language (/arthro/x and /en/article/x may coexist).
+  unique (language, slug),
+  -- One version per language in a translation group.
+  unique (translation_group_id, language),
   check (jsonb_typeof(content_blocks) = 'object'),
   check (jsonb_typeof(content_blocks -> 'version') = 'number'),
   check ((content_blocks ->> 'version')::integer = content_version),
@@ -48,7 +58,8 @@ create unique index articles_one_highlight_idx
 on public.articles (is_highlighted)
 where is_highlighted;
 
-create index articles_status_public_at_idx on public.articles (status, public_at desc);
+create index articles_language_status_public_at_idx
+on public.articles (language, status, public_at desc);
 create index articles_author_status_idx on public.articles (author_id, status);
 create index articles_category_status_idx on public.articles (category_id, status);
 create index articles_featured_public_at_idx on public.articles (public_at desc) where is_featured;

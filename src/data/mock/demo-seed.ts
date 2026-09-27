@@ -332,6 +332,8 @@ const demoSeed: MockStore = {
   ],
   articles: seedArticles.map((article) => ({
     ...article,
+    language: "el",
+    translationGroupId: `group-${article.id}`,
     content: demoArticleContent satisfies ArticleContentDocument,
     imageAlt: "",
     seoTitle: "",

@@ -14,6 +14,10 @@ export type SignInInput =
 
 export type SignInResult = { ok: true } | { ok: false; message: string };
 
+/** Links sent by e-mail: an invitation or a password reset. */
+export const emailLinkTypes = ["invite", "recovery"] as const;
+export type EmailLinkInput = { tokenHash: string; type: (typeof emailLinkTypes)[number] };
+
 /**
  * Authentication contract. The app depends only on this interface; the adapter
  * (demo accounts, Supabase Auth, …) is chosen in `src/server/repositories.ts`.
@@ -24,6 +28,10 @@ export interface AuthProvider {
   getLoginOptions(): LoginOptions;
   signIn(input: SignInInput): Promise<SignInResult>;
   signOut(): Promise<void>;
+  /** Signs the visitor in from an e-mailed link (invitation, password reset). */
+  verifyEmailLink(input: EmailLinkInput): Promise<SignInResult>;
+  /** Sets a new password for the signed-in visitor. */
+  updatePassword(password: string): Promise<SignInResult>;
 }
 
 /** Minimal cookie access so adapters stay independent of the web framework. */

@@ -8,12 +8,14 @@ import {
   Menu,
   PenLine,
   UserRound,
+  Users,
   X,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/functions/auth";
+import { canManageTeam } from "@/domain/team";
 import { initialsOf, memberRoleLabels, type SessionUser } from "@/lib/auth-types";
 
 const navItems = [
@@ -21,6 +23,7 @@ const navItems = [
   { label: "Άρθρα", to: "/admin/articles", icon: BookOpen },
   { label: "Νέο άρθρο", to: "/admin/articles/new", icon: PenLine },
   { label: "Κατηγορίες", to: "/admin/categories", icon: FolderTree },
+  { label: "Ομάδα", to: "/admin/team", icon: Users, teamOnly: true },
   { label: "Προφίλ", to: "/admin/profile", icon: UserRound },
 ] as const;
 
@@ -48,22 +51,24 @@ export function AdminSidebar({ user, onNavigate }: SidebarProps) {
         <span>Συντακτική ομάδα</span>
       </div>
       <nav className="admin-nav" aria-label="Πλοήγηση διαχείρισης">
-        {navItems.map(({ label, to, icon: Icon }) => {
-          const active =
-            to === "/admin" ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
-          return (
-            <Link
-              key={to}
-              to={to}
-              activeOptions={{ exact: true }}
-              className={active ? "active" : ""}
-              onClick={onNavigate}
-            >
-              <Icon />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
+        {navItems
+          .filter((item) => !("teamOnly" in item) || canManageTeam(user.role))
+          .map(({ label, to, icon: Icon }) => {
+            const active =
+              to === "/admin" ? pathname === to : pathname === to || pathname.startsWith(`${to}/`);
+            return (
+              <Link
+                key={to}
+                to={to}
+                activeOptions={{ exact: true }}
+                className={active ? "active" : ""}
+                onClick={onNavigate}
+              >
+                <Icon />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
       </nav>
       <div className="admin-profile-card">
         <div className="admin-avatar" aria-hidden="true">

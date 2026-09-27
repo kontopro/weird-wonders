@@ -68,6 +68,11 @@ using (
     (select private.is_active_member())
     and (select private.is_active_member_id(id))
   )
+  -- Owners and admins manage the team, including suspended members.
+  or (
+    (select private.has_role(array['owner', 'admin']))
+    and exists (select 1 from public.members where members.user_id = profiles.id)
+  )
 );
 
 create policy profiles_update_self
@@ -86,6 +91,8 @@ to authenticated
 using (
   user_id = (select auth.uid())
   or ((select private.is_active_member()) and status = 'active')
+  -- Owners and admins manage the team, including suspended members.
+  or (select private.has_role(array['owner', 'admin']))
 );
 
 create policy members_insert

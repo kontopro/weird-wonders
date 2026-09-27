@@ -79,4 +79,12 @@ export class MockAuthProvider implements AuthProvider {
   async signOut() {
     this.session.clear();
   }
+
+  async verifyEmailLink(): Promise<SignInResult> {
+    return { ok: false, message: "Το demo δεν στέλνει email." };
+  }
+
+  async updatePassword(): Promise<SignInResult> {
+    return { ok: false, message: "Οι demo λογαριασμοί δεν έχουν κωδικό." };
+  }
 }

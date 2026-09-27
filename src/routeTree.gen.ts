@@ -19,8 +19,11 @@ import { Route as SxetikaRouteImport } from './routes/sxetika'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminArticlesRouteImport } from './routes/admin.articles'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminPasswordRouteImport } from './routes/admin.password'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
+import { Route as AdminTeamRouteImport } from './routes/admin.team'
 import { Route as ArthroSlugRouteImport } from './routes/arthro.$slug'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as EtiketaSlugRouteImport } from './routes/etiketa.$slug'
 import { Route as KatigoriaSlugRouteImport } from './routes/katigoria.$slug'
 import { Route as SyntaktisSlugRouteImport } from './routes/syntaktis.$slug'
@@ -78,14 +81,29 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPasswordRoute = AdminPasswordRouteImport.update({
+  id: '/password',
+  path: '/password',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminProfileRoute = AdminProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTeamRoute = AdminTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ArthroSlugRoute = ArthroSlugRouteImport.update({
   id: '/arthro/$slug',
   path: '/arthro/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EtiketaSlugRoute = EtiketaSlugRouteImport.update({
@@ -129,8 +147,11 @@ export interface FileRoutesByFullPath {
   '/sxetika': typeof SxetikaRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/team': typeof AdminTeamRoute
   '/arthro/$slug': typeof ArthroSlugRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/etiketa/$slug': typeof EtiketaSlugRoute
   '/katigoria/$slug': typeof KatigoriaSlugRoute
   '/syntaktis/$slug': typeof SyntaktisSlugRoute
@@ -147,8 +168,11 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/sxetika': typeof SxetikaRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/team': typeof AdminTeamRoute
   '/arthro/$slug': typeof ArthroSlugRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/etiketa/$slug': typeof EtiketaSlugRoute
   '/katigoria/$slug': typeof KatigoriaSlugRoute
   '/syntaktis/$slug': typeof SyntaktisSlugRoute
@@ -168,8 +192,11 @@ export interface FileRoutesById {
   '/sxetika': typeof SxetikaRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/team': typeof AdminTeamRoute
   '/arthro/$slug': typeof ArthroSlugRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/etiketa/$slug': typeof EtiketaSlugRoute
   '/katigoria/$slug': typeof KatigoriaSlugRoute
   '/syntaktis/$slug': typeof SyntaktisSlugRoute
@@ -190,8 +217,11 @@ export interface FileRouteTypes {
     | '/sxetika'
     | '/admin/articles'
     | '/admin/categories'
+    | '/admin/password'
     | '/admin/profile'
+    | '/admin/team'
     | '/arthro/$slug'
+    | '/auth/confirm'
     | '/etiketa/$slug'
     | '/katigoria/$slug'
     | '/syntaktis/$slug'
@@ -208,8 +238,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/sxetika'
     | '/admin/categories'
+    | '/admin/password'
     | '/admin/profile'
+    | '/admin/team'
     | '/arthro/$slug'
+    | '/auth/confirm'
     | '/etiketa/$slug'
     | '/katigoria/$slug'
     | '/syntaktis/$slug'
@@ -228,8 +261,11 @@ export interface FileRouteTypes {
     | '/sxetika'
     | '/admin/articles'
     | '/admin/categories'
+    | '/admin/password'
     | '/admin/profile'
+    | '/admin/team'
     | '/arthro/$slug'
+    | '/auth/confirm'
     | '/etiketa/$slug'
     | '/katigoria/$slug'
     | '/syntaktis/$slug'
@@ -248,6 +284,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SxetikaRoute: typeof SxetikaRoute
   ArthroSlugRoute: typeof ArthroSlugRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   EtiketaSlugRoute: typeof EtiketaSlugRoute
   KatigoriaSlugRoute: typeof KatigoriaSlugRoute
   SyntaktisSlugRoute: typeof SyntaktisSlugRoute
@@ -325,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/password': {
+      id: '/admin/password'
+      path: '/password'
+      fullPath: '/admin/password'
+      preLoaderRoute: typeof AdminPasswordRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/profile': {
       id: '/admin/profile'
       path: '/profile'
@@ -332,11 +376,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProfileRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/team': {
+      id: '/admin/team'
+      path: '/team'
+      fullPath: '/admin/team'
+      preLoaderRoute: typeof AdminTeamRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/arthro/$slug': {
       id: '/arthro/$slug'
       path: '/arthro/$slug'
       fullPath: '/arthro/$slug'
       preLoaderRoute: typeof ArthroSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/etiketa/$slug': {
@@ -403,14 +461,18 @@ const AdminArticlesRouteWithChildren = AdminArticlesRoute._addFileChildren(
 interface AdminRouteChildren {
   AdminArticlesRoute: typeof AdminArticlesRouteWithChildren
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminPasswordRoute: typeof AdminPasswordRoute
   AdminProfileRoute: typeof AdminProfileRoute
+  AdminTeamRoute: typeof AdminTeamRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminArticlesRoute: AdminArticlesRouteWithChildren,
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminPasswordRoute: AdminPasswordRoute,
   AdminProfileRoute: AdminProfileRoute,
+  AdminTeamRoute: AdminTeamRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -425,6 +487,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SxetikaRoute: SxetikaRoute,
   ArthroSlugRoute: ArthroSlugRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   EtiketaSlugRoute: EtiketaSlugRoute,
   KatigoriaSlugRoute: KatigoriaSlugRoute,
   SyntaktisSlugRoute: SyntaktisSlugRoute,

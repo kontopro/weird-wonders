@@ -11,7 +11,10 @@
     "test": "bun test",
     "test:e2e": "playwright test",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "bun run format:check && bun run lint && bun run typecheck && bun test"
   },
   "overrides": {
     "brace-expansion": "1.1.18",

@@ -3,6 +3,12 @@ import type { ArticleRepository } from "@/data/articles/article-repository";
 import type { AuthProvider, SessionCookie } from "@/data/auth/auth-provider";
 import type { AuthorRepository } from "@/data/authors/author-repository";
 import type { TeamRepository } from "@/data/team/team-repository";
+import type { MediaRepository } from "@/data/media/media-repository";
+import type { NewsletterRepository } from "@/data/newsletter/newsletter-repository";
+import { MockNewsletterRepository } from "@/data/mock/mock-newsletter-repository";
+import { SupabaseNewsletterRepository } from "@/data/supabase/supabase-newsletter-repository";
+import { MockMediaRepository } from "@/data/mock/mock-media-repository";
+import { SupabaseMediaRepository } from "@/data/supabase/supabase-media-repository";
 import { MockTeamRepository } from "@/data/mock/mock-team-repository";
 import { SupabaseTeamRepository } from "@/data/supabase/supabase-team-repository";
 import { createSupabaseAdminClient } from "@/server/supabase-admin";
@@ -25,6 +31,8 @@ export type Repositories = {
   taxonomy: TaxonomyRepository;
   authors: AuthorRepository;
   team: TeamRepository;
+  media: MediaRepository;
+  newsletter: NewsletterRepository;
 };
 
 // Mock data lives in server memory and resets on restart.
@@ -59,6 +67,8 @@ export function getRepositories(): Repositories {
       taxonomy: new MockTaxonomyRepository(store),
       authors: new MockAuthorRepository(store),
       team: new MockTeamRepository(store),
+      media: new MockMediaRepository(store),
+      newsletter: new MockNewsletterRepository(store),
     };
   }
 
@@ -67,6 +77,8 @@ export function getRepositories(): Repositories {
     articles: new SupabaseArticleRepository(client),
     taxonomy: new SupabaseTaxonomyRepository(client),
     authors: new SupabaseAuthorRepository(client),
+    media: new SupabaseMediaRepository(client),
+    newsletter: new SupabaseNewsletterRepository(client),
     team: new SupabaseTeamRepository(
       client,
       createSupabaseAdminClient(),
@@ -82,4 +94,10 @@ export function getAuthProvider(): AuthProvider {
     return new MockAuthProvider(getMockStore(), demoSessionCookie, isDemoAdminEnabled());
   }
   return new SupabaseAuthProvider(createSupabaseServerClient());
+}
+
+/** Uploaded bytes in mock mode, served by `/media/demo/$id`; null otherwise. */
+export function getDemoMediaFile(id: string) {
+  if (getDataSource() !== "mock") return null;
+  return new MockMediaRepository(getMockStore()).file(id);
 }

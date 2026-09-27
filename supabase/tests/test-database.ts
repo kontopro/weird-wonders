@@ -1,5 +1,6 @@
 import { PGlite } from "@electric-sql/pglite";
 import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
+import { unaccent } from "@electric-sql/pglite/contrib/unaccent";
 import { readdir } from "node:fs/promises";
 
 const supabaseDir = new URL("../", import.meta.url);
@@ -12,7 +13,7 @@ export type Role = "anon" | "authenticated";
  * migration and the seed applied — no Supabase project or Docker needed.
  */
 export async function createTestDatabase(options: { seed?: boolean } = {}) {
-  const db = new PGlite({ extensions: { pgcrypto } });
+  const db = new PGlite({ extensions: { pgcrypto, unaccent } });
   await db.exec(await read("tests/supabase-shim.sql"));
 
   const migrations = (await readdir(new URL("migrations/", supabaseDir)))

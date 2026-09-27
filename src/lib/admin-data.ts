@@ -8,6 +8,7 @@ export { articleStatuses, articleStatusLabels, type ArticleStatus } from "@/doma
 export type AdminArticle = {
   id: string;
   slug: string;
+  language: string;
   title: string;
   excerpt: string;
   category: CategoryRef;

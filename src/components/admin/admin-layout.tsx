@@ -3,8 +3,11 @@ import {
   BookOpen,
   Eye,
   FolderTree,
+  Tags,
+  Images,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
   PenLine,
   UserRound,
@@ -23,7 +26,10 @@ const navItems = [
   { label: "Άρθρα", to: "/admin/articles", icon: BookOpen },
   { label: "Νέο άρθρο", to: "/admin/articles/new", icon: PenLine },
   { label: "Κατηγορίες", to: "/admin/categories", icon: FolderTree },
+  { label: "Ετικέτες", to: "/admin/tags", icon: Tags },
+  { label: "Εικόνες", to: "/admin/media", icon: Images },
   { label: "Ομάδα", to: "/admin/team", icon: Users, teamOnly: true },
+  { label: "Newsletter", to: "/admin/subscribers", icon: Mail, teamOnly: true },
   { label: "Προφίλ", to: "/admin/profile", icon: UserRound },
 ] as const;
 
@@ -83,7 +89,12 @@ export function AdminSidebar({ user, onNavigate }: SidebarProps) {
         </div>
       </div>
       <div className="admin-sidebar-actions">
-        <Link to="/" className="admin-view-site" onClick={onNavigate}>
+        <Link
+          to="/{-$lang}"
+          params={{ lang: undefined }}
+          className="admin-view-site"
+          onClick={onNavigate}
+        >
           <Eye /> Προβολή site
         </Link>
         <Button variant="ghost" onClick={onSignOut} disabled={signingOut}>

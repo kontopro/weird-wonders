@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { calculateReadingTimeMinutes, safeParseArticleContent } from "./article-content";
+import {
+  calculateReadingTimeMinutes,
+  cleanArticleSources,
+  safeParseArticleContent,
+} from "./article-content";
 
 describe("article content validation", () => {
   test("rejects unsafe URLs", () => {
@@ -51,5 +55,24 @@ describe("article content validation", () => {
         ],
       }),
     ).toBe(2);
+  });
+});
+
+describe("article sources", () => {
+  test("empty optional fields are dropped so the document validates", () => {
+    const sources = cleanArticleSources([
+      { title: " Μελέτη ", url: "", publisher: "", date: "2023" },
+    ]);
+    expect(sources).toEqual([{ title: "Μελέτη", date: "2023" }]);
+    expect(safeParseArticleContent({ version: 1, blocks: [], sources }).success).toBe(true);
+  });
+
+  test("rejects unsafe source links", () => {
+    const result = safeParseArticleContent({
+      version: 1,
+      blocks: [],
+      sources: [{ title: "x", url: "javascript:alert(1)" }],
+    });
+    expect(result.success).toBe(false);
   });
 });

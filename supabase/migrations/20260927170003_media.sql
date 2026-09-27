@@ -13,6 +13,18 @@ create table public.media_assets (
   file_size_bytes bigint check (file_size_bytes is null or file_size_bytes > 0),
   width integer check (width is null or width > 0),
   height integer check (height is null or height > 0),
+  -- Smaller copies for `srcset`: [{"width": 480, "path": "media/<uid>/<name>-w480.webp"}, …],
+  -- stored next to the original in the same bucket.
+  variants jsonb not null default '[]'::jsonb check (
+    jsonb_typeof(variants) = 'array'
+    and jsonb_array_length(variants) <= 8
+    and not jsonb_path_exists(
+      variants,
+      '$[*] ? (!(@.width.type() == "number" && @.width > 0 && @.path.type() == "string"
+               && @.path like_regex "^(articles|media)/[^/]+/[^/]+$"
+               && !(@.path like_regex "(^|/)\\.\\.(/|$)")))'
+    )
+  ),
   alt_text text check (alt_text is null or char_length(alt_text) <= 500),
   caption text check (caption is null or char_length(caption) <= 2000),
   created_at timestamptz not null default now(),

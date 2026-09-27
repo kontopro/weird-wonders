@@ -1,3 +1,8 @@
+/**
+ * The blog's structure: identity, domain and languages. Everything the site
+ * *says* (tagline, SEO text, labels, URL words) lives per language in
+ * `src/config/messages/`.
+ */
 export type SiteConfig = {
   id: string;
   name: string;
@@ -5,23 +10,20 @@ export type SiteConfig = {
     primary: string;
     accent: string;
   };
-  tagline: string;
   domain: string;
+  /**
+   * The blog's main language (BCP 47, e.g. "el", "en"). Articles are written in
+   * it by default and public pages without a language prefix show it.
+   */
   defaultLanguage: string;
+  /**
+   * Languages the blog publishes in, main language first. Translations are
+   * linked articles (same `translationGroupId`); add e.g. "en" when a blog
+   * starts publishing English versions.
+   */
+  languages: readonly string[];
   themeKey: string;
   layoutKey: string;
-  contentLabels: {
-    singular: string;
-    plural: string;
-    /** Name of the one highlighted article shown on the homepage. */
-    highlight: string;
-  };
-  seo: {
-    title: string;
-    description: string;
-    socialTitle: string;
-    socialDescription: string;
-  };
 };
 
 export const factakiSite = {
@@ -31,23 +33,11 @@ export const factakiSite = {
     primary: "FACT",
     accent: "άκι",
   },
-  tagline: "Μικρό fact. Μεγάλη έκπληξη.",
   domain: "factaki.gr",
   defaultLanguage: "el",
+  languages: ["el", "en"],
   themeKey: "factaki",
   layoutKey: "editorial",
-  contentLabels: {
-    singular: "FACTάκι",
-    plural: "FACTάκια",
-    highlight: "FACTάκι της ημέρας",
-  },
-  seo: {
-    title: "FACTάκι — Μικρό fact. Μεγάλη έκπληξη.",
-    description:
-      "Απρόσμενα και τεκμηριωμένα facts από την επιστήμη, την ιστορία, τη φύση, την τεχνολογία και τον πολιτισμό.",
-    socialTitle: "FACTάκι — Κάθε μέρα κάτι που δεν ήξερες",
-    socialDescription: "Μικρές πληροφορίες που κρύβουν μεγάλες εκπλήξεις.",
-  },
 } satisfies SiteConfig;
 
 // This repository remains FACTάκι. A new blog starts from the reusable starter
@@ -57,3 +47,15 @@ export const siteConfig: SiteConfig = factakiSite;
 export function brandedTitle(title: string) {
   return `${title} — ${siteConfig.name}`;
 }
+
+/** The blog's main language; see `SiteConfig.defaultLanguage`. */
+export const mainLanguage = siteConfig.defaultLanguage;
+
+/**
+ * Public origin used for canonical, hreflang, sitemap, RSS and social links,
+ * e.g. `https://factaki.gr`. Set `VITE_SITE_URL` per deployment (preview
+ * URLs, a staging domain); defaults to `https://<domain>`.
+ */
+export const siteUrl = (
+  (import.meta.env["VITE_SITE_URL"] as string | undefined) || `https://${siteConfig.domain}`
+).replace(/\/+$/, "");

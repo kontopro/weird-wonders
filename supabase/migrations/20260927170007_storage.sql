@@ -76,46 +76,69 @@ using (
   )
 );
 
-create policy storage_public_editor_insert
+-- Public bucket: editors write anywhere under the known folders; other
+-- active members only under `media/<their user id>/`.
+create policy storage_public_insert
 on storage.objects
 for insert
 to authenticated
 with check (
   bucket_id = 'blog-public'
-  and (select private.has_role(array['owner', 'admin', 'editor']))
-  and (storage.foldername(name))[1] in ('branding', 'articles', 'media')
+  and (select private.is_active_member())
+  and (
+    (
+      (select private.has_role(array['owner', 'admin', 'editor']))
+      and (storage.foldername(name))[1] in ('branding', 'articles', 'media')
+    )
+    or (
+      (storage.foldername(name))[1] = 'media'
+      and (storage.foldername(name))[2] = (select auth.uid())::text
+    )
+  )
 );
 
--- Lets editors read upload responses; anonymous visitors use public URLs and
--- cannot list the bucket.
-create policy storage_public_editor_read
+-- Lets uploaders read their upload responses; anonymous visitors use public
+-- URLs and cannot list the bucket.
+create policy storage_public_read
 on storage.objects
 for select
 to authenticated
 using (
   bucket_id = 'blog-public'
-  and (select private.has_role(array['owner', 'admin', 'editor']))
+  and (
+    owner_id = (select auth.uid())::text
+    or (select private.has_role(array['owner', 'admin', 'editor']))
+  )
 );
 
-create policy storage_public_editor_update
+create policy storage_public_update
 on storage.objects
 for update
 to authenticated
 using (
   bucket_id = 'blog-public'
-  and (select private.has_role(array['owner', 'admin', 'editor']))
+  and (
+    owner_id = (select auth.uid())::text
+    or (select private.has_role(array['owner', 'admin', 'editor']))
+  )
 )
 with check (
   bucket_id = 'blog-public'
-  and (select private.has_role(array['owner', 'admin', 'editor']))
   and (storage.foldername(name))[1] in ('branding', 'articles', 'media')
+  and (
+    owner_id = (select auth.uid())::text
+    or (select private.has_role(array['owner', 'admin', 'editor']))
+  )
 );
 
-create policy storage_public_editor_delete
+create policy storage_public_delete
 on storage.objects
 for delete
 to authenticated
 using (
   bucket_id = 'blog-public'
-  and (select private.has_role(array['owner', 'admin', 'editor']))
+  and (
+    owner_id = (select auth.uid())::text
+    or (select private.has_role(array['owner', 'admin', 'editor']))
+  )
 );

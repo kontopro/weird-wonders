@@ -4,6 +4,8 @@
 -- Internal helpers live in the `private` schema, which the API does not expose.
 
 create extension if not exists pgcrypto with schema extensions;
+-- Accent-insensitive search (Greek: "επιστημη" finds "επιστήμη").
+create extension if not exists unaccent with schema extensions;
 
 create schema if not exists private;
 revoke all on schema private from public;

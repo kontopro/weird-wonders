@@ -1,3 +1,4 @@
+import { imageVariantWidths } from "@/domain/media";
 import type { ArticleContentDocument } from "@/lib/article-content";
 import type { MockStore } from "@/data/mock/mock-store";
 
@@ -7,11 +8,50 @@ import type { MockStore } from "@/data/mock/mock-store";
  * Everything here is illustrative demo content, not real editorial material.
  */
 
-// Demo images are static files in `public/demo`, served as-is.
-const forest = "/demo/forest-network.jpg";
-const observatory = "/demo/observatory.jpg";
-const octopus = "/demo/octopus.jpg";
-const timeMachine = "/demo/time-machine.jpg";
+// Demo images are static files in `public/demo`, registered as media assets.
+const forest = "demo-forest";
+const observatory = "demo-observatory";
+const octopus = "demo-octopus";
+const timeMachine = "demo-time-machine";
+
+const demoMedia: MockStore["media"] = [
+  ["demo-forest", "/demo/forest-network.jpg", 1600, 1008, 497124, "Δάσος με φωτεινό δίκτυο ριζών"],
+  [
+    "demo-observatory",
+    "/demo/observatory.jpg",
+    1200,
+    912,
+    184752,
+    "Αστεροσκοπείο κάτω από έναστρο ουρανό",
+  ],
+  ["demo-octopus", "/demo/octopus.jpg", 1200, 912, 165659, "Χταπόδι σε μπλε νερά"],
+  [
+    "demo-time-machine",
+    "/demo/time-machine.jpg",
+    1200,
+    912,
+    162276,
+    "Παλιό ρολόι και κυκλώματα υπολογιστή",
+  ],
+].map(([id, src, width, height, sizeBytes, alt]) => ({
+  id: String(id),
+  src: String(src),
+  // Smaller copies in `public/demo`, named like uploads (`<name>-w<width>`).
+  variants: imageVariantWidths
+    .filter((variantWidth) => variantWidth < Number(width))
+    .map((variantWidth) => ({
+      width: variantWidth,
+      src: String(src).replace(/\.jpg$/, `-w${variantWidth}.jpg`),
+    })),
+  width: Number(width),
+  height: Number(height),
+  mimeType: "image/jpeg",
+  sizeBytes: Number(sizeBytes),
+  alt: String(alt),
+  caption: "",
+  uploadedBy: null,
+  createdAt: "2026-09-01T00:00:00.000Z",
+}));
 
 export const DEMO_USER_ID = "00000000-0000-4000-8000-000000000001";
 
@@ -34,7 +74,7 @@ const demoArticleContent: ArticleContentDocument = {
       id: "69fbbfb8-5013-448a-a66b-235f2ed3d6b7",
       type: "paragraph",
       data: {
-        text: "Η μυκόρριζα είναι μια συμβιωτική σχέση ανάμεσα σε μύκητες και φυτά. Οι μύκητες βοηθούν τις ρίζες να απορροφήσουν νερό και θρεπτικά στοιχεία, ενώ λαμβάνουν άνθρακα από το φυτό. Η επιστημονική εικόνα είναι συναρπαστική — αλλά και πιο σύνθετη από τις δημοφιλείς μεταφορές περί «διαδικτύου του δάσους».",
+        text: "Η **μυκόρριζα** είναι μια *συμβιωτική* σχέση ανάμεσα σε μύκητες και φυτά. Οι μύκητες βοηθούν τις ρίζες να απορροφήσουν νερό και θρεπτικά στοιχεία, ενώ λαμβάνουν άνθρακα από το φυτό. Η επιστημονική εικόνα είναι συναρπαστική — αλλά και πιο σύνθετη από τις δημοφιλείς μεταφορές περί «διαδικτύου του δάσους».",
       },
     },
     {
@@ -75,6 +115,21 @@ const demoArticleContent: ArticleContentDocument = {
       data: {
         text: "Η έρευνα συνεχίζεται και αρκετοί ισχυρισμοί παραμένουν υπό συζήτηση. Γι’ αυτό ξεχωρίζουμε τις παρατηρήσεις από τις ερμηνείες και συνδέουμε κάθε δημοσιευμένο άρθρο με πρωτογενείς ή αξιόπιστες δευτερογενείς πηγές.",
       },
+    },
+  ],
+  sources: [
+    {
+      title: "Net transfer of carbon between ectomycorrhizal tree species in the field",
+      url: "https://doi.org/10.1038/41557",
+      publisher: "Nature (Simard κ.ά.)",
+      date: "1997",
+    },
+    {
+      title:
+        "Positive citation bias and overinterpreted results lead to misinformation on common mycorrhizal networks in forests",
+      url: "https://doi.org/10.1038/s41559-023-01986-1",
+      publisher: "Nature Ecology & Evolution (Karst κ.ά.)",
+      date: "2023",
     },
   ],
 };
@@ -123,6 +178,71 @@ const tags: MockStore["tags"] = [
   { id: "tag-egkefalos", slug: "egkefalos", name: "εγκέφαλος" },
   { id: "tag-aisthiseis", slug: "aisthiseis", name: "αισθήσεις" },
 ];
+
+// English versions of the demo categories and tags (the site publishes in el + en).
+const categoryTranslations: MockStore["categoryTranslations"] = [
+  ["cat-epistimi", "Science", "science"],
+  ["cat-istoria", "History", "history"],
+  ["cat-technologia", "Technology", "technology"],
+  ["cat-fysi", "Nature", "nature"],
+  ["cat-diastima", "Space", "space"],
+  ["cat-politismos", "Culture", "culture"],
+  ["cat-anthropos", "Humans", "humans"],
+  ["cat-kathimerinotita", "Everyday life", "everyday-life"],
+].map(([categoryId, name, slug]) => ({
+  categoryId: categoryId!,
+  language: "en",
+  name: name!,
+  slug: slug!,
+  description: "Stories that change the way you look at the world.",
+}));
+
+const tagTranslations: MockStore["tagTranslations"] = [
+  ["tag-oikosystimata", "ecosystems", "ecosystems"],
+  ["tag-fos", "light", "light"],
+  ["tag-zoa", "animals", "animals"],
+  ["tag-chronos", "time", "time"],
+].map(([tagId, name, slug]) => ({
+  tagId: tagId!,
+  language: "en",
+  name: name!,
+  slug: slug!,
+  description: "",
+}));
+
+const englishTreesContent: ArticleContentDocument = {
+  version: 1,
+  blocks: [
+    {
+      id: "5b0e7a1c-2d3f-4e5a-8b6c-7d8e9f0a1b2c",
+      type: "paragraph",
+      data: {
+        text: "Beneath every step we take in a forest, fine fungal threads meet the roots of the trees. Together they form a remarkably complex ecosystem.",
+      },
+    },
+    {
+      id: "6c1f8b2d-3e4a-4f5b-9c7d-8e9f0a1b2c3d",
+      type: "heading",
+      data: { text: "The hidden network under the soil", level: 2 },
+    },
+    {
+      id: "7d2a9c3e-4f5b-4a6c-8d8e-9f0a1b2c3d4e",
+      type: "paragraph",
+      data: {
+        text: "**Mycorrhiza** is a *symbiotic* relationship between fungi and plants. The fungi help roots take up water and nutrients and receive carbon from the plant in return. The science is fascinating — and more complex than the popular “wood wide web” metaphors suggest.",
+      },
+    },
+    {
+      id: "8e3b0d4f-5a6c-4b7d-9e9f-0a1b2c3d4e5f",
+      type: "factBox",
+      data: {
+        title: "Remember this",
+        text: "A teaspoon of healthy forest soil can hold kilometres of microscopic fungal threads.",
+      },
+    },
+  ],
+  sources: demoArticleContent.sources ?? [],
+};
 
 const profiles: MockStore["profiles"] = [
   {
@@ -186,7 +306,7 @@ type SeedArticle = Pick<
   | "tagIds"
   | "status"
   | "dateValue"
-  | "image"
+  | "coverAssetId"
   | "views"
   | "popularity"
   | "minutes"
@@ -204,7 +324,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-oikosystimata"],
     status: "published",
     dateValue: "2026-09-18",
-    image: forest,
+    coverAssetId: forest,
     views: 12480,
     popularity: 98,
     minutes: 7,
@@ -219,7 +339,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-fos", "tag-chronos"],
     status: "published",
     dateValue: "2026-09-16",
-    image: observatory,
+    coverAssetId: observatory,
     views: 9210,
     popularity: 94,
     minutes: 5,
@@ -234,7 +354,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-zoa"],
     status: "scheduled",
     dateValue: "2026-09-22",
-    image: octopus,
+    coverAssetId: octopus,
     views: 0,
     popularity: 91,
     minutes: 4,
@@ -250,7 +370,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-chronos"],
     status: "draft",
     dateValue: "2026-09-19",
-    image: timeMachine,
+    coverAssetId: timeMachine,
     views: 0,
     popularity: 87,
     minutes: 6,
@@ -266,7 +386,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-imerologio", "tag-chronos"],
     status: "published",
     dateValue: "2026-09-10",
-    image: observatory,
+    coverAssetId: observatory,
     views: 7860,
     popularity: 83,
     minutes: 8,
@@ -281,7 +401,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-mousiki"],
     status: "draft",
     dateValue: "2026-09-08",
-    image: timeMachine,
+    coverAssetId: timeMachine,
     views: 0,
     popularity: 79,
     minutes: 5,
@@ -296,7 +416,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-egkefalos"],
     status: "published",
     dateValue: "2026-09-06",
-    image: forest,
+    coverAssetId: forest,
     views: 5120,
     popularity: 76,
     minutes: 4,
@@ -311,7 +431,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-aisthiseis"],
     status: "published",
     dateValue: "2026-09-04",
-    image: forest,
+    coverAssetId: forest,
     views: 4380,
     popularity: 72,
     minutes: 3,
@@ -321,7 +441,13 @@ const seedArticles: SeedArticle[] = [
 const demoSeed: MockStore = {
   categories,
   tags,
+  categoryTranslations,
+  tagTranslations,
   profiles,
+  media: demoMedia,
+  articleViews: [],
+  slugHistory: [],
+  subscribers: [],
   members: [
     { userId: DEMO_USER_ID, email: "maria@example.com", role: "owner", status: "active" },
     { userId: "author-aris", email: "aris@example.com", role: "editor", status: "active" },
@@ -330,16 +456,47 @@ const demoSeed: MockStore = {
     { userId: "author-lida", email: "lida@example.com", role: "author", status: "active" },
     { userId: "author-iason", email: "iason@example.com", role: "author", status: "suspended" },
   ],
-  articles: seedArticles.map((article) => ({
-    ...article,
-    content: demoArticleContent satisfies ArticleContentDocument,
-    imageAlt: "",
-    seoTitle: "",
-    seoDescription: "",
-    isFeatured: article.id === "1",
-    isTrending: article.popularity > 80,
-    isHighlighted: article.slug === "h-myrwdia-ths-vroxhs",
-  })),
+  articles: seedArticles
+    .map((article) => ({
+      ...article,
+      language: "el",
+      translationGroupId: `group-${article.id}`,
+      content: demoArticleContent satisfies ArticleContentDocument,
+      imageAlt: demoMedia.find((media) => media.id === article.coverAssetId)?.alt ?? "",
+      seoTitle: "",
+      seoDescription: "",
+      isFeatured: article.id === "1",
+      isTrending: article.popularity > 80,
+      isHighlighted: article.slug === "h-myrwdia-ths-vroxhs",
+    }))
+    .concat([
+      // English translation of the trees article (same translation group).
+      {
+        id: "1-en",
+        slug: "trees-talk-to-each-other",
+        language: "en",
+        translationGroupId: "group-1",
+        title: "Did you know that trees communicate with each other?",
+        excerpt:
+          "Beneath the forest floor lies an invisible network that exchanges nutrients and signals.",
+        categoryId: "cat-fysi",
+        authorId: DEMO_USER_ID,
+        tagIds: ["tag-oikosystimata"],
+        status: "published",
+        dateValue: "2026-09-19",
+        coverAssetId: forest,
+        imageAlt: "A forest with a glowing network of roots",
+        content: englishTreesContent,
+        seoTitle: "",
+        seoDescription: "",
+        isFeatured: true,
+        isTrending: true,
+        isHighlighted: false,
+        views: 3120,
+        popularity: 90,
+        minutes: 3,
+      },
+    ]),
 };
 
 const addDays = (date: Date, days: number) =>
@@ -354,5 +511,14 @@ export function createDemoStore(now: Date = new Date()): MockStore {
   for (const article of store.articles) {
     if (article.status === "scheduled") article.dateValue = addDays(now, 7);
   }
+  // Recent views so "popular" has something to rank: yesterday's count
+  // follows the demo popularity score.
+  store.articleViews = store.articles
+    .filter((article) => article.status === "published" && article.popularity > 0)
+    .map((article) => ({
+      articleId: article.id,
+      day: addDays(now, -1),
+      views: article.popularity * 10,
+    }));
   return store;
 }

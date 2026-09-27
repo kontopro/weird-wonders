@@ -1,7 +1,11 @@
-import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
+import { deleteCookie, getCookie, getRequestUrl, setCookie } from "@tanstack/react-start/server";
 import type { ArticleRepository } from "@/data/articles/article-repository";
 import type { AuthProvider, SessionCookie } from "@/data/auth/auth-provider";
 import type { AuthorRepository } from "@/data/authors/author-repository";
+import type { TeamRepository } from "@/data/team/team-repository";
+import { MockTeamRepository } from "@/data/mock/mock-team-repository";
+import { SupabaseTeamRepository } from "@/data/supabase/supabase-team-repository";
+import { createSupabaseAdminClient } from "@/server/supabase-admin";
 import { createDemoStore } from "@/data/mock/demo-seed";
 import { MockArticleRepository } from "@/data/mock/mock-article-repository";
 import { MockAuthProvider } from "@/data/mock/mock-auth-provider";
@@ -20,6 +24,7 @@ export type Repositories = {
   articles: ArticleRepository;
   taxonomy: TaxonomyRepository;
   authors: AuthorRepository;
+  team: TeamRepository;
 };
 
 // Mock data lives in server memory and resets on restart.
@@ -53,6 +58,7 @@ export function getRepositories(): Repositories {
       articles: new MockArticleRepository(store),
       taxonomy: new MockTaxonomyRepository(store),
       authors: new MockAuthorRepository(store),
+      team: new MockTeamRepository(store),
     };
   }
 
@@ -61,6 +67,12 @@ export function getRepositories(): Repositories {
     articles: new SupabaseArticleRepository(client),
     taxonomy: new SupabaseTaxonomyRepository(client),
     authors: new SupabaseAuthorRepository(client),
+    team: new SupabaseTeamRepository(
+      client,
+      createSupabaseAdminClient(),
+      // Invited people set their password right after accepting.
+      new URL("/admin/password", getRequestUrl()).toString(),
+    ),
   };
 }
 

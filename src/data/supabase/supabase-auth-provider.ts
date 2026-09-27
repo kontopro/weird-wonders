@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type {
   AuthProvider,
+  EmailLinkInput,
   LoginOptions,
   SignInInput,
   SignInResult,
@@ -67,5 +68,24 @@ export class SupabaseAuthProvider implements AuthProvider {
 
   async signOut() {
     await this.client.auth.signOut();
+  }
+
+  async verifyEmailLink(input: EmailLinkInput): Promise<SignInResult> {
+    const { error } = await this.client.auth.verifyOtp({
+      token_hash: input.tokenHash,
+      type: input.type,
+    });
+    return error
+      ? { ok: false, message: "Ο σύνδεσμος έληξε ή έχει ήδη χρησιμοποιηθεί. Ζήτησε νέο." }
+      : { ok: true };
+  }
+
+  async updatePassword(password: string): Promise<SignInResult> {
+    const { data } = await this.client.auth.getClaims();
+    if (!data?.claims?.sub) return { ok: false, message: "Απαιτείται σύνδεση." };
+    const { error } = await this.client.auth.updateUser({ password });
+    return error
+      ? { ok: false, message: "Ο κωδικός δεν άλλαξε. Δοκίμασε έναν πιο ισχυρό κωδικό." }
+      : { ok: true };
   }
 }

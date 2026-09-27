@@ -28,6 +28,14 @@ This checklist is intentionally hosted-only. It does not start, reset or depend 
 - Confirm a second bootstrap fails, and that `authenticated` cannot execute `private.bootstrap_owner`.
 - Sign in at `/login`, confirm the session cookie is HTTP-only, and that `/admin` opens and shows the owner's name and role.
 - Sign out and confirm `/admin` redirects to `/login` again.
+
+## Team verification
+
+- Set `SUPABASE_SECRET_KEY` on the server, the Site URL and the invite e-mail template (see README → Team).
+- As the owner, invite an editor and an author from `/admin/team`; confirm both e-mails arrive, the links open `/admin/password`, and each can set a password and sign in.
+- As an admin, confirm the role list offers no "owner" and owners cannot be changed.
+- Suspend the author and confirm they are sent to `/login` with a "no access" message; reactivate them.
+- Confirm a member with articles cannot be removed, only suspended.
 - Confirm the final active owner cannot be suspended, demoted or deleted.
 - Confirm an anonymous request cannot enter the admin flow.
 

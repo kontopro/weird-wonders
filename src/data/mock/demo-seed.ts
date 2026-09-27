@@ -323,12 +323,12 @@ const demoSeed: MockStore = {
   tags,
   profiles,
   members: [
-    { userId: DEMO_USER_ID, role: "owner", status: "active" },
-    { userId: "author-aris", role: "editor", status: "active" },
-    { userId: "author-eva", role: "author", status: "active" },
-    { userId: "author-nikos", role: "author", status: "active" },
-    { userId: "author-lida", role: "author", status: "active" },
-    { userId: "author-iason", role: "author", status: "suspended" },
+    { userId: DEMO_USER_ID, email: "maria@example.com", role: "owner", status: "active" },
+    { userId: "author-aris", email: "aris@example.com", role: "editor", status: "active" },
+    { userId: "author-eva", email: "eva@example.com", role: "author", status: "active" },
+    { userId: "author-nikos", email: "nikos@example.com", role: "author", status: "active" },
+    { userId: "author-lida", email: "lida@example.com", role: "author", status: "active" },
+    { userId: "author-iason", email: "iason@example.com", role: "author", status: "suspended" },
   ],
   articles: seedArticles.map((article) => ({
     ...article,

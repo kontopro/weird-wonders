@@ -2882,3 +2882,53 @@ select:focus-visible {
   color: var(--muted-foreground);
   font-weight: 600;
 }
+
+/* Team */
+.team-list article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.team-list article:last-child {
+  border-bottom: 0;
+}
+.team-list article.is-suspended {
+  opacity: 0.65;
+}
+.team-identity {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.team-identity span {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.team-identity small {
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+.team-role select {
+  min-width: 150px;
+}
+.team-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.team-status.status-suspended {
+  color: var(--coral);
+}
+@media (max-width: 760px) {
+  .team-list article {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .team-role,
+  .team-status,
+  .team-list .row-actions {
+    grid-column: 2;
+  }
+}

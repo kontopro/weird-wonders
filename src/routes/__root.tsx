@@ -126,7 +126,9 @@ function RootComponent() {
   // Admin and login pages render without the public site header/footer.
   const isAdmin = useRouterState({
     select: ({ location }) =>
-      location.pathname.startsWith("/admin") || location.pathname === "/login",
+      location.pathname.startsWith("/admin") ||
+      location.pathname === "/login" ||
+      location.pathname.startsWith("/auth/"),
   });
 
   return (

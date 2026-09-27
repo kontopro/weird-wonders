@@ -61,6 +61,19 @@ Blogs are invite-only. Before anyone can reach the project:
 
 The bootstrap runs only as the database owner, is concurrency-safe, and refuses to run once any member exists.
 
+## Team
+
+Owners and admins manage the team at `/admin/team`: invite members, change roles, suspend and reactivate, and remove members without articles (members with articles are suspended instead, so their bylines stay). Admins cannot create or change owners, nobody changes their own membership there, and the team always keeps an active owner. The same rules live in `src/domain/team.ts` and in the database.
+
+In mock mode an invited member is added immediately and appears among the demo accounts. With Supabase:
+
+1. Set `SUPABASE_SECRET_KEY` on the server (Vercel: _Settings → Environment Variables_). It is server-only — never prefix it with `VITE_`. Without it, invites are disabled and the team list shows no e-mails.
+2. Under **Authentication → URL Configuration**, set the **Site URL** to the blog's address.
+3. Under **Authentication → Emails → Invite user**, make the link point to the app:
+   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/admin/password`
+
+The invited person opens the link, is signed in by `/auth/confirm`, and sets a password at `/admin/password`.
+
 When a fresh hosted project is available:
 
 ```sh

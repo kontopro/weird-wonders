@@ -234,3 +234,81 @@ describe("set_article_tags", () => {
     expect(await tagsOf(id)).toEqual(["Θάλασσα"]);
   });
 });
+
+describe("team management", () => {
+  let admin: string;
+
+  beforeEach(async () => {
+    admin = await t.createUser("admin@example.com");
+    await t.db.query(`insert into public.members (user_id, role) values ($1, 'admin')`, [admin]);
+  });
+
+  test("owners and admins see suspended members; others see active ones only", async () => {
+    await t.db.query("update public.members set status = 'suspended' where user_id = $1", [author]);
+    const visibleTo = async (userId: string) =>
+      (
+        await t.as<{ user_id: string }>(
+          "authenticated",
+          userId,
+          "select user_id from public.members",
+        )
+      ).map((row) => row.user_id);
+    expect(await visibleTo(admin)).toContain(author);
+    expect(await visibleTo(editor)).not.toContain(author);
+    const profiles = await t.as<{ id: string }>(
+      "authenticated",
+      admin,
+      "select id from public.profiles where id = $1",
+      [author],
+    );
+    expect(profiles).toHaveLength(1);
+  });
+
+  test("admins add and change members but never touch owners", async () => {
+    const newcomer = await t.createUser("new@example.com");
+    await t.as(
+      "authenticated",
+      admin,
+      "insert into public.members (user_id, role, invited_by) values ($1, 'author', $2)",
+      [newcomer, admin],
+    );
+    await t.as(
+      "authenticated",
+      admin,
+      "update public.members set role = 'editor' where user_id = $1",
+      [newcomer],
+    );
+    await expect(
+      t.as("authenticated", admin, "update public.members set role = 'owner' where user_id = $1", [
+        newcomer,
+      ]),
+    ).rejects.toThrow(/row-level security/);
+
+    const ownerRows = await t.as(
+      "authenticated",
+      admin,
+      "update public.members set status = 'suspended' where user_id = $1 returning user_id",
+      [owner],
+    );
+    expect(ownerRows).toHaveLength(0);
+  });
+
+  test("editors cannot manage the team", async () => {
+    const newcomer = await t.createUser("new@example.com");
+    await expect(
+      t.as(
+        "authenticated",
+        editor,
+        "insert into public.members (user_id, role) values ($1, 'author')",
+        [newcomer],
+      ),
+    ).rejects.toThrow(/row-level security/);
+  });
+
+  test("members with articles cannot be removed, only suspended", async () => {
+    await article("Byline", { status: "published" });
+    await expect(
+      t.as("authenticated", admin, "delete from public.members where user_id = $1", [author]),
+    ).rejects.toThrow(/foreign key/);
+  });
+});

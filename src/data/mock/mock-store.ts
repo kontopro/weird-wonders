@@ -20,7 +20,13 @@ export type MockStore = {
   tags: Array<{ id: string; slug: string; name: string }>;
   profiles: Array<{ id: string; slug: string; displayName: string; bio: string }>;
   /** Editorial team access, like `public.members`. */
-  members: Array<{ userId: string; role: MemberRole; status: "active" | "suspended" }>;
+  members: Array<{
+    userId: string;
+    /** In production the e-mail lives on the Auth account; mock keeps it here. */
+    email: string;
+    role: MemberRole;
+    status: "active" | "suspended";
+  }>;
   articles: Array<{
     id: string;
     slug: string;

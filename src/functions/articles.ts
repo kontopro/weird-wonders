@@ -12,6 +12,7 @@ import type { AdminArticleFilter } from "@/data/articles/article-repository";
 import type { SessionUser } from "@/lib/auth-types";
 import { requireMember } from "@/server/auth";
 import { getRepositories } from "@/server/repositories";
+import { allow } from "@/server/rate-limit";
 
 const slugSchema = z.string().trim().min(1).max(200);
 const idSchema = z.string().trim().min(1).max(100);
@@ -168,5 +169,7 @@ export const resolveOldArticleSlug = createServerFn({ method: "GET" })
 export const recordArticleView = createServerFn({ method: "POST" })
   .validator((articleId: string) => idSchema.parse(articleId))
   .handler(async ({ data }) => {
+    // Reloads and scripted calls do not inflate counts; excess views are ignored.
+    if (!allow("viewPerArticle", data) || !allow("views")) return;
     await getRepositories().articles.recordView(data);
   });

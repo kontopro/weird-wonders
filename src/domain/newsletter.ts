@@ -29,6 +29,8 @@ export type SubscribeInput = z.infer<typeof subscribeInputSchema>;
 
 /** At most one confirmation e-mail per address in this many minutes. */
 export const confirmationIntervalMinutes = 10;
+/** At most this many confirmation e-mails in any hour (protects the e-mail quota). */
+export const confirmationHourlyLimit = 100;
 
 /** What the server needs to e-mail a confirmation link. Never sent to browsers. */
 export type ConfirmationTicket = { token: string; language: string };

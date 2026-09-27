@@ -281,11 +281,14 @@ $$;
 
 -- The server claims the right to send a confirmation e-mail: it gets the
 -- token only for a pending address that has not had one in the last
--- `p_min_interval`, so the form cannot be used to flood someone's inbox.
+-- `p_min_interval`, so the form cannot be used to flood someone's inbox, and
+-- only while fewer than `p_hourly_limit` confirmations went out in the last
+-- hour, so a flood of fake sign-ups cannot exhaust the e-mail quota.
 -- Server only (secret key): visitors never see tokens.
 create or replace function public.claim_newsletter_confirmation(
   p_email text,
-  p_min_interval interval default interval '10 minutes'
+  p_min_interval interval default interval '10 minutes',
+  p_hourly_limit integer default 100
 )
 returns table (token uuid, language text)
 language sql
@@ -300,11 +303,16 @@ as $$
       subscriber.confirmation_sent_at is null
       or subscriber.confirmation_sent_at <= now() - p_min_interval
     )
+    and (
+      select count(*)
+      from public.newsletter_subscribers as recent
+      where recent.confirmation_sent_at > now() - interval '1 hour'
+    ) < p_hourly_limit
   returning subscriber.token, subscriber.language;
 $$;
 
-revoke all on function public.claim_newsletter_confirmation(text, interval) from public;
-grant execute on function public.claim_newsletter_confirmation(text, interval) to service_role;
+revoke all on function public.claim_newsletter_confirmation(text, interval, integer) from public;
+grant execute on function public.claim_newsletter_confirmation(text, interval, integer) to service_role;
 
 revoke all on function public.subscribe_newsletter(text, text) from public;
 revoke all on function public.confirm_newsletter(uuid) from public;

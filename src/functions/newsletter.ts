@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { subscribeInputSchema, type SubscribeInput } from "@/domain/newsletter";
 import { requireMember } from "@/server/auth";
+import { DomainError } from "@/domain/errors";
+import { allow } from "@/server/rate-limit";
 import { getDemoOutbox, getEmailSender, getRepositories } from "@/server/repositories";
 import { sendNewsletterConfirmation } from "@/server/newsletter-email";
 
@@ -13,6 +15,8 @@ const listManagers = ["owner", "admin"] as const;
 export const subscribeToNewsletter = createServerFn({ method: "POST" })
   .validator((input: SubscribeInput) => subscribeInputSchema.parse(input))
   .handler(async ({ data }) => {
+    if (!allow("subscribe"))
+      throw new DomainError("Too many sign-ups. Try again later.", "invalid");
     await getRepositories().newsletter.subscribe(data);
     // Double opt-in: the address counts only after the link in this e-mail.
     await sendNewsletterConfirmation(data.email);
@@ -20,11 +24,17 @@ export const subscribeToNewsletter = createServerFn({ method: "POST" })
 
 export const confirmNewsletter = createServerFn({ method: "POST" })
   .validator((token: string) => tokenSchema.parse(token))
-  .handler(({ data }) => getRepositories().newsletter.confirm(data));
+  .handler(({ data }) => {
+    if (!allow("newsletterLink")) throw new DomainError("Too many attempts.", "invalid");
+    return getRepositories().newsletter.confirm(data);
+  });
 
 export const unsubscribeNewsletter = createServerFn({ method: "POST" })
   .validator((token: string) => tokenSchema.parse(token))
-  .handler(({ data }) => getRepositories().newsletter.unsubscribe(data));
+  .handler(({ data }) => {
+    if (!allow("newsletterLink")) throw new DomainError("Too many attempts.", "invalid");
+    return getRepositories().newsletter.unsubscribe(data);
+  });
 
 export const listSubscribers = createServerFn({ method: "GET" }).handler(async () => {
   await requireMember(listManagers);

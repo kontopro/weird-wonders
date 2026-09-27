@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { hit, isLimited, visitorKey } from "@/server/rate-limit";
 import {
   emailLinkTypes,
   type EmailLinkInput,
@@ -28,7 +29,19 @@ export const getLoginOptions = createServerFn({ method: "GET" }).handler(() =>
 
 export const signIn = createServerFn({ method: "POST" })
   .validator((input: SignInInput) => signInSchema.parse(input))
-  .handler(({ data }): Promise<SignInResult> => getAuthProvider().signIn(data));
+  .handler(async ({ data }): Promise<SignInResult> => {
+    // Slows down password guessing: only failed attempts count.
+    const visitor = visitorKey();
+    if (isLimited("signIn", visitor)) {
+      return {
+        ok: false,
+        message: "Πολλές αποτυχημένες προσπάθειες. Δοκίμασε ξανά σε λίγα λεπτά.",
+      };
+    }
+    const result = await getAuthProvider().signIn(data);
+    if (!result.ok) hit("signIn", visitor);
+    return result;
+  });
 
 export const signOut = createServerFn({ method: "POST" }).handler(() =>
   getAuthProvider().signOut(),

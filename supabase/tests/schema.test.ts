@@ -582,4 +582,20 @@ describe("newsletter", () => {
     await t.db.query("update public.newsletter_subscribers set confirmation_sent_at = null");
     expect(await claim("service_role")).toHaveLength(0);
   });
+
+  test("an hourly cap protects the e-mail quota", async () => {
+    for (const email of ["c1@example.com", "c2@example.com", "c3@example.com"]) {
+      await subscribe(email);
+    }
+    const claim = (email: string) =>
+      t.as<{ token: string }>(
+        "service_role",
+        null,
+        "select * from public.claim_newsletter_confirmation($1, interval '10 minutes', 2)",
+        [email],
+      );
+    expect(await claim("c1@example.com")).toHaveLength(1);
+    expect(await claim("c2@example.com")).toHaveLength(1);
+    expect(await claim("c3@example.com")).toHaveLength(0);
+  });
 });

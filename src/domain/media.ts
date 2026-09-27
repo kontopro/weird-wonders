@@ -107,6 +107,30 @@ export function isImageVariantWidth(value: number): boolean {
   return (imageVariantWidths as readonly number[]).includes(value);
 }
 
+/**
+ * The image type from the file's first bytes ("magic numbers"), or null when
+ * it is not one of the allowed images. The type a browser reports comes from
+ * the file name and cannot be trusted.
+ */
+export function detectImageType(bytes: Uint8Array): AllowedImageType | null {
+  const ascii = (from: number, to: number) => String.fromCharCode(...bytes.subarray(from, to));
+  if (bytes.length < 12) return null;
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (ascii(0, 8) === "\x89PNG\r\n\x1a\n") return "image/png";
+  if (ascii(0, 6) === "GIF87a" || ascii(0, 6) === "GIF89a") return "image/gif";
+  if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "image/webp";
+  // ISO-BMFF: "ftyp" box whose major or compatible brands include AVIF.
+  if (ascii(4, 8) === "ftyp") {
+    const boxSize = Math.min(
+      (bytes[0]! << 24) | (bytes[1]! << 16) | (bytes[2]! << 8) | bytes[3]!,
+      64,
+    );
+    const brands = ascii(8, Math.max(12, boxSize));
+    if (/avi[fs]/.test(brands)) return "image/avif";
+  }
+  return null;
+}
+
 export function isAllowedImageType(value: string): value is AllowedImageType {
   return (allowedImageTypes as readonly string[]).includes(value);
 }

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
+  detectImageType,
   isAllowedImageType,
   isImageVariantWidth,
   maxImageBytes,
@@ -61,26 +62,24 @@ export const uploadMedia = createServerFn({ method: "POST" })
   })
   .handler(async ({ data: { file, meta, variants } }) => {
     const context = await contextOf();
-    const mimeType = file.type;
-    if (!isAllowedImageType(mimeType)) throw new DomainError(mediaMessages.type, "invalid");
+    // The stored type comes from the file's contents, never from its name.
+    const imageOf = async (upload: File) => {
+      const bytes = new Uint8Array(await upload.arrayBuffer());
+      const mimeType = detectImageType(bytes);
+      if (!mimeType) throw new DomainError(mediaMessages.type, "invalid");
+      return { bytes, mimeType };
+    };
+    const original = await imageOf(file);
     return getRepositories().media.upload(
       {
         ...meta,
         fileName: file.name,
-        mimeType,
-        bytes: new Uint8Array(await file.arrayBuffer()),
+        ...original,
         variants: await Promise.all(
-          variants.flatMap(({ width, file: variant }) =>
-            isAllowedImageType(variant.type)
-              ? [
-                  variant.arrayBuffer().then((buffer) => ({
-                    width,
-                    mimeType: variant.type as typeof mimeType,
-                    bytes: new Uint8Array(buffer),
-                  })),
-                ]
-              : [],
-          ),
+          variants.map(async ({ width, file: variant }) => ({
+            width,
+            ...(await imageOf(variant)),
+          })),
         ),
       },
       context,

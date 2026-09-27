@@ -1,6 +1,10 @@
 import type { MockStore } from "@/data/mock/mock-store";
 import type { NewsletterRepository } from "@/data/newsletter/newsletter-repository";
-import { confirmationIntervalMinutes, type SubscribeInput } from "@/domain/newsletter";
+import {
+  confirmationHourlyLimit,
+  confirmationIntervalMinutes,
+  type SubscribeInput,
+} from "@/domain/newsletter";
 
 /** In-memory newsletter list with the database's rules (idempotent, silent). */
 export class MockNewsletterRepository implements NewsletterRepository {
@@ -35,6 +39,11 @@ export class MockNewsletterRepository implements NewsletterRepository {
     if (!subscriber || subscriber.status !== "pending") return null;
     const last = subscriber.confirmationSentAt ? Date.parse(subscriber.confirmationSentAt) : 0;
     if (Date.now() - last < confirmationIntervalMinutes * 60_000) return null;
+    const hourAgo = Date.now() - 60 * 60_000;
+    const sentLastHour = this.store.subscribers.filter(
+      (item) => item.confirmationSentAt && Date.parse(item.confirmationSentAt) > hourAgo,
+    ).length;
+    if (sentLastHour >= confirmationHourlyLimit) return null;
     subscriber.confirmationSentAt = new Date().toISOString();
     return { token: subscriber.token, language: subscriber.language };
   }

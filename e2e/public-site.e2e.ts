@@ -84,4 +84,13 @@ test.describe("addresses and feeds", () => {
     expect(rss.headers()["content-type"]).toContain("application/rss+xml");
     expect(await rss.text()).toContain("<language>en-GB</language>");
   });
+
+  test("pages carry security headers", async ({ request }) => {
+    const headers = (await request.get("/")).headers();
+    expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(headers["content-security-policy"]).toContain("object-src 'none'");
+    expect(headers["x-content-type-options"]).toBe("nosniff");
+    expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+    expect(headers["x-frame-options"]).toBe("DENY");
+  });
 });

@@ -13,6 +13,8 @@ Status: **approved architecture — baseline squashed on 2026-09-27, not yet app
 > - `set_article_tags(article, tags)` replaces tags atomically; existing tags match by slug or name.
 > - Buckets accept images only (no SVG), up to 10 MB.
 > - The migrations are tested in an in-process Postgres (PGlite): `supabase/tests`.
+> - Languages: `articles.language` + `translation_group_id` (slug unique per language, one version per language per group); `category_translations` and `tag_translations`.
+> - Media: every active member uploads to `blog-public` under `media/<own id>/`; editors manage all assets, others their own. Uploads are public by URL.
 
 This document defines the database contract for a reusable blog starter. FACTάκι is the first real implementation, but every new blog will be created as an independent repository with an independent Supabase project. The same version-controlled migrations will initialize each project.
 

@@ -61,6 +61,24 @@ Blogs are invite-only. Before anyone can reach the project:
 
 The bootstrap runs only as the database owner, is concurrency-safe, and refuses to run once any member exists.
 
+## Writing articles
+
+The editor builds articles from blocks (paragraph, heading, list, quote, image, gallery, table, fact box, scorecard, video/embed, divider, call to action):
+
+- **Text formatting:** `**bold**`, `*italic*` and `[links](https://…)` via the toolbar or Ctrl+B / Ctrl+I / Ctrl+K. It is rendered safely (never as HTML); unsafe links stay plain text.
+- **Pasting** several paragraphs into a paragraph block creates one block per paragraph.
+- **Images** come from the media library (`/admin/media`): upload once, reuse anywhere. Uploads are resized to at most 2000 px and converted to WebP in the browser; alt text is required. Images only (no SVG), up to 10 MB.
+- **Sources** are structured (title, link, publisher, date) and shown under the article.
+- **YouTube/Vimeo** embeds load only when the reader presses play.
+
+In mock mode uploads live in server memory until restart; with Supabase they go to the `blog-public` Storage bucket (`media/<uploader>/…`). Uploaded images are reachable by URL, as in most CMSs.
+
+## Languages
+
+Each blog sets its main language in `src/config/site.ts` (`defaultLanguage`) and lists the languages it publishes in (`languages`). Every article has a language; translations are separate, linked articles (same `translationGroupId`), each with its own slug, SEO and status, so a Greek article can be published before its English version. Categories and tags are written in the main language, with translations in `category_translations` / `tag_translations`.
+
+The schema and data layer support translations today; the English public pages (`/en/…`, `hreflang`) and a "create translation" action in the editor are the next step.
+
 ## Team
 
 Owners and admins manage the team at `/admin/team`: invite members, change roles, suspend and reactivate, and remove members without articles (members with articles are suspended instead, so their bylines stay). Admins cannot create or change owners, nobody changes their own membership there, and the team always keeps an active owner. The same rules live in `src/domain/team.ts` and in the database.

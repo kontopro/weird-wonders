@@ -29,6 +29,12 @@ This checklist is intentionally hosted-only. It does not start, reset or depend 
 - Sign in at `/login`, confirm the session cookie is HTTP-only, and that `/admin` opens and shows the owner's name and role.
 - Sign out and confirm `/admin` redirects to `/login` again.
 
+## Editor and media verification
+
+- As an author, upload an image from the editor's picker; confirm it lands in `blog-public/media/<author id>/` and appears at `/admin/media`.
+- Confirm an author cannot edit or delete an editor's image, and that an image used in an article cannot be deleted.
+- Publish an article with a cover, an image block, formatted text and sources; check the public page.
+
 ## Team verification
 
 - Set `SUPABASE_SECRET_KEY` on the server, the Site URL and the invite e-mail template (see README → Team).

@@ -38,6 +38,10 @@
 - [x] Ενιαίο καθαρό baseline 7 migrations, seed εκτός migrations, `is_highlighted`, column-level grants
 - [x] Tests του schema σε in-process Postgres (PGlite): RLS ανά ρόλο, triggers, bootstrap
 - [x] Διαχείριση ομάδας: πρόσκληση, ρόλοι, αναστολή, αφαίρεση (mock + Supabase adapter, invite email και ορισμός κωδικού)
+- [x] Γλώσσες: κύρια γλώσσα ανά blog, `language` + `translation_group_id`, μεταφράσεις κατηγοριών/ετικετών (schema + data layer)
+- [x] Βιβλιοθήκη εικόνων: upload με WebP resize, picker για εξώφυλλο/εικόνες/gallery, σελίδα `/admin/media`
+- [x] Editor: έντονα/πλάγια/σύνδεσμοι, έξυπνη επικόλληση, δομημένες πηγές, βίντεο click-to-load
+- [ ] Αγγλικές δημόσιες σελίδες (`/en/…`, hreflang) και «Δημιουργία μετάφρασης» στον editor
 - [ ] Έλεγχος σε hosted project (`docs/hosted-supabase-validation.md`)
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports
 - [ ] Ενεργοποίηση πραγματικού Supabase CRUD μετά τη δημιουργία hosted project

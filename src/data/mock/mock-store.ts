@@ -1,3 +1,4 @@
+import type { EmailMessage } from "@/domain/email";
 import type { ArticleStatus } from "@/lib/admin-data";
 import { scheduledAtFor } from "@/domain/publishing";
 import type { ArticleContentDocument } from "@/lib/article-content";
@@ -46,7 +47,9 @@ export type MockStore = {
   /** Old slugs of public articles, like `public.article_slug_history`. */
   slugHistory: Array<{ language: string; slug: string; articleId: string }>;
   /** Newsletter sign-ups, like `public.newsletter_subscribers`. */
-  subscribers: Array<Subscriber & { token: string }>;
+  subscribers: Array<Subscriber & { token: string; confirmationSentAt?: string | null }>;
+  /** E-mails "sent" in demo mode (see `OutboxEmailSender`), newest first. */
+  outbox: Array<EmailMessage & { id: string; sentAt: string }>;
   /** Editorial team access, like `public.members`. */
   members: Array<{
     userId: string;

@@ -10,7 +10,7 @@ create schema extensions;
 create schema auth;
 create schema storage;
 -- Supabase lets the API roles use extension functions (e.g. unaccent).
-grant usage on schema public, auth, storage, extensions to anon, authenticated;
+grant usage on schema public, auth, storage, extensions to anon, authenticated, service_role;
 
 create table auth.users (
   id uuid primary key default gen_random_uuid(),

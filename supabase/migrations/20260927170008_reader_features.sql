@@ -206,7 +206,8 @@ grant execute on function public.article_view_counts(integer) to anon, authentic
 
 -- Newsletter ------------------------------------------------------------
 -- Sign-ups with consent time and language. `token` builds confirm and
--- unsubscribe links. Sending e-mails needs an e-mail provider (not included).
+-- unsubscribe links; the app e-mails them through its e-mail provider
+-- (server-side, with the secret key, see `claim_newsletter_confirmation`).
 
 create table public.newsletter_subscribers (
   id uuid primary key default gen_random_uuid(),
@@ -219,6 +220,8 @@ create table public.newsletter_subscribers (
   consent_at timestamptz not null default now(),
   confirmed_at timestamptz,
   unsubscribed_at timestamptz,
+  -- Last confirmation e-mail, to limit repeats to the same address.
+  confirmation_sent_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -275,6 +278,33 @@ as $$
   where token = p_token
   returning true;
 $$;
+
+-- The server claims the right to send a confirmation e-mail: it gets the
+-- token only for a pending address that has not had one in the last
+-- `p_min_interval`, so the form cannot be used to flood someone's inbox.
+-- Server only (secret key): visitors never see tokens.
+create or replace function public.claim_newsletter_confirmation(
+  p_email text,
+  p_min_interval interval default interval '10 minutes'
+)
+returns table (token uuid, language text)
+language sql
+security definer
+set search_path = ''
+as $$
+  update public.newsletter_subscribers as subscriber
+  set confirmation_sent_at = now()
+  where lower(subscriber.email) = lower(trim(p_email))
+    and subscriber.status = 'pending'
+    and (
+      subscriber.confirmation_sent_at is null
+      or subscriber.confirmation_sent_at <= now() - p_min_interval
+    )
+  returning subscriber.token, subscriber.language;
+$$;
+
+revoke all on function public.claim_newsletter_confirmation(text, interval) from public;
+grant execute on function public.claim_newsletter_confirmation(text, interval) to service_role;
 
 revoke all on function public.subscribe_newsletter(text, text) from public;
 revoke all on function public.confirm_newsletter(uuid) from public;

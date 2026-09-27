@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { subscribeInputSchema, type SubscribeInput } from "@/domain/newsletter";
 import { requireMember } from "@/server/auth";
-import { getRepositories } from "@/server/repositories";
+import { getDemoOutbox, getEmailSender, getRepositories } from "@/server/repositories";
+import { sendNewsletterConfirmation } from "@/server/newsletter-email";
 
 const tokenSchema = z.string().trim().min(1).max(100);
 /** Subscribers are personal data: owners and admins only. */
@@ -13,6 +14,8 @@ export const subscribeToNewsletter = createServerFn({ method: "POST" })
   .validator((input: SubscribeInput) => subscribeInputSchema.parse(input))
   .handler(async ({ data }) => {
     await getRepositories().newsletter.subscribe(data);
+    // Double opt-in: the address counts only after the link in this e-mail.
+    await sendNewsletterConfirmation(data.email);
   });
 
 export const confirmNewsletter = createServerFn({ method: "POST" })
@@ -34,3 +37,21 @@ export const removeSubscriber = createServerFn({ method: "POST" })
     await requireMember(listManagers);
     await getRepositories().newsletter.remove(data);
   });
+
+/** E-mails "sent" in demo mode, so their links can be opened (owners/admins). */
+export const listDemoOutbox = createServerFn({ method: "GET" }).handler(async () => {
+  await requireMember(listManagers);
+  return getDemoOutbox().map(({ id, to, subject, text, sentAt }) => ({
+    id,
+    to,
+    subject,
+    text,
+    sentAt,
+  }));
+});
+
+/** Which e-mail provider is active (null: none, e-mails are not sent). */
+export const getEmailProvider = createServerFn({ method: "GET" }).handler(async () => {
+  await requireMember(listManagers);
+  return getEmailSender()?.name ?? null;
+});

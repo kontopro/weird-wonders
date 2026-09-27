@@ -448,6 +448,7 @@ const demoSeed: MockStore = {
   articleViews: [],
   slugHistory: [],
   subscribers: [],
+  outbox: [],
   members: [
     { userId: DEMO_USER_ID, email: "maria@example.com", role: "owner", status: "active" },
     { userId: "author-aris", email: "aris@example.com", role: "editor", status: "active" },

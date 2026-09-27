@@ -1910,6 +1910,24 @@ select:focus-visible {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.demo-outbox {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+.demo-outbox details {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.demo-outbox summary {
+  cursor: pointer;
+}
+.demo-outbox pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+  font: inherit;
+  font-size: 0.8rem;
+}
 .admin-empty {
   padding: 90px 20px;
   display: grid;

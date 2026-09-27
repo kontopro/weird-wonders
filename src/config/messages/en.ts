@@ -95,7 +95,7 @@ export const en: SiteMessages = {
     emailLabel: "Email",
     emailPlaceholder: "you@example.com",
     subscribe: "Subscribe",
-    subscribed: "You're in! The first fact is on its way.",
+    subscribed: "Almost there! Open the email we just sent you to confirm your subscription.",
     invalidEmail: "Please enter a valid email address.",
     subscribeFailed: "Sign-up didn't go through. Please try again shortly.",
     consent: "By subscribing you agree to receive the newsletter. Unsubscribe any time.",
@@ -171,10 +171,24 @@ export const en: SiteMessages = {
   },
   newsletter: {
     title: "Newsletter",
+    confirmPrompt: "Press the button to confirm your newsletter subscription.",
+    confirmButton: "Confirm subscription",
+    unsubscribePrompt: "Do you want to stop receiving the newsletter?",
+    unsubscribeButton: "Unsubscribe",
+    failed: "Something went wrong. Please try again shortly.",
     confirmed: "Your subscription is confirmed. Thank you!",
     unsubscribed: "You have been unsubscribed. You won't receive further emails.",
     invalid: "This link is not valid or has already been used.",
     backHome: "Back to the home page",
+  },
+  email: {
+    confirmSubject: (siteName: string) => `Confirm your subscription to ${siteName}`,
+    confirmHeading: "One more click",
+    confirmIntro: (siteName: string) =>
+      `You asked to receive the ${siteName} newsletter. Press the button to confirm your address.`,
+    confirmButton: "Confirm subscription",
+    linkFallback: "If the button does not work, open this link:",
+    ignore: "If you did not sign up, ignore this message; you will not hear from us again.",
   },
   about: {
     title: "About",

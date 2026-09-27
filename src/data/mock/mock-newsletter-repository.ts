@@ -1,6 +1,6 @@
 import type { MockStore } from "@/data/mock/mock-store";
 import type { NewsletterRepository } from "@/data/newsletter/newsletter-repository";
-import type { SubscribeInput } from "@/domain/newsletter";
+import { confirmationIntervalMinutes, type SubscribeInput } from "@/domain/newsletter";
 
 /** In-memory newsletter list with the database's rules (idempotent, silent). */
 export class MockNewsletterRepository implements NewsletterRepository {
@@ -28,6 +28,17 @@ export class MockNewsletterRepository implements NewsletterRepository {
     });
   }
 
+  async claimConfirmation(email: string) {
+    const subscriber = this.store.subscribers.find(
+      (item) => item.email === email.trim().toLowerCase(),
+    );
+    if (!subscriber || subscriber.status !== "pending") return null;
+    const last = subscriber.confirmationSentAt ? Date.parse(subscriber.confirmationSentAt) : 0;
+    if (Date.now() - last < confirmationIntervalMinutes * 60_000) return null;
+    subscriber.confirmationSentAt = new Date().toISOString();
+    return { token: subscriber.token, language: subscriber.language };
+  }
+
   private byToken(token: string) {
     return this.store.subscribers.find((item) => item.token === token);
   }
@@ -51,7 +62,7 @@ export class MockNewsletterRepository implements NewsletterRepository {
   async list() {
     return [...this.store.subscribers]
       .sort((a, b) => b.consentAt.localeCompare(a.consentAt))
-      .map(({ token: _token, ...subscriber }) => subscriber);
+      .map(({ token: _token, confirmationSentAt: _sent, ...subscriber }) => subscriber);
   }
 
   async remove(id: string) {

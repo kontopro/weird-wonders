@@ -555,4 +555,31 @@ describe("newsletter", () => {
     await subscribe("a@example.com");
     expect(await status()).toBe("pending");
   });
+  test("only the server claims confirmation e-mails, at most once per interval", async () => {
+    await subscribe("b@example.com");
+    const claim = (role: "anon" | "service_role", email = "B@example.com") =>
+      t.as<{ token: string; language: string }>(
+        role,
+        null,
+        "select * from public.claim_newsletter_confirmation($1)",
+        [email],
+      );
+    await expect(claim("anon")).rejects.toThrow(/permission denied/);
+
+    const [first] = await claim("service_role");
+    expect(first?.language).toBe("el");
+    expect(first?.token).toMatch(/^[0-9a-f-]{36}$/);
+    // A second sign-up right away does not send another e-mail.
+    expect(await claim("service_role")).toHaveLength(0);
+
+    await t.db.query(
+      "update public.newsletter_subscribers set confirmation_sent_at = now() - interval '11 minutes'",
+    );
+    expect(await claim("service_role")).toHaveLength(1);
+
+    // Confirmed addresses get no confirmation e-mail.
+    await t.as("anon", null, "select public.confirm_newsletter($1)", [first!.token]);
+    await t.db.query("update public.newsletter_subscribers set confirmation_sent_at = null");
+    expect(await claim("service_role")).toHaveLength(0);
+  });
 });

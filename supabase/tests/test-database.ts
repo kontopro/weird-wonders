@@ -6,7 +6,8 @@ import { readdir } from "node:fs/promises";
 const supabaseDir = new URL("../", import.meta.url);
 const read = (relative: string) => Bun.file(new URL(relative, supabaseDir)).text();
 
-export type Role = "anon" | "authenticated";
+/** API roles; `service_role` is the server with the secret key. */
+export type Role = "anon" | "authenticated" | "service_role";
 
 /**
  * A throwaway Postgres (PGlite, in-process) with the Supabase stand-ins, every

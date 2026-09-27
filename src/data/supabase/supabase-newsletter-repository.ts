@@ -2,7 +2,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { NewsletterRepository } from "@/data/newsletter/newsletter-repository";
 import { toDomainError } from "@/data/supabase/supabase-errors";
-import { subscriberStatuses, type SubscribeInput } from "@/domain/newsletter";
+import {
+  confirmationIntervalMinutes,
+  subscriberStatuses,
+  type SubscribeInput,
+} from "@/domain/newsletter";
 
 const rowSchema = z.object({
   id: z.string(),
@@ -18,7 +22,14 @@ const isUuid = (value: string) => /^[0-9a-f-]{36}$/i.test(value);
 
 /** Newsletter via the database functions in `20260927170008_reader_features.sql`. */
 export class SupabaseNewsletterRepository implements NewsletterRepository {
-  constructor(private readonly client: SupabaseClient) {}
+  /**
+   * `admin` is the secret-key client (`createSupabaseAdminClient`); without it
+   * the server cannot read tokens, so no confirmation e-mails are sent.
+   */
+  constructor(
+    private readonly client: SupabaseClient,
+    private readonly admin: SupabaseClient | null = null,
+  ) {}
 
   async subscribe({ email, language }: SubscribeInput) {
     const { error } = await this.client.rpc("subscribe_newsletter", {
@@ -26,6 +37,17 @@ export class SupabaseNewsletterRepository implements NewsletterRepository {
       p_language: language,
     });
     if (error) throw toDomainError(error, "");
+  }
+
+  async claimConfirmation(email: string) {
+    if (!this.admin) return null;
+    const { data, error } = await this.admin.rpc("claim_newsletter_confirmation", {
+      p_email: email,
+      p_min_interval: `${confirmationIntervalMinutes} minutes`,
+    });
+    if (error) throw toDomainError(error, "");
+    const [row] = z.array(z.object({ token: z.string(), language: z.string() })).parse(data ?? []);
+    return row ?? null;
   }
 
   private async byToken(fn: "confirm_newsletter" | "unsubscribe_newsletter", token: string) {

@@ -33,6 +33,7 @@ This checklist is intentionally hosted-only. It does not start, reset or depend 
 
 - As an author, upload an image from the editor's picker; confirm it lands in `blog-public/media/<author id>/` and appears at `/admin/media`.
 - Upload a wide image (> 1440 px): confirm the `-w480`, `-w960` and `-w1440` copies land next to it, `media_assets.variants` lists them, and the article page's `<img>` has a `srcset`. Deleting the image removes the copies too.
+- Set `RESEND_API_KEY`, `EMAIL_FROM` and `SUPABASE_SECRET_KEY` on Vercel (after verifying the domain in Resend). Subscribe from the homepage: the confirmation e-mail arrives in the form's language; a second sign-up within 10 minutes sends nothing; confirming from the e-mail's button marks the row confirmed at `/admin/subscribers`. `/admin/subscribers` names the active provider.
 - Set `VITE_SITE_URL` on Vercel; open `/sitemap.xml`, `/robots.txt` and `/rss.xml` and check the links use the real domain. Paste an article URL into a social preview checker (e.g. the Facebook Sharing Debugger) and Google's Rich Results Test.
 - Confirm an author cannot edit or delete an editor's image, and that an image used in an article cannot be deleted.
 - Publish an article with a cover, an image block, formatted text and sources; check the public page.

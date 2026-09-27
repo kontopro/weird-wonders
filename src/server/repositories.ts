@@ -12,6 +12,9 @@ import { SupabaseMediaRepository } from "@/data/supabase/supabase-media-reposito
 import { MockTeamRepository } from "@/data/mock/mock-team-repository";
 import { SupabaseTeamRepository } from "@/data/supabase/supabase-team-repository";
 import { createSupabaseAdminClient } from "@/server/supabase-admin";
+import type { EmailSender } from "@/data/email/email-sender";
+import { OutboxEmailSender } from "@/data/email/outbox-email-sender";
+import { ResendEmailSender } from "@/data/email/resend-email-sender";
 import { createDemoStore } from "@/data/mock/demo-seed";
 import { MockArticleRepository } from "@/data/mock/mock-article-repository";
 import { MockAuthProvider } from "@/data/mock/mock-auth-provider";
@@ -78,7 +81,7 @@ export function getRepositories(): Repositories {
     taxonomy: new SupabaseTaxonomyRepository(client),
     authors: new SupabaseAuthorRepository(client),
     media: new SupabaseMediaRepository(client),
-    newsletter: new SupabaseNewsletterRepository(client),
+    newsletter: new SupabaseNewsletterRepository(client, createSupabaseAdminClient()),
     team: new SupabaseTeamRepository(
       client,
       createSupabaseAdminClient(),
@@ -86,6 +89,24 @@ export function getRepositories(): Repositories {
       new URL("/admin/password", getRequestUrl()).toString(),
     ),
   };
+}
+
+/**
+ * Picks how e-mails leave the app: Resend when `RESEND_API_KEY` and
+ * `EMAIL_FROM` are set (server-only variables), the in-memory demo outbox in
+ * mock mode, otherwise none (e-mails are skipped and logged).
+ */
+export function getEmailSender(): EmailSender | null {
+  const apiKey = process.env["RESEND_API_KEY"];
+  const from = process.env["EMAIL_FROM"];
+  if (apiKey && from) return new ResendEmailSender(apiKey, from);
+  if (getDataSource() === "mock") return new OutboxEmailSender(getMockStore());
+  return null;
+}
+
+/** Demo e-mails, newest first (mock mode only). */
+export function getDemoOutbox() {
+  return getDataSource() === "mock" ? getMockStore().outbox : [];
 }
 
 /** Picks the authentication adapter, alongside the data adapters above. */

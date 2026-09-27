@@ -130,4 +130,33 @@ test.describe("admin", () => {
     await page.getByRole("button", { name: "Αποστολή πρόσκλησης" }).click();
     await expect(page.getByRole("region", { name: "Μέλη ομάδας" })).toContainText(email);
   });
+
+  test("newsletter: double opt-in through the confirmation e-mail", async ({ page }) => {
+    const email = `reader-${Date.now()}@example.com`;
+    await page.goto("/en");
+    await page.getByRole("textbox", { name: "Email" }).fill(email);
+    await page.getByRole("button", { name: "Subscribe" }).click();
+    await expect(page.getByText(/Open the email we just sent you/)).toBeVisible();
+
+    // Demo mode keeps the e-mail in the outbox on the subscribers page.
+    await signInAs(page, owner);
+    await page.goto("/admin/subscribers");
+    const row = page.getByRole("row", { name: new RegExp(email) });
+    await expect(row).toContainText("Εκκρεμεί επιβεβαίωση");
+    const outbox = page.getByRole("region", { name: "Demo email" });
+    const message = outbox.locator("details", { hasText: email }).first();
+    await message.locator("summary").click();
+    await expect(message).toContainText("Confirm your subscription to FACTάκι");
+    await message.getByRole("link", { name: /action=confirm/ }).click();
+
+    // Opening the link changes nothing until the button is pressed.
+    await expect(page).toHaveURL(/\/en\/newsletter\?action=confirm/);
+    await page.getByRole("button", { name: "Confirm subscription" }).click();
+    await expect(page.getByRole("status")).toHaveText("Your subscription is confirmed. Thank you!");
+
+    await page.goto("/admin/subscribers");
+    await expect(page.getByRole("row", { name: new RegExp(email) })).toContainText(
+      "Επιβεβαιωμένος",
+    );
+  });
 });

@@ -100,7 +100,7 @@ export const el = {
     emailLabel: "Email",
     emailPlaceholder: "to@email.sou",
     subscribe: "Εγγραφή",
-    subscribed: "Είσαι μέσα! Το πρώτο fact έρχεται σύντομα.",
+    subscribed: "Σχεδόν έτοιμο! Άνοιξε το email που σου στείλαμε για να επιβεβαιώσεις την εγγραφή.",
     invalidEmail: "Γράψε μια έγκυρη διεύθυνση email.",
     subscribeFailed: "Η εγγραφή δεν ολοκληρώθηκε. Δοκίμασε ξανά σε λίγο.",
     consent: "Με την εγγραφή συμφωνείς να λαμβάνεις το newsletter. Διαγράφεσαι όποτε θέλεις.",
@@ -176,10 +176,24 @@ export const el = {
   },
   newsletter: {
     title: "Newsletter",
+    confirmPrompt: "Πάτα για να επιβεβαιώσεις την εγγραφή σου στο newsletter.",
+    confirmButton: "Επιβεβαίωση εγγραφής",
+    unsubscribePrompt: "Θέλεις να σταματήσεις να λαμβάνεις το newsletter;",
+    unsubscribeButton: "Διαγραφή από τη λίστα",
+    failed: "Κάτι πήγε στραβά. Δοκίμασε ξανά σε λίγο.",
     confirmed: "Η εγγραφή σου επιβεβαιώθηκε. Ευχαριστούμε!",
     unsubscribed: "Διαγράφηκες από το newsletter. Δεν θα λάβεις άλλα μηνύματα.",
     invalid: "Ο σύνδεσμος δεν είναι έγκυρος ή έχει ήδη χρησιμοποιηθεί.",
     backHome: "Πίσω στην αρχική",
+  },
+  email: {
+    confirmSubject: (siteName: string) => `Επιβεβαίωσε την εγγραφή σου στο ${siteName}`,
+    confirmHeading: "Ένα κλικ ακόμα",
+    confirmIntro: (siteName: string) =>
+      `Ζήτησες να λαμβάνεις το newsletter του ${siteName}. Πάτα το κουμπί για να επιβεβαιώσεις τη διεύθυνσή σου.`,
+    confirmButton: "Επιβεβαίωση εγγραφής",
+    linkFallback: "Αν το κουμπί δεν λειτουργεί, άνοιξε αυτόν τον σύνδεσμο:",
+    ignore: "Αν δεν έκανες εσύ την εγγραφή, αγνόησε αυτό το μήνυμα· δεν θα λάβεις τίποτε άλλο.",
   },
   about: {
     title: "Σχετικά",

@@ -48,7 +48,8 @@
 - [x] Ταχύτητα/προσβασιμότητα: responsive εικόνες (srcset), self-hosted fonts, dark mode χωρίς αναβόσβημα, skip link, εικονίδια, χωρίς cookie banner
 - [x] Browser tests (Playwright): δημόσιο site και admin από άκρη σε άκρη, `bun run test:e2e`
 - [x] Admin: λίστα άρθρων με σελίδες και φίλτρα στη διεύθυνση, πραγματικά νούμερα στην επισκόπηση
-- [ ] Αποστολή newsletter μέσω παρόχου email (π.χ. Resend)
+- [x] Email: double opt-in επιβεβαίωση newsletter μέσω Resend (ή demo outbox), όριο επανάληψης, επιβεβαίωση με κουμπί
+- [ ] Ενεργοποίηση Resend (API key, επαλήθευση domain) και αποστολή τευχών newsletter στη λίστα
 - [ ] Έλεγχος σε hosted project (`docs/hosted-supabase-validation.md`)
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports
 - [ ] Ενεργοποίηση πραγματικού Supabase CRUD μετά τη δημιουργία hosted project

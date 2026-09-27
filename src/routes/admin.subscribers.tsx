@@ -16,7 +16,14 @@ export const Route = createFileRoute("/admin/subscribers")({
   beforeLoad: ({ context }) => {
     if (!canManageTeam(context.user.role)) throw redirect({ to: "/admin" });
   },
-  loader: () => newsletterApi.list(),
+  loader: async () => {
+    const [subscribers, outbox, provider] = await Promise.all([
+      newsletterApi.list(),
+      newsletterApi.demoOutbox(),
+      newsletterApi.emailProvider(),
+    ]);
+    return { subscribers, outbox, provider };
+  },
   component: SubscribersAdmin,
   head: () => ({ meta: [{ title: brandedTitle("Newsletter") }] }),
 });
@@ -28,8 +35,17 @@ const formatDateTime = (value: string | null) =>
       )
     : "—";
 
+/**
+ * Demo links point to the configured site address; open them on this server
+ * instead, so they work on localhost and previews.
+ */
+const demoLink = (url: string) => {
+  const parsed = new URL(url);
+  return `${parsed.pathname}${parsed.search}`;
+};
+
 function SubscribersAdmin() {
-  const subscribers = Route.useLoaderData();
+  const { subscribers, outbox, provider } = Route.useLoaderData();
   const router = useRouter();
   const [removing, setRemoving] = useState<Subscriber>();
   const active = subscribers.filter((item) => item.status !== "unsubscribed");
@@ -51,8 +67,10 @@ function SubscribersAdmin() {
           <p className="admin-overline">Κοινό</p>
           <h1>Newsletter</h1>
           <p>
-            {active.length} ενεργές εγγραφές από {subscribers.length}. Η αποστολή email χρειάζεται
-            σύνδεση με πάροχο (π.χ. Resend) — ως τότε, εξαγωγή σε CSV.
+            {active.length} ενεργές εγγραφές από {subscribers.length}.{" "}
+            {provider
+              ? `Τα email επιβεβαίωσης στέλνονται αυτόματα (${provider}).`
+              : "Δεν έχει οριστεί πάροχος email (RESEND_API_KEY, EMAIL_FROM): τα email επιβεβαίωσης δεν στέλνονται."}
           </p>
         </div>
         <Button onClick={exportCsv} disabled={subscribers.length === 0}>
@@ -100,6 +118,34 @@ function SubscribersAdmin() {
           </table>
         )}
       </section>
+
+      {outbox.length > 0 && (
+        <section className="admin-panel demo-outbox" aria-label="Demo email">
+          <h2>Demo: email που θα είχαν σταλεί</h2>
+          <p className="admin-empty-note">
+            Στη demo λειτουργία τα email δεν φεύγουν· εμφανίζονται εδώ για να δοκιμάσεις τους
+            συνδέσμους τους.
+          </p>
+          {outbox.map((message) => (
+            <details key={message.id}>
+              <summary>
+                <strong>{message.subject}</strong> → {message.to} · {formatDateTime(message.sentAt)}
+              </summary>
+              <pre>
+                {message.text.split(/(https?:\/\/\S+)/).map((part, index) =>
+                  /^https?:\/\//.test(part) ? (
+                    <a key={index} href={demoLink(part)}>
+                      {part}
+                    </a>
+                  ) : (
+                    part
+                  ),
+                )}
+              </pre>
+            </details>
+          ))}
+        </section>
+      )}
 
       <ConfirmDialog
         open={!!removing}

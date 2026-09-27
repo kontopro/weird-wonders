@@ -27,6 +27,12 @@ export const subscribeInputSchema = z
   .strict();
 export type SubscribeInput = z.infer<typeof subscribeInputSchema>;
 
+/** At most one confirmation e-mail per address in this many minutes. */
+export const confirmationIntervalMinutes = 10;
+
+/** What the server needs to e-mail a confirmation link. Never sent to browsers. */
+export type ConfirmationTicket = { token: string; language: string };
+
 /** CSV for exporting the list (e.g. to an e-mail provider). */
 export function subscribersToCsv(subscribers: readonly Subscriber[]): string {
   const escape = (value: string | null) => `"${(value ?? "").replaceAll('"', '""')}"`;

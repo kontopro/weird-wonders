@@ -1,6 +1,8 @@
 import type { SubscribeInput } from "@/domain/newsletter";
 import {
   confirmNewsletter,
+  getEmailProvider,
+  listDemoOutbox,
   listSubscribers,
   removeSubscriber,
   subscribeToNewsletter,
@@ -13,5 +15,8 @@ export const newsletterApi = {
   confirm: (token: string) => confirmNewsletter({ data: token }),
   unsubscribe: (token: string) => unsubscribeNewsletter({ data: token }),
   list: () => listSubscribers(),
+  /** Demo mode only: the e-mails that would have been sent. */
+  demoOutbox: () => listDemoOutbox(),
+  emailProvider: () => getEmailProvider(),
   remove: (id: string) => removeSubscriber({ data: id }),
 };

@@ -13,6 +13,12 @@ bun install
 bun run dev
 ```
 
+## Browser tests
+
+`bun run test:e2e` builds the site with demo data and the demo admin (`e2e/serve.ts`, never Supabase), starts it on port 4173 and drives a real Chromium through the public site and the admin: publishing an article with an uploaded cover, its responsive copies, feeds, a translation draft, the article list filters, role limits and team invitations. Any browser console error fails a test. It needs Node.js for the built server.
+
+First time on a machine: `bunx playwright install chromium`. Failed runs keep a screenshot and a trace in `test-results/` (`bunx playwright show-trace <file>`).
+
 ## Supabase setup
 
 The repository contains a version-controlled Supabase baseline for one independent blog. A new blog gets its own repository and hosted Supabase project, then applies the same migrations from `supabase/migrations`.

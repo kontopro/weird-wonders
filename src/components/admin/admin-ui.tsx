@@ -67,17 +67,17 @@ export function ArticleStatusBadge({ status }: { status: ArticleStatus }) {
 export function StatsCard({
   label,
   value,
-  trend,
+  note,
   icon: Icon,
   tone,
 }: {
   label: string;
   value: string;
-  trend: string;
+  /** A short line under the number (plain facts, no trends). */
+  note?: string;
   icon: LucideIcon;
   tone: string;
 }) {
-  const positive = !trend.startsWith("-");
   return (
     <article className={`stats-card ${tone}`}>
       <div className="stats-icon">
@@ -85,10 +85,7 @@ export function StatsCard({
       </div>
       <span>{label}</span>
       <strong>{value}</strong>
-      <small className={positive ? "positive" : "negative"}>
-        {positive ? <ArrowUpRight /> : <ArrowDownRight />}
-        {trend}
-      </small>
+      {note && <small>{note}</small>}
     </article>
   );
 }
@@ -200,7 +197,14 @@ export function ArticlesTable({
                   <img src={article.image} alt="" />
                   <div>
                     <strong>
-                      {article.title} <LanguageBadge language={article.language} />
+                      <Link
+                        to="/admin/articles/$id/edit"
+                        params={{ id: article.id }}
+                        className="article-title-link"
+                      >
+                        {article.title}
+                      </Link>{" "}
+                      <LanguageBadge language={article.language} />
                     </strong>
                     <span>{article.excerpt}</span>
                   </div>
@@ -229,7 +233,14 @@ export function ArticlesTable({
               <ArticleActions article={article} onDelete={onDelete} onDuplicate={onDuplicate} />
             </div>
             <strong>
-              {article.title} <LanguageBadge language={article.language} />
+              <Link
+                to="/admin/articles/$id/edit"
+                params={{ id: article.id }}
+                className="article-title-link"
+              >
+                {article.title}
+              </Link>{" "}
+              <LanguageBadge language={article.language} />
             </strong>
             <div className="admin-article-card-meta">
               <span>{article.category.name}</span>

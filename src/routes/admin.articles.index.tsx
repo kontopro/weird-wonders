@@ -1,18 +1,40 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { FileQuestion, Plus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { ArticlesTable, ConfirmDialog } from "@/components/admin/admin-ui";
+import { Pager } from "@/components/pager";
 import { articleStatusLabels, articleStatuses, type AdminArticle } from "@/lib/admin-data";
 import { articleApi } from "@/data/articles";
 import { taxonomyApi } from "@/data/taxonomy";
 import { errorMessage } from "@/lib/error-message";
 import { brandedTitle, siteConfig } from "@/config/site";
 
+// Filters live in the URL (?q=&category=&status=&sort=&page=), so they survive
+// reloads and the back button, and each page loads only its own rows.
+const searchSchema = z.object({
+  q: z.string().max(200).optional().catch(undefined),
+  category: z.string().max(200).optional().catch(undefined),
+  status: z.enum(articleStatuses).optional().catch(undefined),
+  sort: z.enum(["newest", "oldest"]).optional().catch(undefined),
+  page: z.coerce.number().int().min(1).optional().catch(undefined),
+});
+
 export const Route = createFileRoute("/admin/articles/")({
-  loader: async () => {
+  validateSearch: searchSchema,
+  loaderDeps: ({ search }) => search,
+  loader: async ({ deps }) => {
     const [articles, categories] = await Promise.all([
-      articleApi.listAdmin(),
+      articleApi.pageAdmin(
+        {
+          ...(deps.q ? { query: deps.q } : {}),
+          ...(deps.category ? { categorySlug: deps.category } : {}),
+          ...(deps.status ? { status: deps.status } : {}),
+          ...(deps.sort === "oldest" ? { oldestFirst: true } : {}),
+        },
+        deps.page ?? 1,
+      ),
       taxonomyApi.listCategories(),
     ]);
     return { articles, categories };
@@ -37,36 +59,29 @@ export const Route = createFileRoute("/admin/articles/")({
 });
 
 function ArticlesPage() {
-  const { articles: loadedRows, categories } = Route.useLoaderData();
-  const [rows, setRows] = useState<AdminArticle[]>(() => loadedRows);
-  const [query, setQuery] = useState("");
-  // Category filter holds a slug; "" means all categories.
-  const [category, setCategory] = useState("");
-  // "" means all statuses.
-  const [status, setStatus] = useState("");
-  const [sort, setSort] = useState("newest");
+  const { articles, categories } = Route.useLoaderData();
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const router = useRouter();
+  const [query, setQuery] = useState(search.q ?? "");
   const [target, setTarget] = useState<AdminArticle>();
-  const filtered = useMemo(
-    () =>
-      rows
-        .filter(
-          (a) =>
-            (!query || a.title.toLocaleLowerCase("el").includes(query.toLocaleLowerCase("el"))) &&
-            (category === "" || a.category.slug === category) &&
-            (status === "" || a.status === status),
-        )
-        .sort((a, b) =>
-          sort === "newest"
-            ? b.dateValue.localeCompare(a.dateValue)
-            : a.dateValue.localeCompare(b.dateValue),
-        ),
-    [rows, query, category, status, sort],
-  );
+  useEffect(() => setQuery(search.q ?? ""), [search.q]);
+  // Any filter change starts again from the first page.
+  const setFilter = (next: Partial<z.infer<typeof searchSchema>>) =>
+    navigate({
+      search: (previous) => {
+        const merged = { ...previous, ...next, page: undefined };
+        return Object.fromEntries(
+          Object.entries(merged).filter(([, value]) => value !== undefined && value !== ""),
+        );
+      },
+    });
+  const filtered = Boolean(search.q || search.category || search.status);
   const duplicate = async (article: AdminArticle) => {
     try {
-      const copy = await articleApi.duplicate(article.id);
-      setRows((current) => [copy, ...current]);
+      await articleApi.duplicate(article.id);
       toast.success("Το αντίγραφο αποθηκεύτηκε ως πρόχειρο.");
+      await router.invalidate();
     } catch (error) {
       toast.error(errorMessage(error));
     }
@@ -78,8 +93,8 @@ function ArticlesPage() {
           <p className="admin-overline">Περιεχόμενο</p>
           <h1>Άρθρα</h1>
           <p>
-            {rows.length} άρθρα συνολικά · {rows.filter((a) => a.status === "draft").length}{" "}
-            πρόχειρα
+            {articles.total === 1 ? "1 άρθρο" : `${articles.total} άρθρα`}
+            {filtered ? " με αυτά τα φίλτρα" : " συνολικά"}
           </p>
         </div>
         <Link to="/admin/articles/new" className="btn btn-primary">
@@ -87,18 +102,35 @@ function ArticlesPage() {
         </Link>
       </header>
       <section className="article-filters">
-        <label className="admin-search">
+        <form
+          className="admin-search"
+          role="search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void setFilter({ q: query.trim() || undefined });
+          }}
+        >
           <Search />
-          <span className="sr-only">Αναζήτηση άρθρων</span>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Αναζήτηση τίτλου…"
-          />
-        </label>
+          <label>
+            <span className="sr-only">Αναζήτηση άρθρων</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onBlur={() => {
+                if ((search.q ?? "") !== query.trim())
+                  void setFilter({ q: query.trim() || undefined });
+              }}
+              placeholder="Αναζήτηση τίτλου… (Enter)"
+            />
+          </label>
+        </form>
         <label>
           <span>Κατηγορία</span>
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <select
+            value={search.category ?? ""}
+            onChange={(e) => void setFilter({ category: e.target.value || undefined })}
+          >
             <option value="">Όλες</option>
             {categories.map((c) => (
               <option key={c.slug} value={c.slug}>
@@ -109,7 +141,15 @@ function ArticlesPage() {
         </label>
         <label>
           <span>Κατάσταση</span>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <select
+            value={search.status ?? ""}
+            onChange={(e) =>
+              void setFilter({
+                status: (e.target.value || undefined) as
+                  (typeof articleStatuses)[number] | undefined,
+              })
+            }
+          >
             <option value="">Όλες</option>
             {articleStatuses.map((s) => (
               <option key={s} value={s}>
@@ -120,27 +160,28 @@ function ArticlesPage() {
         </label>
         <label>
           <span>Ταξινόμηση</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+          <select
+            value={search.sort ?? "newest"}
+            onChange={(e) =>
+              void setFilter({ sort: e.target.value === "oldest" ? "oldest" : undefined })
+            }
+          >
             <option value="newest">Νεότερα πρώτα</option>
             <option value="oldest">Παλαιότερα πρώτα</option>
           </select>
         </label>
       </section>
-      {filtered.length ? (
-        <ArticlesTable articles={filtered} onDelete={setTarget} onDuplicate={duplicate} />
+      {articles.items.length ? (
+        <>
+          <ArticlesTable articles={articles.items} onDelete={setTarget} onDuplicate={duplicate} />
+          <Pager page={articles} />
+        </>
       ) : (
         <section className="admin-empty">
           <FileQuestion />
           <h2>Δεν βρέθηκαν άρθρα</h2>
           <p>Δοκίμασε διαφορετική αναζήτηση ή καθάρισε τα φίλτρα.</p>
-          <button
-            className="btn btn-outline"
-            onClick={() => {
-              setQuery("");
-              setCategory("");
-              setStatus("");
-            }}
-          >
+          <button className="btn btn-outline" onClick={() => void navigate({ search: {} })}>
             Καθαρισμός φίλτρων
           </button>
         </section>
@@ -155,8 +196,8 @@ function ArticlesPage() {
           if (!target) return;
           try {
             await articleApi.delete(target.id);
-            setRows((current) => current.filter((row) => row.id !== target.id));
             toast.success("Το άρθρο αφαιρέθηκε.");
+            await router.invalidate();
           } catch (error) {
             toast.error(errorMessage(error));
           } finally {

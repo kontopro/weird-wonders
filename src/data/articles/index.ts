@@ -9,14 +9,19 @@ import {
   duplicateArticle,
   getAdminArticle,
   getPublishedArticle,
-  listAdminArticles,
+  getAdminStats,
+  pageAdminArticles,
   listPublishedArticles,
   saveArticle,
 } from "@/functions/articles";
 
-import type { PublishedArticleFilter } from "@/data/articles/article-repository";
+import type {
+  AdminArticleFilter,
+  PublishedArticleFilter,
+} from "@/data/articles/article-repository";
 
 export type {
+  AdminArticleFilter,
   ArticleDetail,
   ArticleWriteInput,
   EditableArticle,
@@ -42,7 +47,9 @@ export const articleApi = {
   resolveOldSlug: (slug: string, language?: string) =>
     resolveOldArticleSlug({ data: { slug, ...(language ? { language } : {}) } }),
   recordView: (articleId: string) => recordArticleView({ data: articleId }),
-  listAdmin: () => listAdminArticles(),
+  adminStats: () => getAdminStats(),
+  pageAdmin: (filter: AdminArticleFilter, page = 1) =>
+    pageAdminArticles({ data: { filter, page } }),
   findAdminById: (id: string) => getAdminArticle({ data: id }),
   createTranslation: (sourceId: string, language: string) =>
     createArticleTranslation({ data: { sourceId, language } }),

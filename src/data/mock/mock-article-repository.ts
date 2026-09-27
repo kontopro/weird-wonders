@@ -2,6 +2,7 @@ import { mainLanguage, siteConfig } from "@/config/site";
 import {
   assertArticleWriteInvariants,
   type ArticleRepository,
+  type AdminArticleFilter,
   type ArticleWriteInput,
   type EditableArticle,
   type PublishedArticleFilter,
@@ -11,7 +12,13 @@ import { scheduleOf, type MockArticleRow, type MockStore } from "@/data/mock/moc
 import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
 import { collectAssetIds, srcSetOf } from "@/domain/media";
-import { matchesSearch, pageOf, popularWindowDays, searchTerms } from "@/domain/listing";
+import {
+  adminPageSize,
+  matchesSearch,
+  pageOf,
+  popularWindowDays,
+  searchTerms,
+} from "@/domain/listing";
 import { MockMediaRepository } from "@/data/mock/mock-media-repository";
 import { effectiveStatus, isPubliclyVisible } from "@/domain/publishing";
 import { authorEditableStatuses, canEditArticle, isEditorRole } from "@/domain/permissions";
@@ -23,7 +30,7 @@ import {
   type CategoryRef,
   type TagRef,
 } from "@/domain/taxonomy";
-import type { AdminArticle } from "@/lib/admin-data";
+import { articleStatuses, type AdminArticle, type ArticleStatus } from "@/lib/admin-data";
 import { calculateReadingTimeMinutes, documentText } from "@/lib/article-content";
 import type { Article } from "@/lib/articles";
 import { formatArticleDate } from "@/lib/format";
@@ -276,8 +283,32 @@ export class MockArticleRepository implements ArticleRepository {
     };
   }
 
-  async listAdmin() {
-    return [...this.store.articles].sort(byNewest).map((row) => this.toAdmin(row));
+  async adminStats() {
+    const byStatus = Object.fromEntries(articleStatuses.map((status) => [status, 0])) as Record<
+      ArticleStatus,
+      number
+    >;
+    for (const row of this.store.articles) byStatus[effectiveStatus(scheduleOf(row))] += 1;
+    const since = new Date(Date.now() - popularWindowDays * 86_400_000).toISOString().slice(0, 10);
+    const recentViews = this.store.articleViews
+      .filter((entry) => entry.day > since)
+      .reduce((total, entry) => total + entry.views, 0);
+    return { total: this.store.articles.length, byStatus, recentViews };
+  }
+
+  async pageAdmin(filter: AdminArticleFilter, page: number, pageSize = adminPageSize) {
+    const query = filter.query?.trim().toLocaleLowerCase(mainLanguage);
+    const rows = this.store.articles
+      .filter(
+        (row) =>
+          (!query || row.title.toLocaleLowerCase(mainLanguage).includes(query)) &&
+          (!filter.categorySlug ||
+            this.categoryRef(row.categoryId, mainLanguage).slug === filter.categorySlug) &&
+          (!filter.status || effectiveStatus(scheduleOf(row)) === filter.status),
+      )
+      .sort(filter.oldestFirst ? (a, b) => byNewest(b, a) : byNewest);
+    const result = pageOf(rows, page, pageSize);
+    return { ...result, items: result.items.map((row) => this.toAdmin(row)) };
   }
 
   async findAdminById(id: string) {
@@ -315,6 +346,7 @@ export class MockArticleRepository implements ArticleRepository {
       isFeatured: false,
       isTrending: false,
       isHighlighted: false,
+      updatedAt: new Date().toISOString(),
     };
     this.store.articles.unshift(copy);
     return this.toEditable(copy);
@@ -460,9 +492,11 @@ export class MockArticleRepository implements ArticleRepository {
       authorId: context.actorId,
       status: "draft",
       views: 0,
+      popularity: 0,
       isFeatured: false,
       isTrending: false,
       isHighlighted: false,
+      updatedAt: new Date().toISOString(),
     };
     this.store.articles.unshift(copy);
     return this.toEditable(copy);

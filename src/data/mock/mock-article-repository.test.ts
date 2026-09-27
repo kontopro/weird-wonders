@@ -259,3 +259,32 @@ describe("MockArticleRepository — translations", () => {
     await expect(repository.createTranslation(treesId(), "fr", author)).rejects.toThrow();
   });
 });
+
+describe("MockArticleRepository — admin list", () => {
+  test("pages every article with filters for title, category and effective status", async () => {
+    const all = await repository.pageAdmin({}, 1, 3);
+    expect(all.items).toHaveLength(3);
+    expect(all.total).toBe(store.articles.length);
+    expect(all.pageCount).toBe(Math.ceil(store.articles.length / 3));
+
+    const second = await repository.pageAdmin({}, 2, 3);
+    expect(second.items.map((item) => item.id)).not.toContain(all.items[0]!.id);
+
+    const drafts = await repository.pageAdmin({ status: "draft" }, 1);
+    expect(drafts.items.every((item) => item.status === "draft")).toBe(true);
+
+    const titled = await repository.pageAdmin({ query: "ΔΈΝΤΡΑ" }, 1);
+    expect(titled.items.map((item) => item.slug)).toContain("ta-dentra-epikoinonoun");
+
+    const nature = await repository.pageAdmin({ categorySlug: "fysi" }, 1);
+    expect(nature.items.length).toBeGreaterThan(0);
+    expect(nature.items.every((item) => item.category.slug === "fysi")).toBe(true);
+  });
+
+  test("oldest first reverses the order", async () => {
+    const newest = await repository.pageAdmin({}, 1, 50);
+    const oldest = await repository.pageAdmin({ oldestFirst: true }, 1, 50);
+    expect(oldest.items[0]!.dateValue <= newest.items[0]!.dateValue).toBe(true);
+    expect(oldest.items.at(-1)!.dateValue).toBe(newest.items[0]!.dateValue);
+  });
+});

@@ -7,6 +7,8 @@ import {
   type WriteContext,
 } from "@/data/articles/article-repository";
 import { editorRoles } from "@/domain/permissions";
+import { articleStatuses } from "@/lib/admin-data";
+import type { AdminArticleFilter } from "@/data/articles/article-repository";
 import type { SessionUser } from "@/lib/auth-types";
 import { requireMember } from "@/server/auth";
 import { getRepositories } from "@/server/repositories";
@@ -54,10 +56,31 @@ export const getPublishedArticle = createServerFn({ method: "GET" })
   )
   .handler(({ data }) => getRepositories().articles.findPublishedBySlug(data.slug, data.language));
 
-export const listAdminArticles = createServerFn({ method: "GET" }).handler(async () => {
+export const getAdminStats = createServerFn({ method: "GET" }).handler(async () => {
   await requireMember();
-  return getRepositories().articles.listAdmin();
+  return getRepositories().articles.adminStats();
 });
+
+const adminFilterSchema = z
+  .object({
+    query: z.string().max(200).optional(),
+    categorySlug: slugSchema.optional(),
+    status: z.enum(articleStatuses).optional(),
+    oldestFirst: z.boolean().optional(),
+  })
+  .strict();
+
+export const pageAdminArticles = createServerFn({ method: "GET" })
+  .validator((input: { filter: AdminArticleFilter; page?: number }) =>
+    z.object({ filter: adminFilterSchema, page: pageSchema }).strict().parse(input),
+  )
+  .handler(async ({ data }) => {
+    await requireMember();
+    const filter = Object.fromEntries(
+      Object.entries(data.filter).filter(([, value]) => value !== undefined && value !== ""),
+    ) as AdminArticleFilter;
+    return getRepositories().articles.pageAdmin(filter, data.page);
+  });
 
 export const getAdminArticle = createServerFn({ method: "GET" })
   .validator((id: string) => idSchema.parse(id))

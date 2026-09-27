@@ -5,7 +5,7 @@ import { brandedTitle } from "@/config/site";
 import { articleApi } from "@/data/articles";
 import { taxonomyApi } from "@/data/taxonomy";
 import { localizedPath, messagesFor, useT } from "@/i18n";
-import { alternateLinks, langOf } from "@/i18n/head";
+import { alternateLinks, langOf, paginatedLinks } from "@/i18n/head";
 import { breadcrumbs, socialMeta } from "@/i18n/seo";
 
 export const Route = createFileRoute("/{-$lang}/katigoria/$slug")({
@@ -44,10 +44,13 @@ export const Route = createFileRoute("/{-$lang}/katigoria/$slug")({
           { name, path: localizedPath(language, `/katigoria/${params.slug}`) },
         ]),
       ],
-      links: alternateLinks(
-        language,
-        (version) => localizedPath(version, `/katigoria/${slugs[version] ?? params.slug}`),
-        Object.keys(slugs),
+      links: paginatedLinks(
+        alternateLinks(
+          language,
+          (version) => localizedPath(version, `/katigoria/${slugs[version] ?? params.slug}`),
+          Object.keys(slugs),
+        ),
+        loaderData?.page.page,
       ),
     };
   },

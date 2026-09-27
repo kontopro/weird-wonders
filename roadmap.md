@@ -46,6 +46,8 @@
 - [x] Αναζήτηση χωρίς τόνους, pagination, ανακατεύθυνση παλιών διευθύνσεων, μετρητής προβολών, newsletter (αποθήκευση εγγραφών)
 - [x] SEO: `sitemap.xml` με hreflang, `robots.txt`, RSS ανά γλώσσα, social previews, JSON-LD, `VITE_SITE_URL`
 - [x] Ταχύτητα/προσβασιμότητα: responsive εικόνες (srcset), self-hosted fonts, dark mode χωρίς αναβόσβημα, skip link, εικονίδια, χωρίς cookie banner
+- [x] Browser tests (Playwright): δημόσιο site και admin από άκρη σε άκρη, `bun run test:e2e`
+- [x] Admin: λίστα άρθρων με σελίδες και φίλτρα στη διεύθυνση, πραγματικά νούμερα στην επισκόπηση
 - [ ] Αποστολή newsletter μέσω παρόχου email (π.χ. Resend)
 - [ ] Έλεγχος σε hosted project (`docs/hosted-supabase-validation.md`)
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports

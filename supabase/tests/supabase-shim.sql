@@ -9,7 +9,8 @@ create role service_role nologin bypassrls;
 create schema extensions;
 create schema auth;
 create schema storage;
-grant usage on schema public, auth, storage to anon, authenticated;
+-- Supabase lets the API roles use extension functions (e.g. unaccent).
+grant usage on schema public, auth, storage, extensions to anon, authenticated;
 
 create table auth.users (
   id uuid primary key default gen_random_uuid(),

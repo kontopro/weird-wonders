@@ -400,3 +400,134 @@ describe("media uploads", () => {
     expect(await rename(editor, asset!.id)).toHaveLength(1);
   });
 });
+
+describe("search", () => {
+  const search = (
+    query: string,
+    role: "anon" | "authenticated" = "anon",
+    userId: string | null = null,
+  ) =>
+    t.as<{ article_id: string; total: string }>(
+      role,
+      userId,
+      "select * from public.search_articles($1, 'el')",
+      [query],
+    );
+
+  test("finds public articles ignoring accents, case and word endings", async () => {
+    const id = await article("Δέντρα", {
+      slug: "dentra",
+      status: "published",
+      excerpt: "Το κρυφό δίκτυο",
+      content_blocks: {
+        version: 1,
+        blocks: [
+          {
+            id: "2c1d8a23-7060-46e5-a50b-cf703c1e57f3",
+            type: "paragraph",
+            data: { text: "Η Μυκόρριζα είναι συμβίωση." },
+          },
+        ],
+      },
+    });
+    await article("Άλλο", { slug: "allo", status: "published" });
+    for (const query of ["δεντρα", "ΔΙΚΤΥΟ", "μυκορ", "κρυφο δικτ"]) {
+      const rows = await search(query);
+      expect(rows.map((row) => row.article_id)).toEqual([id]);
+      expect(Number(rows[0]!.total)).toBe(1);
+    }
+    expect(await search("ανύπαρκτο")).toEqual([]);
+    expect(await search("   ")).toEqual([]);
+  });
+
+  test("never returns drafts, even to members", async () => {
+    await article("Μυστικό", { slug: "mystiko" });
+    expect(await search("μυστικο")).toEqual([]);
+    expect(await search("μυστικο", "authenticated", editor)).toEqual([]);
+  });
+});
+
+describe("old URLs", () => {
+  test("keeps the old slug of a public article and resolves it to the new one", async () => {
+    const id = await article("Old", { slug: "palio", status: "published" });
+    await t.db.query("update public.articles set slug = 'neo' where id = $1", [id]);
+    const [row] = await t.as<{ slug: string }>(
+      "anon",
+      null,
+      "select public.resolve_article_slug('palio', 'el') as slug",
+    );
+    expect(row?.slug).toBe("neo");
+  });
+
+  test("ignores drafts and frees a slug that is reused", async () => {
+    const draft = await article("Draft", { slug: "proxeiro" });
+    await t.db.query("update public.articles set slug = 'proxeiro-2' where id = $1", [draft]);
+    const history = await t.db.query("select 1 from public.article_slug_history");
+    expect(history.rows).toHaveLength(0);
+
+    const published = await article("Pub", { slug: "a", status: "published" });
+    await t.db.query("update public.articles set slug = 'b' where id = $1", [published]);
+    await article("Reuse", { slug: "a" });
+    const left = await t.db.query("select 1 from public.article_slug_history where slug = 'a'");
+    expect(left.rows).toHaveLength(0);
+  });
+});
+
+describe("views", () => {
+  test("anyone records views of public articles only; counts are readable", async () => {
+    const live = await article("Live", { slug: "live", status: "published" });
+    const draft = await article("Draft", { slug: "draft" });
+    for (const id of [live, live, draft]) {
+      await t.as("anon", null, "select public.record_article_view($1)", [id]);
+    }
+    const counts = await t.as<{ article_id: string; views: string }>(
+      "anon",
+      null,
+      "select * from public.article_view_counts(7)",
+    );
+    expect(counts.map((row) => [row.article_id, Number(row.views)])).toEqual([[live, 2]]);
+    await expect(
+      t.as("anon", null, "insert into public.article_views (article_id) values ($1)", [live]),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
+
+describe("newsletter", () => {
+  const subscribe = (email: string) =>
+    t.as("anon", null, "select public.subscribe_newsletter($1, 'el')", [email]);
+
+  test("sign-ups are idempotent and only owners/admins can read them", async () => {
+    await subscribe("Reader@Example.com");
+    await subscribe("reader@example.com ");
+    const all = await t.db.query<{ email: string; status: string }>(
+      "select email, status from public.newsletter_subscribers",
+    );
+    expect(all.rows).toEqual([{ email: "reader@example.com", status: "pending" }]);
+
+    await expect(t.as("anon", null, "select * from public.newsletter_subscribers")).rejects.toThrow(
+      /permission denied/,
+    );
+    expect(
+      await t.as("authenticated", editor, "select * from public.newsletter_subscribers"),
+    ).toHaveLength(0);
+    expect(
+      await t.as("authenticated", owner, "select * from public.newsletter_subscribers"),
+    ).toHaveLength(1);
+  });
+
+  test("confirm and unsubscribe work by token; re-subscribing reopens", async () => {
+    await subscribe("a@example.com");
+    const { rows } = await t.db.query<{ token: string }>(
+      "select token from public.newsletter_subscribers",
+    );
+    const token = rows[0]!.token;
+    await t.as("anon", null, "select public.confirm_newsletter($1)", [token]);
+    await t.as("anon", null, "select public.unsubscribe_newsletter($1)", [token]);
+    const status = async () =>
+      (await t.db.query<{ status: string }>("select status from public.newsletter_subscribers"))
+        .rows[0]!.status;
+    expect(await status()).toBe("unsubscribed");
+    await subscribe("a@example.com");
+    expect(await status()).toBe("pending");
+  });
+});

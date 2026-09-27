@@ -33,6 +33,8 @@
 - [x] Ασφαλές bootstrap πρώτου owner (χωρίς self-service claim) και invite-only sign-ups
 - [x] Κατηγορίες (CRUD), ετικέτες και σελίδες συντακτών μέσω repositories, ανεξάρτητα από βάση
 - [x] Σελίδες /katigoria, /etiketa, /syntaktis και ελληνικά → λατινικά slugs
+- [x] Status ως σταθεροί κωδικοί (`draft`, `published`…) με ελληνικές ετικέτες μόνο στην προβολή
+- [x] Προγραμματισμένη δημοσίευση χωρίς background job (ίδιος κανόνας σε mock, Supabase adapter και RLS)
 - [ ] RLS και role/storage integration tests σε hosted project
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports
 - [ ] Ενεργοποίηση πραγματικού Supabase CRUD μετά τη δημιουργία hosted project

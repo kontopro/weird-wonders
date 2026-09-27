@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/admin/admin-ui";
 import { BlockEditor } from "@/components/admin/block-editor";
-import { articleStatuses, type ArticleStatus } from "@/lib/admin-data";
+import { articleStatusLabels, articleStatuses, type ArticleStatus } from "@/lib/admin-data";
 import { authorEditableStatuses, isEditorRole } from "@/domain/permissions";
 import type { CategoryRef, TagRef } from "@/domain/taxonomy";
 import type { SessionUser } from "@/lib/auth-types";
@@ -186,7 +186,9 @@ export function PublishPanel({
           <span>Κατάσταση</span>
           <select value={status} onChange={(e) => onStatus(e.target.value as ArticleStatus)}>
             {(canPublish ? articleStatuses : authorEditableStatuses).map((articleStatus) => (
-              <option key={articleStatus}>{articleStatus}</option>
+              <option key={articleStatus} value={articleStatus}>
+                {articleStatusLabels[articleStatus]}
+              </option>
             ))}
           </select>
         </label>
@@ -234,7 +236,7 @@ export function ArticleEditor({
   );
   const [image, setImage] = useState<string | undefined>(article?.image);
   const [alt, setAlt] = useState(article?.imageAlt ?? "");
-  const [status, setStatus] = useState<ArticleStatus>(article?.status ?? "Πρόχειρο");
+  const [status, setStatus] = useState<ArticleStatus>(article?.status ?? "draft");
   const [date, setDate] = useState(article?.dateValue ?? new Date().toISOString().slice(0, 10));
   const [category, setCategory] = useState(article?.category.slug ?? categories[0]?.slug ?? "");
   const [tags, setTags] = useState(article?.tags.map((tag) => tag.name).join(", ") ?? "");
@@ -299,7 +301,7 @@ export function ArticleEditor({
     }
   };
   const save = async () => {
-    if (await persist("Πρόχειρο")) toast.success("Το άρθρο αποθηκεύτηκε ως πρόχειρο.");
+    if (await persist("draft")) toast.success("Το άρθρο αποθηκεύτηκε ως πρόχειρο.");
   };
   return (
     <TooltipProvider>
@@ -363,7 +365,7 @@ export function ArticleEditor({
               date={date}
               onStatus={(value) => {
                 setStatus(value);
-                if (value !== "Δημοσιευμένο") setDaily(false);
+                if (value !== "published") setDaily(false);
                 setDirty(true);
               }}
               onDate={(value) => {
@@ -468,7 +470,7 @@ export function ArticleEditor({
                       <span>{siteConfig.contentLabels.singular} της ημέρας</span>
                       <Switch
                         checked={daily}
-                        disabled={status !== "Δημοσιευμένο"}
+                        disabled={status !== "published"}
                         onCheckedChange={(value) => {
                           setDaily(value);
                           setDirty(true);
@@ -504,7 +506,7 @@ export function ArticleEditor({
           }
           confirmLabel={canPublish ? "Δημοσίευση" : "Υποβολή"}
           onConfirm={async () => {
-            const nextStatus = canPublish ? "Δημοσιευμένο" : "Σε έλεγχο";
+            const nextStatus = canPublish ? "published" : "in_review";
             if (await persist(nextStatus)) {
               setPublishOpen(false);
               toast.success(

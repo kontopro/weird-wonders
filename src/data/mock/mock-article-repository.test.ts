@@ -21,7 +21,7 @@ const draftInput = (overrides: Partial<ArticleWriteInput> = {}): ArticleWriteInp
   title: "Νέο άρθρο",
   excerpt: "Περίληψη",
   categorySlug: "epistimi",
-  status: "Πρόχειρο",
+  status: "draft",
   dateValue: "2026-09-27",
   content: { version: 1, blocks: [] },
   ...overrides,
@@ -84,7 +84,7 @@ describe("MockArticleRepository — writing", () => {
         slug: original.slug,
         title: "Νέος τίτλος",
         categorySlug: original.category.slug,
-        status: "Δημοσιευμένο",
+        status: "published",
       }),
       editor,
     );
@@ -106,9 +106,9 @@ describe("MockArticleRepository — writing", () => {
   });
 
   test("keeps a single fact of the day", async () => {
-    await repository.save(draftInput({ status: "Δημοσιευμένο", isFactOfDay: true }), editor);
+    await repository.save(draftInput({ status: "published", isFactOfDay: true }), editor);
     await repository.save(
-      draftInput({ slug: "allo-arthro", status: "Δημοσιευμένο", isFactOfDay: true }),
+      draftInput({ slug: "allo-arthro", status: "published", isFactOfDay: true }),
       editor,
     );
     expect(store.articles.filter((article) => article.isFactOfDay)).toHaveLength(1);
@@ -120,12 +120,10 @@ describe("MockArticleRepository — writing", () => {
 
   test("duplicating creates an independent draft owned by the actor", async () => {
     const copy = await repository.duplicate("1", author);
-    expect(copy.status).toBe("Πρόχειρο");
+    expect(copy.status).toBe("draft");
     expect(copy.authorId).toBe(author.actorId);
     expect(copy.isFeatured).toBe(false);
-    expect((await repository.findAdminBySlug("ta-dentra-epikoinonoun"))?.status).toBe(
-      "Δημοσιευμένο",
-    );
+    expect((await repository.findAdminBySlug("ta-dentra-epikoinonoun"))?.status).toBe("published");
   });
 });
 
@@ -133,15 +131,15 @@ describe("MockArticleRepository — author role (mirrors RLS)", () => {
   test("authors can write drafts and submit them for review", async () => {
     const draft = await repository.save(draftInput(), author);
     const submitted = await repository.save(
-      draftInput({ id: draft.id, status: "Σε έλεγχο" }),
+      draftInput({ id: draft.id, status: "in_review" }),
       author,
     );
-    expect(submitted.status).toBe("Σε έλεγχο");
+    expect(submitted.status).toBe("in_review");
   });
 
   test("authors cannot publish", async () => {
     await expect(
-      repository.save(draftInput({ status: "Δημοσιευμένο" }), author),
+      repository.save(draftInput({ status: "published" }), author),
     ).rejects.toMatchObject({ code: "forbidden" });
   });
 
@@ -161,5 +159,21 @@ describe("MockArticleRepository — author role (mirrors RLS)", () => {
     await expect(
       repository.save(draftInput({ slug: "allo", tags: ["ολοκαίνουργια"] }), author),
     ).rejects.toMatchObject({ code: "forbidden" });
+  });
+});
+
+describe("MockArticleRepository — scheduled publishing", () => {
+  test("keeps a future scheduled article private and shows it as scheduled", async () => {
+    const pending = await repository.findPublishedBySlug("treis-kardies-ena-xrwma");
+    expect(pending).toBeNull();
+    const admin = await repository.findAdminBySlug("treis-kardies-ena-xrwma");
+    expect(admin?.status).toBe("scheduled");
+  });
+
+  test("publishes a scheduled article once its day has come", async () => {
+    const row = store.articles.find((item) => item.slug === "treis-kardies-ena-xrwma")!;
+    row.dateValue = "2020-01-01";
+    expect(await repository.findPublishedBySlug(row.slug)).not.toBeNull();
+    expect((await repository.findAdminBySlug(row.slug))?.status).toBe("published");
   });
 });

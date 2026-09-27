@@ -83,7 +83,7 @@ export function parseArticleWriteInput(input: unknown): ArticleWriteInput {
 }
 
 export function assertArticleWriteInvariants(input: ArticleWriteInput) {
-  if (input.isFactOfDay && input.status !== "Δημοσιευμένο") {
+  if (input.isFactOfDay && input.status !== "published") {
     throw new Error(`Το FACTάκι της ημέρας πρέπει να είναι δημοσιευμένο.`);
   }
 }

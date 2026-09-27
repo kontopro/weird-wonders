@@ -1,13 +1,14 @@
-import type { MockStore } from "@/data/mock/mock-store";
+import { scheduleOf, type MockStore } from "@/data/mock/mock-store";
 import type { TaxonomyRepository } from "@/data/taxonomy/taxonomy-repository";
 import { DomainError } from "@/domain/errors";
+import { isPubliclyVisible } from "@/domain/publishing";
 import { sortCategories, type Category, type CategoryInput, type Tag } from "@/domain/taxonomy";
 
 export class MockTaxonomyRepository implements TaxonomyRepository {
   constructor(private readonly store: MockStore) {}
 
   private publishedArticles() {
-    return this.store.articles.filter((row) => row.status === "Δημοσιευμένο");
+    return this.store.articles.filter((row) => isPubliclyVisible(scheduleOf(row)));
   }
 
   private toCategory(row: MockStore["categories"][number]): Category {

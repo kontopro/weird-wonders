@@ -1,7 +1,8 @@
 import type { AuthorRepository } from "@/data/authors/author-repository";
-import type { MockStore } from "@/data/mock/mock-store";
+import { scheduleOf, type MockStore } from "@/data/mock/mock-store";
 import type { AuthorProfile, ProfileInput } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
+import { isPubliclyVisible } from "@/domain/publishing";
 
 export class MockAuthorRepository implements AuthorRepository {
   constructor(private readonly store: MockStore) {}
@@ -11,7 +12,7 @@ export class MockAuthorRepository implements AuthorRepository {
     if (!profile) return null;
     // Mirrors RLS: only authors with a published article are publicly visible.
     const isPublished = this.store.articles.some(
-      (article) => article.authorId === profile.id && article.status === "Δημοσιευμένο",
+      (article) => article.authorId === profile.id && isPubliclyVisible(scheduleOf(article)),
     );
     return isPublished ? { ...profile } : null;
   }

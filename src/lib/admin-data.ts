@@ -1,15 +1,9 @@
 import type { AuthorRef } from "@/domain/authors";
 import type { CategoryRef } from "@/domain/taxonomy";
 
-export const articleStatuses = [
-  "Πρόχειρο",
-  "Σε έλεγχο",
-  "Προγραμματισμένο",
-  "Δημοσιευμένο",
-  "Αρχειοθετημένο",
-] as const;
+import type { ArticleStatus } from "@/domain/article-status";
 
-export type ArticleStatus = (typeof articleStatuses)[number];
+export { articleStatuses, articleStatusLabels, type ArticleStatus } from "@/domain/article-status";
 
 export type AdminArticle = {
   id: string;

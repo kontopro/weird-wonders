@@ -83,4 +83,18 @@ describe("Supabase migration baseline", () => {
       "revoke all on function public.set_article_tags(uuid, jsonb) from public, anon;",
     );
   });
+
+  test("mirrors the scheduled publishing rule in RLS", async () => {
+    const sql = await migrationFile("20260927140000_scheduled_publishing.sql");
+    const due = "status = 'scheduled' and scheduled_at <= now()";
+    expect(sql).toContain(due);
+    for (const policy of [
+      "articles_public_read",
+      "profiles_public_authors_read",
+      "article_tags_public_read",
+    ]) {
+      expect(sql).toContain(`drop policy ${policy}`);
+      expect(sql).toContain(`create policy ${policy}`);
+    }
+  });
 });

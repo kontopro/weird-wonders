@@ -3,7 +3,7 @@ import { FileQuestion, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArticlesTable, ConfirmDialog } from "@/components/admin/admin-ui";
-import { articleStatuses, type AdminArticle } from "@/lib/admin-data";
+import { articleStatusLabels, articleStatuses, type AdminArticle } from "@/lib/admin-data";
 import { articleApi } from "@/data/articles";
 import { taxonomyApi } from "@/data/taxonomy";
 import { errorMessage } from "@/lib/error-message";
@@ -42,7 +42,8 @@ function ArticlesPage() {
   const [query, setQuery] = useState("");
   // Category filter holds a slug; "" means all categories.
   const [category, setCategory] = useState("");
-  const [status, setStatus] = useState("Όλες");
+  // "" means all statuses.
+  const [status, setStatus] = useState("");
   const [sort, setSort] = useState("newest");
   const [target, setTarget] = useState<AdminArticle>();
   const filtered = useMemo(
@@ -52,7 +53,7 @@ function ArticlesPage() {
           (a) =>
             (!query || a.title.toLocaleLowerCase("el").includes(query.toLocaleLowerCase("el"))) &&
             (category === "" || a.category.slug === category) &&
-            (status === "Όλες" || a.status === status),
+            (status === "" || a.status === status),
         )
         .sort((a, b) =>
           sort === "newest"
@@ -77,7 +78,7 @@ function ArticlesPage() {
           <p className="admin-overline">Περιεχόμενο</p>
           <h1>Άρθρα</h1>
           <p>
-            {rows.length} άρθρα συνολικά · {rows.filter((a) => a.status === "Πρόχειρο").length}{" "}
+            {rows.length} άρθρα συνολικά · {rows.filter((a) => a.status === "draft").length}{" "}
             πρόχειρα
           </p>
         </div>
@@ -109,9 +110,11 @@ function ArticlesPage() {
         <label>
           <span>Κατάσταση</span>
           <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option>Όλες</option>
+            <option value="">Όλες</option>
             {articleStatuses.map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>
+                {articleStatusLabels[s]}
+              </option>
             ))}
           </select>
         </label>
@@ -135,7 +138,7 @@ function ArticlesPage() {
             onClick={() => {
               setQuery("");
               setCategory("");
-              setStatus("Όλες");
+              setStatus("");
             }}
           >
             Καθαρισμός φίλτρων

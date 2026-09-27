@@ -16,8 +16,8 @@ import { calculateReadingTimeMinutes, parseArticleContent } from "@/lib/article-
 import type { Article } from "@/lib/articles";
 import { formatArticleDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
-
-type DatabaseArticleStatus = "draft" | "in_review" | "scheduled" | "published" | "archived";
+import { effectiveStatus, scheduledAtFor } from "@/domain/publishing";
+import { publiclyVisibleFilter } from "@/data/supabase/visibility";
 
 type MediaRow = {
   id?: string;
@@ -36,7 +36,7 @@ type ArticleRow = {
   excerpt: string | null;
   content_blocks?: unknown;
   cover_image_alt: string | null;
-  status: DatabaseArticleStatus;
+  status: ArticleStatus;
   is_featured: boolean;
   is_trending: boolean;
   is_fact_of_day: boolean;
@@ -52,21 +52,8 @@ type ArticleRow = {
   article_tags: Array<{ tag: { slug: string; name: string } | null }>;
 };
 
-const statusFromDatabase: Record<DatabaseArticleStatus, ArticleStatus> = {
-  draft: "Πρόχειρο",
-  in_review: "Σε έλεγχο",
-  scheduled: "Προγραμματισμένο",
-  published: "Δημοσιευμένο",
-  archived: "Αρχειοθετημένο",
-};
-
-const statusToDatabase: Record<ArticleStatus, DatabaseArticleStatus> = {
-  Πρόχειρο: "draft",
-  "Σε έλεγχο": "in_review",
-  Προγραμματισμένο: "scheduled",
-  Δημοσιευμένο: "published",
-  Αρχειοθετημένο: "archived",
-};
+// Status codes are identical in the domain and the database; no mapping needed.
+// `public_at` (generated: published_at ?? scheduled_at) orders public lists.
 
 // Relations are embedded in one request. The cover FK is named because
 // `articles` has two foreign keys to `media_assets` (cover and social image).
@@ -166,7 +153,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       excerpt: article.excerpt,
       category: article.category,
       author: article.author,
-      status: statusFromDatabase[row.status],
+      status: effectiveStatus({ status: row.status, scheduledAt: row.scheduled_at }),
       date: article.date,
       dateValue: toDateValue(row),
       views: 0,
@@ -212,8 +199,8 @@ export class SupabaseArticleRepository implements ArticleRepository {
     let query = this.client
       .from("articles")
       .select(LIST_COLUMNS)
-      .eq("status", "published")
-      .order("published_at", { ascending: false });
+      .or(publiclyVisibleFilter())
+      .order("public_at", { ascending: false });
     if (categoryId) query = query.eq("category_id", categoryId);
     if (authorId) query = query.eq("author_id", authorId);
     if (tagId) {
@@ -239,7 +226,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       .from("articles")
       .select(DETAIL_COLUMNS)
       .eq("slug", slug)
-      .eq("status", "published")
+      .or(publiclyVisibleFilter())
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
@@ -322,7 +309,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
     const categoryId = await this.idBySlug("categories", input.categorySlug);
     if (!categoryId) throw new DomainError("Η κατηγορία δεν υπάρχει.", "invalid");
 
-    const databaseStatus = statusToDatabase[input.status];
+    const databaseStatus = input.status;
     const payload = {
       category_id: categoryId,
       slug: input.slug,
@@ -332,7 +319,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       content_blocks: input.content,
       cover_image_alt: input.imageAlt || null,
       status: databaseStatus,
-      scheduled_at: databaseStatus === "scheduled" ? `${input.dateValue}T12:00:00.000Z` : null,
+      scheduled_at: databaseStatus === "scheduled" ? scheduledAtFor(input.dateValue) : null,
       seo_title: input.seoTitle || null,
       seo_description: input.seoDescription || null,
       reading_time_minutes: calculateReadingTimeMinutes(input.content),
@@ -365,7 +352,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
         title: `${source.title} — αντίγραφο`,
         excerpt: source.excerpt,
         categorySlug: source.category.slug,
-        status: "Πρόχειρο",
+        status: "draft",
         dateValue: source.dateValue,
         imageAlt: source.imageAlt,
         tags: source.tags.map((tag) => tag.name),

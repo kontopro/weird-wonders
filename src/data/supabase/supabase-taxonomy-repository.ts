@@ -8,6 +8,10 @@ import {
   type CategoryInput,
   type Tag,
 } from "@/domain/taxonomy";
+import type { ArticleStatus } from "@/domain/article-status";
+import { isPubliclyVisible } from "@/domain/publishing";
+
+type VisibilityRow = { status: ArticleStatus; scheduled_at: string | null };
 
 type CategoryRow = {
   id: string;
@@ -16,20 +20,24 @@ type CategoryRow = {
   description: string | null;
   icon_key: string | null;
   sort_order: number;
-  articles: Array<{ status: string }>;
+  articles: VisibilityRow[];
 };
 
 type TagRow = {
   id: string;
   slug: string;
   name: string;
-  article_tags: Array<{ article: { status: string } | null }>;
+  article_tags: Array<{ article: VisibilityRow | null }>;
 };
 
 // Counts are computed from the statuses the caller may see (RLS limits
-// anonymous visitors to published articles), then narrowed to "published".
-const CATEGORY_COLUMNS = "id, slug, name, description, icon_key, sort_order, articles(status)";
-const TAG_COLUMNS = "id, slug, name, article_tags(article:articles(status))";
+// anonymous visitors to published articles), then narrowed to the publicly visible ones.
+const CATEGORY_COLUMNS =
+  "id, slug, name, description, icon_key, sort_order, articles(status, scheduled_at)";
+const TAG_COLUMNS = "id, slug, name, article_tags(article:articles(status, scheduled_at))";
+
+const isVisible = (row: VisibilityRow) =>
+  isPubliclyVisible({ status: row.status, scheduledAt: row.scheduled_at });
 
 const toCategory = (row: CategoryRow): Category => ({
   id: row.id,
@@ -38,14 +46,14 @@ const toCategory = (row: CategoryRow): Category => ({
   description: row.description ?? "",
   iconKey: toCategoryIconKey(row.icon_key),
   sortOrder: row.sort_order,
-  publishedCount: row.articles.filter((article) => article.status === "published").length,
+  publishedCount: row.articles.filter(isVisible).length,
 });
 
 const toTag = (row: TagRow): Tag => ({
   id: row.id,
   slug: row.slug,
   name: row.name,
-  publishedCount: row.article_tags.filter(({ article }) => article?.status === "published").length,
+  publishedCount: row.article_tags.filter(({ article }) => article && isVisible(article)).length,
 });
 
 export class SupabaseTaxonomyRepository implements TaxonomyRepository {

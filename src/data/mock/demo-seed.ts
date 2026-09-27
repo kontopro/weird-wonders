@@ -202,7 +202,7 @@ const seedArticles: SeedArticle[] = [
     categoryId: "cat-fysi",
     authorId: DEMO_USER_ID,
     tagIds: ["tag-oikosystimata"],
-    status: "Δημοσιευμένο",
+    status: "published",
     dateValue: "2026-09-18",
     image: forest,
     views: 12480,
@@ -217,7 +217,7 @@ const seedArticles: SeedArticle[] = [
     categoryId: "cat-diastima",
     authorId: "author-aris",
     tagIds: ["tag-fos", "tag-chronos"],
-    status: "Δημοσιευμένο",
+    status: "published",
     dateValue: "2026-09-16",
     image: observatory,
     views: 9210,
@@ -232,7 +232,7 @@ const seedArticles: SeedArticle[] = [
     categoryId: "cat-epistimi",
     authorId: "author-eva",
     tagIds: ["tag-zoa"],
-    status: "Προγραμματισμένο",
+    status: "scheduled",
     dateValue: "2026-09-22",
     image: octopus,
     views: 0,
@@ -248,7 +248,7 @@ const seedArticles: SeedArticle[] = [
     categoryId: "cat-technologia",
     authorId: "author-nikos",
     tagIds: ["tag-chronos"],
-    status: "Πρόχειρο",
+    status: "draft",
     dateValue: "2026-09-19",
     image: timeMachine,
     views: 0,
@@ -264,7 +264,7 @@ const seedArticles: SeedArticle[] = [
     categoryId: "cat-istoria",
     authorId: "author-lida",
     tagIds: ["tag-imerologio", "tag-chronos"],
-    status: "Δημοσιευμένο",
+    status: "published",
     dateValue: "2026-09-10",
     image: observatory,
     views: 7860,
@@ -279,7 +279,7 @@ const seedArticles: SeedArticle[] = [
     categoryId: "cat-politismos",
     authorId: "author-iason",
     tagIds: ["tag-mousiki"],
-    status: "Πρόχειρο",
+    status: "draft",
     dateValue: "2026-09-08",
     image: timeMachine,
     views: 0,
@@ -294,7 +294,7 @@ const seedArticles: SeedArticle[] = [
     categoryId: "cat-anthropos",
     authorId: "author-danai",
     tagIds: ["tag-egkefalos"],
-    status: "Δημοσιευμένο",
+    status: "published",
     dateValue: "2026-09-06",
     image: forest,
     views: 5120,
@@ -309,7 +309,7 @@ const seedArticles: SeedArticle[] = [
     categoryId: "cat-kathimerinotita",
     authorId: "author-marina",
     tagIds: ["tag-aisthiseis"],
-    status: "Δημοσιευμένο",
+    status: "published",
     dateValue: "2026-09-04",
     image: forest,
     views: 4380,
@@ -342,7 +342,17 @@ const demoSeed: MockStore = {
   })),
 };
 
-/** Returns a fresh, independent copy of the demo data. */
-export function createDemoStore(): MockStore {
-  return structuredClone(demoSeed);
+const addDays = (date: Date, days: number) =>
+  new Date(date.getTime() + days * 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * Returns a fresh, independent copy of the demo data. Scheduled demo articles
+ * are moved a week ahead of `now` so the demo always shows one pending article.
+ */
+export function createDemoStore(now: Date = new Date()): MockStore {
+  const store = structuredClone(demoSeed);
+  for (const article of store.articles) {
+    if (article.status === "scheduled") article.dateValue = addDays(now, 7);
+  }
+  return store;
 }

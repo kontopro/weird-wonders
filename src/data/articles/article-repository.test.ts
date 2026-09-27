@@ -6,7 +6,7 @@ const validInput: ArticleWriteInput = {
   title: "Νέο άρθρο",
   excerpt: "Περίληψη",
   categorySlug: "epistimi",
-  status: "Πρόχειρο",
+  status: "draft",
   dateValue: "2026-09-27",
   content: { version: 1, blocks: [] },
 };
@@ -23,7 +23,7 @@ describe("parseArticleWriteInput", () => {
   });
 
   test("rejects an unknown status", () => {
-    expect(() => parseArticleWriteInput({ ...validInput, status: "published" })).toThrow();
+    expect(() => parseArticleWriteInput({ ...validInput, status: "PUBLISHED" })).toThrow();
   });
 
   test("rejects a non-normalized slug", () => {

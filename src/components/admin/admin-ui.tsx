@@ -27,21 +27,27 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatViews, type AdminArticle, type ArticleStatus } from "@/lib/admin-data";
+import {
+  articleStatusLabels,
+  formatViews,
+  type AdminArticle,
+  type ArticleStatus,
+} from "@/lib/admin-data";
 
+// CSS modifier per status (`status-review` predates the `in_review` code).
 const statusTone: Record<ArticleStatus, string> = {
-  Πρόχειρο: "draft",
-  "Σε έλεγχο": "review",
-  Προγραμματισμένο: "scheduled",
-  Δημοσιευμένο: "published",
-  Αρχειοθετημένο: "archived",
+  draft: "draft",
+  in_review: "review",
+  scheduled: "scheduled",
+  published: "published",
+  archived: "archived",
 };
 
 export function ArticleStatusBadge({ status }: { status: ArticleStatus }) {
   return (
     <span className={`admin-status status-${statusTone[status]}`}>
       <i />
-      {status}
+      {articleStatusLabels[status]}
     </span>
   );
 }

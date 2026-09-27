@@ -6,9 +6,10 @@ import {
   type PublishedArticleFilter,
   type WriteContext,
 } from "@/data/articles/article-repository";
-import type { MockArticleRow, MockStore } from "@/data/mock/mock-store";
+import { scheduleOf, type MockArticleRow, type MockStore } from "@/data/mock/mock-store";
 import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
+import { effectiveStatus, isPubliclyVisible } from "@/domain/publishing";
 import { authorEditableStatuses, canEditArticle, isEditorRole } from "@/domain/permissions";
 import { uncategorized, type CategoryRef, type TagRef } from "@/domain/taxonomy";
 import type { AdminArticle } from "@/lib/admin-data";
@@ -64,7 +65,7 @@ export class MockArticleRepository implements ArticleRepository {
       excerpt: row.excerpt,
       category: this.categoryRef(row.categoryId),
       author: this.authorRef(row.authorId),
-      status: row.status,
+      status: effectiveStatus(scheduleOf(row)),
       date: formatArticleDate(row.dateValue),
       dateValue: row.dateValue,
       views: row.views,
@@ -88,7 +89,7 @@ export class MockArticleRepository implements ArticleRepository {
   }
 
   private published() {
-    return this.store.articles.filter((row) => row.status === "Δημοσιευμένο");
+    return this.store.articles.filter((row) => isPubliclyVisible(scheduleOf(row)));
   }
 
   async listPublished(filter: PublishedArticleFilter = {}) {
@@ -233,7 +234,7 @@ export class MockArticleRepository implements ArticleRepository {
       slug: `${source.slug}-copy-${Date.now()}`,
       title: `${source.title} — αντίγραφο`,
       authorId: context.actorId,
-      status: "Πρόχειρο",
+      status: "draft",
       views: 0,
       isFeatured: false,
       isTrending: false,

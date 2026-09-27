@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AuthorRepository } from "@/data/authors/author-repository";
 import { toDomainError } from "@/data/supabase/supabase-errors";
 import type { AuthorProfile, ProfileInput } from "@/domain/authors";
+import { publiclyVisibleFilter } from "@/data/supabase/visibility";
 
 type ProfileRow = { id: string; slug: string; display_name: string; bio: string | null };
 
@@ -31,7 +32,7 @@ export class SupabaseAuthorRepository implements AuthorRepository {
       .from("articles")
       .select("id", { count: "exact", head: true })
       .eq("author_id", data.id)
-      .eq("status", "published");
+      .or(publiclyVisibleFilter());
     if (countError) throw countError;
     return count ? toProfile(data as ProfileRow) : null;
   }

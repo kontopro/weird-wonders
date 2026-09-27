@@ -7,7 +7,7 @@ import type { ArticleStatus } from "@/lib/admin-data";
  * mode the database enforces them again.
  */
 export const editorRoles: readonly MemberRole[] = ["owner", "admin", "editor"];
-export const authorEditableStatuses: readonly ArticleStatus[] = ["Πρόχειρο", "Σε έλεγχο"];
+export const authorEditableStatuses: readonly ArticleStatus[] = ["draft", "in_review"];
 
 export function isEditorRole(role: MemberRole) {
   return editorRoles.includes(role);

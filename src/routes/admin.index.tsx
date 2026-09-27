@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   ArrowRight,
   BookOpen,
@@ -11,7 +11,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { mainLanguage } from "@/config/site";
+import { popularWindowDays } from "@/domain/listing";
 import { Button } from "@/components/ui/button";
 import { ArticlesTable, ConfirmDialog, StatsCard } from "@/components/admin/admin-ui";
 import { formatViews, type AdminArticle } from "@/lib/admin-data";
@@ -20,7 +22,14 @@ import { errorMessage } from "@/lib/error-message";
 import { brandedTitle, siteConfig } from "@/config/site";
 
 export const Route = createFileRoute("/admin/")({
-  loader: () => articleApi.listAdmin(),
+  loader: async () => {
+    const [stats, recent, popular] = await Promise.all([
+      articleApi.adminStats(),
+      articleApi.pageAdmin({}),
+      articleApi.listPopular(mainLanguage, 3),
+    ]);
+    return { stats, recent: recent.items.slice(0, 4), popular };
+  },
   component: AdminDashboard,
   head: () => ({
     meta: [
@@ -40,15 +49,27 @@ export const Route = createFileRoute("/admin/")({
   }),
 });
 
+/** Greeting by the time of day. */
+function greeting(hour = new Date().getHours()) {
+  if (hour >= 5 && hour < 12) return "Καλημέρα";
+  if (hour >= 12 && hour < 18) return "Καλό απόγευμα";
+  return "Καλησπέρα";
+}
+
 function AdminDashboard() {
-  const loadedRows = Route.useLoaderData();
-  const [rows, setRows] = useState<AdminArticle[]>(() => loadedRows);
+  const { stats, recent, popular } = Route.useLoaderData();
+  const { user } = Route.useRouteContext();
+  const router = useRouter();
   const [target, setTarget] = useState<AdminArticle>();
+  const firstName = user.displayName.split(" ")[0] || user.displayName;
+  // Chosen in the browser: the server's clock may be in another time zone.
+  const [hello, setHello] = useState("Γεια σου");
+  useEffect(() => setHello(greeting()), []);
   const duplicate = async (article: AdminArticle) => {
     try {
-      const copy = await articleApi.duplicate(article.id);
-      setRows((current) => [copy, ...current]);
+      await articleApi.duplicate(article.id);
       toast.success("Δημιουργήθηκε αντίγραφο ως πρόχειρο.");
+      await router.invalidate();
     } catch (error) {
       toast.error(errorMessage(error));
     }
@@ -65,7 +86,7 @@ function AdminDashboard() {
             }).format(new Date())}
           </p>
           <h1>
-            Καλημέρα, Μαρία <span className="sr-only">👋</span>
+            {hello}, {firstName} <span className="sr-only">👋</span>
             <Hand className="greeting-hand" aria-hidden="true" />
           </h1>
           <p>Δες τι συμβαίνει σήμερα στο {siteConfig.name}.</p>
@@ -77,23 +98,29 @@ function AdminDashboard() {
       <section className="stats-grid" aria-label="Στατιστικά">
         <StatsCard
           label="Συνολικά άρθρα"
-          value="128"
-          trend="+8 αυτόν τον μήνα"
+          value={formatViews(stats.total)}
+          note={`${formatViews(stats.byStatus.archived)} αρχειοθετημένα`}
           icon={FileText}
           tone="sky"
         />
         <StatsCard
           label="Δημοσιευμένα"
-          value="104"
-          trend="+6 αυτόν τον μήνα"
+          value={formatViews(stats.byStatus.published)}
+          note={`${formatViews(stats.byStatus.scheduled)} προγραμματισμένα`}
           icon={BookOpen}
           tone="green"
         />
-        <StatsCard label="Πρόχειρα" value="17" trend="-2 από χθες" icon={PenLine} tone="coral" />
         <StatsCard
-          label="Προβολές αυτόν τον μήνα"
-          value="84,2K"
-          trend="+12,4%"
+          label="Πρόχειρα"
+          value={formatViews(stats.byStatus.draft)}
+          note={`${formatViews(stats.byStatus.in_review)} σε έλεγχο`}
+          icon={PenLine}
+          tone="coral"
+        />
+        <StatsCard
+          label="Προβολές"
+          value={formatViews(stats.recentViews)}
+          note={`τελευταίες ${popularWindowDays} ημέρες`}
           icon={Eye}
           tone="yellow"
         />
@@ -109,12 +136,7 @@ function AdminDashboard() {
               Όλα τα άρθρα <ArrowRight />
             </Link>
           </header>
-          <ArticlesTable
-            compact
-            articles={rows.slice(0, 4)}
-            onDelete={setTarget}
-            onDuplicate={duplicate}
-          />
+          <ArticlesTable compact articles={recent} onDelete={setTarget} onDuplicate={duplicate} />
         </section>
         <aside className="admin-dashboard-side">
           <section className="admin-panel popular-mini">
@@ -124,18 +146,16 @@ function AdminDashboard() {
                 <h2>Δημοφιλή άρθρα</h2>
               </div>
             </header>
-            {[...rows]
-              .sort((a, b) => b.views - a.views)
-              .slice(0, 3)
-              .map((article, index) => (
-                <div className="popular-mini-row" key={article.id}>
-                  <span>0{index + 1}</span>
-                  <div>
-                    <strong>{article.title}</strong>
-                    <small>{formatViews(article.views)} προβολές</small>
-                  </div>
+            {popular.length === 0 && <p>Δεν υπάρχουν ακόμα προβολές.</p>}
+            {popular.map((article, index) => (
+              <div className="popular-mini-row" key={article.id}>
+                <span>0{index + 1}</span>
+                <div>
+                  <strong>{article.title}</strong>
+                  <small>{formatViews(article.popularity)} προβολές</small>
                 </div>
-              ))}
+              </div>
+            ))}
           </section>
           <section className="admin-panel quick-actions">
             <header>
@@ -179,8 +199,8 @@ function AdminDashboard() {
           if (!target) return;
           try {
             await articleApi.delete(target.id);
-            setRows((current) => current.filter((row) => row.id !== target.id));
             toast.success("Το άρθρο αφαιρέθηκε.");
+            await router.invalidate();
           } catch (error) {
             toast.error(errorMessage(error));
           } finally {

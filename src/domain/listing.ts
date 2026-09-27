@@ -1,6 +1,8 @@
 /** Pagination, search and popularity rules shared by every adapter. */
 
 export const defaultPageSize = 12;
+/** Rows per page in the admin article list. */
+export const adminPageSize = 20;
 export const maxPageSize = 50;
 /** "Popular" means most viewed in this many recent days. */
 export const popularWindowDays = 30;

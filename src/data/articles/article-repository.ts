@@ -82,6 +82,26 @@ export type PublishedArticleFilter = {
   maxMinutes?: number;
 };
 
+/** Filters of the admin article list (every status and language). */
+export type AdminArticleFilter = {
+  /** Case-insensitive part of the title. */
+  query?: string;
+  /** Main-language category slug. */
+  categorySlug?: string;
+  /** Effective status: a scheduled article whose time has come counts as published. */
+  status?: ArticleStatus;
+  /** Oldest first instead of newest first. */
+  oldestFirst?: boolean;
+};
+
+/** Dashboard numbers: articles per effective status and recent views. */
+export type AdminStats = {
+  total: number;
+  byStatus: Record<ArticleStatus, number>;
+  /** Views of all articles in the last `popularWindowDays` days. */
+  recentViews: number;
+};
+
 /** One public article, as the sitemap needs it (every language). */
 export type PublicArticleIndexEntry = {
   language: string;
@@ -165,7 +185,14 @@ export interface ArticleRepository {
   listPublicIndex(): Promise<PublicArticleIndexEntry[]>;
   /** A public article by its slug in a language (default: the main language). */
   findPublishedBySlug(slug: string, language?: string): Promise<ArticleDetail | null>;
-  listAdmin(): Promise<AdminArticle[]>;
+  /** Counts for the admin dashboard. */
+  adminStats(): Promise<AdminStats>;
+  /** One page of the admin article list. */
+  pageAdmin(
+    filter: AdminArticleFilter,
+    page: number,
+    pageSize?: number,
+  ): Promise<Page<AdminArticle>>;
   findAdminById(id: string): Promise<EditableArticle | null>;
   save(input: ArticleWriteInput, context: WriteContext): Promise<EditableArticle>;
   duplicate(id: string, context: WriteContext): Promise<EditableArticle>;

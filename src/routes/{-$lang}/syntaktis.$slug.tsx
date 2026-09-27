@@ -5,7 +5,7 @@ import { brandedTitle } from "@/config/site";
 import { articleApi } from "@/data/articles";
 import { authorApi } from "@/data/authors";
 import { absoluteUrl, localizedPath, messagesFor, useT } from "@/i18n";
-import { langOf, sitewideAlternates } from "@/i18n/head";
+import { langOf, sitewideAlternates, paginatedLinks } from "@/i18n/head";
 import { jsonLd, socialMeta } from "@/i18n/seo";
 import { initialsOf } from "@/lib/auth-types";
 
@@ -38,7 +38,10 @@ export const Route = createFileRoute("/{-$lang}/syntaktis/$slug")({
           type: "profile",
         }),
       ],
-      links: sitewideAlternates(language, `/syntaktis/${params.slug}`),
+      links: paginatedLinks(
+        sitewideAlternates(language, `/syntaktis/${params.slug}`),
+        loaderData?.page.page,
+      ),
       scripts: author
         ? [
             jsonLd({

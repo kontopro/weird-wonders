@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   assertArticleWriteInvariants,
   type ArticleRepository,
+  type AdminArticleFilter,
   type ArticleWriteInput,
   type EditableArticle,
   type PublishedArticleFilter,
@@ -15,6 +16,7 @@ import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
 import { collectAssetIds, srcSetOf, type PublicMediaSource } from "@/domain/media";
 import {
+  adminPageSize,
   clampPage,
   defaultPageSize,
   maxPageSize,
@@ -496,16 +498,74 @@ export class SupabaseArticleRepository implements ArticleRepository {
     };
   }
 
-  async listAdmin() {
-    const { data, error } = await this.client
-      .from("articles")
-      .select(LIST_COLUMNS)
-      .order("updated_at", { ascending: false });
+  async adminStats() {
+    // Row counts only (no rows are transferred), one request per status.
+    const now = new Date().toISOString();
+    const count = async (
+      query: PromiseLike<{ count: number | null; error: { message: string } | null }>,
+    ) => {
+      const { count: value, error } = await query;
+      if (error) throw error;
+      return value ?? 0;
+    };
+    const rows = () => this.countQuery();
+    const [total, published, scheduled, draft, inReview, archived, views] = await Promise.all([
+      count(rows()),
+      count(rows().or(publiclyVisibleFilter())),
+      count(rows().eq("status", "scheduled").gt("scheduled_at", now)),
+      count(rows().eq("status", "draft")),
+      count(rows().eq("status", "in_review")),
+      count(rows().eq("status", "archived")),
+      this.viewCounts(popularWindowDays),
+    ]);
+    const byStatus: Record<ArticleStatus, number> = {
+      draft,
+      in_review: inReview,
+      scheduled,
+      published,
+      archived,
+    };
+    const recentViews = [...views.values()].reduce((sum, value) => sum + value, 0);
+    return { total, byStatus, recentViews };
+  }
+
+  private countQuery() {
+    return this.client.from("articles").select("id", { count: "exact", head: true });
+  }
+
+  async pageAdmin(filter: AdminArticleFilter, page: number, pageSize = adminPageSize) {
+    const current = clampPage(page);
+    const size = Math.min(Math.max(pageSize, 1), maxPageSize);
+    const categoryId = await this.idBySlug("categories", filter.categorySlug);
+    if (categoryId === null) return pageFrom<AdminArticle>([], 0, current, size);
+
+    let query = this.client.from("articles").select(LIST_COLUMNS, { count: "exact" });
+    const title = filter.query?.trim();
+    // Literal match: % and _ in the typed text are not wildcards.
+    if (title) query = query.ilike("title", `%${title.replace(/[\\%_]/g, "\\$&")}%`);
+    if (categoryId) query = query.eq("category_id", categoryId);
+    // Effective status, like `effectiveStatus` in src/domain/publishing.ts.
+    const now = new Date().toISOString();
+    if (filter.status === "published") query = query.or(publiclyVisibleFilter());
+    else if (filter.status === "scheduled") {
+      query = query.eq("status", "scheduled").gt("scheduled_at", now);
+    } else if (filter.status) query = query.eq("status", filter.status);
+    // Drafts (no public date yet) come first among the newest.
+    const ascending = Boolean(filter.oldestFirst);
+    query = query
+      .order("public_at", { ascending, nullsFirst: !ascending })
+      .order("updated_at", { ascending });
+
+    const from = (current - 1) * size;
+    const { data, error, count } = await query.range(from, from + size - 1);
     if (error) throw error;
     const rows = (data ?? []) as unknown as ArticleRow[];
     const [authors, views] = await Promise.all([this.loadAuthors(rows), this.viewCounts()]);
-    // All-time views for the admin list.
-    return rows.map((row) => ({ ...this.toAdmin(row, authors), views: views.get(row.id) ?? 0 }));
+    const items = rows.map((row) => ({
+      ...this.toAdmin(row, authors),
+      views: views.get(row.id) ?? 0,
+    }));
+    return pageFrom(items, count ?? items.length, current, size);
   }
 
   private async findEditable(id: string) {

@@ -3,6 +3,7 @@ import {
   BookOpen,
   Eye,
   FolderTree,
+  Images,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -23,6 +24,7 @@ const navItems = [
   { label: "Άρθρα", to: "/admin/articles", icon: BookOpen },
   { label: "Νέο άρθρο", to: "/admin/articles/new", icon: PenLine },
   { label: "Κατηγορίες", to: "/admin/categories", icon: FolderTree },
+  { label: "Εικόνες", to: "/admin/media", icon: Images },
   { label: "Ομάδα", to: "/admin/team", icon: Users, teamOnly: true },
   { label: "Προφίλ", to: "/admin/profile", icon: UserRound },
 ] as const;

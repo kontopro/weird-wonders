@@ -1,20 +1,12 @@
-import {
-  Calendar,
-  ChevronDown,
-  Eye,
-  Image,
-  Save,
-  Sparkles,
-  Trash2,
-  UploadCloud,
-} from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { Calendar, ChevronDown, Eye, Image, Save, Sparkles } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/admin/admin-ui";
 import { BlockEditor } from "@/components/admin/block-editor";
+import { ImageField, MediaLibraryProvider } from "@/components/admin/media-library";
 import { articleStatusLabels, articleStatuses, type ArticleStatus } from "@/lib/admin-data";
 import { authorEditableStatuses, isEditorRole } from "@/domain/permissions";
 import type { CategoryRef, TagRef } from "@/domain/taxonomy";
@@ -28,76 +20,6 @@ import {
   type ArticleContentDocument,
 } from "@/lib/article-content";
 import { articleApi, type EditableArticle } from "@/data/articles";
-
-export function ImageUploadPlaceholder({
-  image,
-  alt,
-  onImage,
-  onAlt,
-  onRemove,
-}: {
-  image: string | undefined;
-  alt: string;
-  onImage: (url: string) => void;
-  onAlt: (value: string) => void;
-  onRemove: () => void;
-}) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const pick = (file?: File) => {
-    if (file?.type.startsWith("image/")) onImage(URL.createObjectURL(file));
-  };
-  return (
-    <div className="image-upload">
-      <input
-        ref={fileRef}
-        className="sr-only"
-        type="file"
-        accept="image/*"
-        onChange={(e) => pick(e.target.files?.[0])}
-      />
-      {image ? (
-        <>
-          <div className="image-preview">
-            <img src={image} alt={alt || "Προεπισκόπηση κεντρικής εικόνας"} />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={onRemove}
-              aria-label="Αφαίρεση εικόνας"
-            >
-              <Trash2 />
-            </Button>
-          </div>
-          <label>
-            <span>Alt text</span>
-            <input
-              value={alt}
-              onChange={(e) => onAlt(e.target.value)}
-              placeholder="Περιέγραψε την εικόνα"
-            />
-          </label>
-        </>
-      ) : (
-        <button
-          type="button"
-          className="drop-zone"
-          onClick={() => fileRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            pick(e.dataTransfer.files[0]);
-          }}
-        >
-          <UploadCloud />
-          <strong>Σύρε μια εικόνα εδώ</strong>
-          <span>ή επίλεξε αρχείο από τη συσκευή</span>
-          <small>JPG, PNG ή WebP · μόνο προσωρινή προεπισκόπηση</small>
-        </button>
-      )}
-    </div>
-  );
-}
 
 export function SeoPanel({
   title,
@@ -234,7 +156,7 @@ export function ArticleEditor({
   const [contentDocument, setContentDocument] = useState<ArticleContentDocument>(
     article?.content ?? createEmptyArticleContent(),
   );
-  const [image, setImage] = useState<string | undefined>(article?.image);
+  const [coverAssetId, setCoverAssetId] = useState<string | null>(article?.coverAssetId ?? null);
   const [alt, setAlt] = useState(article?.imageAlt ?? "");
   const [status, setStatus] = useState<ArticleStatus>(article?.status ?? "draft");
   const [date, setDate] = useState(article?.dateValue ?? new Date().toISOString().slice(0, 10));
@@ -277,8 +199,8 @@ export function ArticleEditor({
         categorySlug: category,
         status: nextStatus,
         dateValue: date,
-        ...(image ? { image } : {}),
-        imageAlt: alt,
+        coverAssetId,
+        imageAlt: coverAssetId ? alt : "",
         tags: tags
           .split(",")
           .map((tag) => tag.trim())
@@ -304,218 +226,231 @@ export function ArticleEditor({
     if (await persist("draft")) toast.success("Το άρθρο αποθηκεύτηκε ως πρόχειρο.");
   };
   return (
-    <TooltipProvider>
-      <div className="editor-page">
-        <header className="editor-topbar">
-          <div>
-            <p className="admin-overline">{article ? "Επεξεργασία άρθρου" : "Νέο άρθρο"}</p>
-            <h1>{article ? "Επεξεργασία" : "Δημιούργησε κάτι που αξίζει να μάθουμε"}</h1>
-          </div>
-          <span className={dirty ? "unsaved active" : "unsaved"}>
-            <i />
-            {dirty ? "Μη αποθηκευμένες αλλαγές" : "Όλες οι αλλαγές αποθηκεύτηκαν"}
-          </span>
-        </header>
-        <div className="editor-layout">
-          <div className="editor-main">
-            <section className="editor-canvas">
-              <label className="title-field">
-                <span className="sr-only">Τίτλος άρθρου</span>
-                <textarea
-                  rows={2}
-                  maxLength={120}
-                  value={title}
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                    setSeoTitle(e.target.value.slice(0, 60));
-                    setDirty(true);
-                  }}
-                  placeholder="Γράψε έναν τίτλο που γεννά περιέργεια…"
-                />
-                <small>{title.length}/120</small>
-              </label>
-              <p className="slug-preview">
-                {siteConfig.domain}/arthro/<strong>{slug}</strong>
-              </p>
-              <label className="description-field">
-                <span>Σύντομη περιγραφή</span>
-                <textarea
-                  maxLength={220}
-                  value={description}
-                  onChange={(e) => {
-                    setDescription(e.target.value);
-                    setSeoDescription(e.target.value.slice(0, 160));
-                    setDirty(true);
-                  }}
-                  placeholder="Μια σύντομη εισαγωγή για τον αναγνώστη…"
-                />
-                <small>{description.length}/220</small>
-              </label>
-              <BlockEditor
-                document={contentDocument}
-                onChange={setContentDocument}
-                onDirty={() => setDirty(true)}
-              />
-            </section>
-          </div>
-          <aside className="editor-aside">
-            <PublishPanel
-              canPublish={canPublish}
-              status={status}
-              date={date}
-              onStatus={(value) => {
-                setStatus(value);
-                if (value !== "published") setDaily(false);
-                setDirty(true);
-              }}
-              onDate={(value) => {
-                setDate(value);
-                setDirty(true);
-              }}
-              onDraft={save}
-              onPreview={() => toast.info("Άνοιξε την προεπισκόπηση μέσα σε κάθε block.")}
-              onPublish={() => {
-                if (contentIsValid()) setPublishOpen(true);
-              }}
-            />
-            <section className="editor-panel">
-              <header>
-                <h2>Κεντρική εικόνα</h2>
-              </header>
-              <div className="panel-body">
-                <ImageUploadPlaceholder
-                  image={image}
-                  alt={alt}
-                  onImage={(url) => {
-                    setImage(url);
-                    setDirty(true);
-                  }}
-                  onAlt={(value) => {
-                    setAlt(value);
-                    setDirty(true);
-                  }}
-                  onRemove={() => {
-                    setImage(undefined);
-                    setDirty(true);
-                  }}
-                />
-              </div>
-            </section>
-            <section className="editor-panel">
-              <header>
-                <h2>Οργάνωση</h2>
-              </header>
-              <div className="panel-body">
-                <label>
-                  <span>Κατηγορία</span>
-                  <select
-                    value={category}
+    <MediaLibraryProvider>
+      <TooltipProvider>
+        <div className="editor-page">
+          <header className="editor-topbar">
+            <div>
+              <p className="admin-overline">{article ? "Επεξεργασία άρθρου" : "Νέο άρθρο"}</p>
+              <h1>{article ? "Επεξεργασία" : "Δημιούργησε κάτι που αξίζει να μάθουμε"}</h1>
+            </div>
+            <span className={dirty ? "unsaved active" : "unsaved"}>
+              <i />
+              {dirty ? "Μη αποθηκευμένες αλλαγές" : "Όλες οι αλλαγές αποθηκεύτηκαν"}
+            </span>
+          </header>
+          <div className="editor-layout">
+            <div className="editor-main">
+              <section className="editor-canvas">
+                <label className="title-field">
+                  <span className="sr-only">Τίτλος άρθρου</span>
+                  <textarea
+                    rows={2}
+                    maxLength={120}
+                    value={title}
                     onChange={(e) => {
-                      setCategory(e.target.value);
+                      setTitle(e.target.value);
+                      setSeoTitle(e.target.value.slice(0, 60));
                       setDirty(true);
                     }}
-                  >
-                    {categories.map((c) => (
-                      <option key={c.slug} value={c.slug}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  <span>Ετικέτες</span>
-                  <input
-                    list="tag-suggestions"
-                    value={tags}
-                    onChange={(e) => {
-                      setTags(e.target.value);
-                      setDirty(true);
-                    }}
-                    placeholder="π.χ. φύση, δάσος"
+                    placeholder="Γράψε έναν τίτλο που γεννά περιέργεια…"
                   />
-                  <datalist id="tag-suggestions">
-                    {tagSuggestions.map((tag) => (
-                      <option key={tag.slug} value={tag.name} />
-                    ))}
-                  </datalist>
-                  {!canPublish && <small>Νέες ετικέτες δημιουργούν μόνο οι επιμελητές.</small>}
+                  <small>{title.length}/120</small>
                 </label>
-                <label>
-                  <span>Συντάκτης</span>
-                  <input value={article?.author.name ?? user.displayName} readOnly />
+                <p className="slug-preview">
+                  {siteConfig.domain}/arthro/<strong>{slug}</strong>
+                </p>
+                <label className="description-field">
+                  <span>Σύντομη περιγραφή</span>
+                  <textarea
+                    maxLength={220}
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      setSeoDescription(e.target.value.slice(0, 160));
+                      setDirty(true);
+                    }}
+                    placeholder="Μια σύντομη εισαγωγή για τον αναγνώστη…"
+                  />
+                  <small>{description.length}/220</small>
                 </label>
-                {canPublish && (
-                  <div className="switch-list">
-                    <label>
-                      <span>Featured άρθρο</span>
-                      <Switch
-                        checked={featured}
-                        onCheckedChange={(value) => {
-                          setFeatured(value);
+                <BlockEditor
+                  document={contentDocument}
+                  onChange={setContentDocument}
+                  onDirty={() => setDirty(true)}
+                />
+              </section>
+            </div>
+            <aside className="editor-aside">
+              <PublishPanel
+                canPublish={canPublish}
+                status={status}
+                date={date}
+                onStatus={(value) => {
+                  setStatus(value);
+                  if (value !== "published") setDaily(false);
+                  setDirty(true);
+                }}
+                onDate={(value) => {
+                  setDate(value);
+                  setDirty(true);
+                }}
+                onDraft={save}
+                onPreview={() => toast.info("Άνοιξε την προεπισκόπηση μέσα σε κάθε block.")}
+                onPublish={() => {
+                  if (contentIsValid()) setPublishOpen(true);
+                }}
+              />
+              <section className="editor-panel">
+                <header>
+                  <h2>Κεντρική εικόνα</h2>
+                </header>
+                <div className="panel-body">
+                  <ImageField
+                    assetId={coverAssetId}
+                    label="Επιλογή κεντρικής εικόνας"
+                    onSelect={(asset) => {
+                      setCoverAssetId(asset.id);
+                      if (!alt.trim()) setAlt(asset.alt);
+                      setDirty(true);
+                    }}
+                    onRemove={() => {
+                      setCoverAssetId(null);
+                      setDirty(true);
+                    }}
+                  />
+                  {coverAssetId && (
+                    <label className="cover-alt">
+                      <span>Alt text κεντρικής εικόνας</span>
+                      <input
+                        value={alt}
+                        maxLength={500}
+                        onChange={(e) => {
+                          setAlt(e.target.value);
                           setDirty(true);
                         }}
+                        placeholder="Περιέγραψε την εικόνα"
                       />
                     </label>
-                    <label>
-                      <span>Δημοφιλές</span>
-                      <Switch
-                        checked={popular}
-                        onCheckedChange={(value) => {
-                          setPopular(value);
-                          setDirty(true);
-                        }}
-                      />
-                    </label>
-                    <label>
-                      <span>{siteConfig.contentLabels.highlight}</span>
-                      <Switch
-                        checked={daily}
-                        disabled={status !== "published"}
-                        onCheckedChange={(value) => {
-                          setDaily(value);
-                          setDirty(true);
-                        }}
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-            </section>
-            <SeoPanel
-              title={seoTitle}
-              description={seoDescription}
-              onTitle={(value) => {
-                setSeoTitle(value);
-                setDirty(true);
-              }}
-              onDescription={(value) => {
-                setSeoDescription(value);
-                setDirty(true);
-              }}
-            />
-          </aside>
-        </div>
-        <ConfirmDialog
-          open={publishOpen}
-          onOpenChange={setPublishOpen}
-          title={canPublish ? "Έτοιμο για δημοσίευση;" : "Υποβολή για έλεγχο;"}
-          description={
-            canPublish
-              ? "Το άρθρο θα γίνει ορατό στους αναγνώστες."
-              : "Ένας επιμελητής θα ελέγξει και θα δημοσιεύσει το άρθρο."
-          }
-          confirmLabel={canPublish ? "Δημοσίευση" : "Υποβολή"}
-          onConfirm={async () => {
-            const nextStatus = canPublish ? "published" : "in_review";
-            if (await persist(nextStatus)) {
-              setPublishOpen(false);
-              toast.success(
-                canPublish ? "Το άρθρο δημοσιεύτηκε." : "Το άρθρο στάλθηκε για έλεγχο.",
-              );
+                  )}
+                </div>
+              </section>
+              <section className="editor-panel">
+                <header>
+                  <h2>Οργάνωση</h2>
+                </header>
+                <div className="panel-body">
+                  <label>
+                    <span>Κατηγορία</span>
+                    <select
+                      value={category}
+                      onChange={(e) => {
+                        setCategory(e.target.value);
+                        setDirty(true);
+                      }}
+                    >
+                      {categories.map((c) => (
+                        <option key={c.slug} value={c.slug}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Ετικέτες</span>
+                    <input
+                      list="tag-suggestions"
+                      value={tags}
+                      onChange={(e) => {
+                        setTags(e.target.value);
+                        setDirty(true);
+                      }}
+                      placeholder="π.χ. φύση, δάσος"
+                    />
+                    <datalist id="tag-suggestions">
+                      {tagSuggestions.map((tag) => (
+                        <option key={tag.slug} value={tag.name} />
+                      ))}
+                    </datalist>
+                    {!canPublish && <small>Νέες ετικέτες δημιουργούν μόνο οι επιμελητές.</small>}
+                  </label>
+                  <label>
+                    <span>Συντάκτης</span>
+                    <input value={article?.author.name ?? user.displayName} readOnly />
+                  </label>
+                  {canPublish && (
+                    <div className="switch-list">
+                      <label>
+                        <span>Featured άρθρο</span>
+                        <Switch
+                          checked={featured}
+                          onCheckedChange={(value) => {
+                            setFeatured(value);
+                            setDirty(true);
+                          }}
+                        />
+                      </label>
+                      <label>
+                        <span>Δημοφιλές</span>
+                        <Switch
+                          checked={popular}
+                          onCheckedChange={(value) => {
+                            setPopular(value);
+                            setDirty(true);
+                          }}
+                        />
+                      </label>
+                      <label>
+                        <span>{siteConfig.contentLabels.highlight}</span>
+                        <Switch
+                          checked={daily}
+                          disabled={status !== "published"}
+                          onCheckedChange={(value) => {
+                            setDaily(value);
+                            setDirty(true);
+                          }}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </section>
+              <SeoPanel
+                title={seoTitle}
+                description={seoDescription}
+                onTitle={(value) => {
+                  setSeoTitle(value);
+                  setDirty(true);
+                }}
+                onDescription={(value) => {
+                  setSeoDescription(value);
+                  setDirty(true);
+                }}
+              />
+            </aside>
+          </div>
+          <ConfirmDialog
+            open={publishOpen}
+            onOpenChange={setPublishOpen}
+            title={canPublish ? "Έτοιμο για δημοσίευση;" : "Υποβολή για έλεγχο;"}
+            description={
+              canPublish
+                ? "Το άρθρο θα γίνει ορατό στους αναγνώστες."
+                : "Ένας επιμελητής θα ελέγξει και θα δημοσιεύσει το άρθρο."
             }
-          }}
-        />
-      </div>
-    </TooltipProvider>
+            confirmLabel={canPublish ? "Δημοσίευση" : "Υποβολή"}
+            onConfirm={async () => {
+              const nextStatus = canPublish ? "published" : "in_review";
+              if (await persist(nextStatus)) {
+                setPublishOpen(false);
+                toast.success(
+                  canPublish ? "Το άρθρο δημοσιεύτηκε." : "Το άρθρο στάλθηκε για έλεγχο.",
+                );
+              }
+            }}
+          />
+        </div>
+      </TooltipProvider>
+    </MediaLibraryProvider>
   );
 }

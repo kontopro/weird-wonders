@@ -19,6 +19,22 @@ export type MockStore = {
   }>;
   tags: Array<{ id: string; slug: string; name: string }>;
   profiles: Array<{ id: string; slug: string; displayName: string; bio: string }>;
+  /** Media library, like `public.media_assets` (+ Storage for uploaded bytes). */
+  media: Array<{
+    id: string;
+    /** Static demo file (`/demo/…`) or, for uploads, the demo media route. */
+    src: string;
+    /** Uploaded bytes, kept in memory; absent for static demo files. */
+    bytes?: Uint8Array;
+    width: number | null;
+    height: number | null;
+    mimeType: string;
+    sizeBytes: number | null;
+    alt: string;
+    caption: string;
+    uploadedBy: string | null;
+    createdAt: string;
+  }>;
   /** Editorial team access, like `public.members`. */
   members: Array<{
     userId: string;
@@ -39,7 +55,7 @@ export type MockStore = {
     tagIds: string[];
     status: ArticleStatus;
     dateValue: string;
-    image: string;
+    coverAssetId: string | null;
     imageAlt: string;
     content: ArticleContentDocument;
     seoTitle: string;

@@ -20,7 +20,8 @@ const safeContentUrlSchema = z
 
 const imageSchema = z
   .object({
-    assetId: z.string().uuid(),
+    // Media library id (a UUID in Supabase; demo assets use readable ids).
+    assetId: z.string().min(1, "Διάλεξε εικόνα για κάθε μπλοκ εικόνας.").max(100),
     alt: z.string().trim().min(1).max(500),
     caption: shortTextSchema.optional(),
     credit: shortTextSchema.optional(),

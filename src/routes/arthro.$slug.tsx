@@ -114,7 +114,9 @@ function ArticlePage() {
           </div>
         </header>
         <div className="article-visual section-shell">
-          <img src={article.image} alt="Εικόνα παρουσίασης του άρθρου" width={1600} height={1000} />
+          {article.image && (
+            <img src={article.image} alt={article.imageAlt} width={1600} height={1000} />
+          )}
         </div>
         <div className="demo-notice section-shell">
           <CheckCircle2 />

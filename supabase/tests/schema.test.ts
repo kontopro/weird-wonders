@@ -358,3 +358,45 @@ describe("languages and translations", () => {
     ).rejects.toThrow(/row-level security/);
   });
 });
+
+describe("media uploads", () => {
+  const upload = (userId: string, path: string) =>
+    t.as(
+      "authenticated",
+      userId,
+      `insert into storage.objects (bucket_id, name, owner_id) values ('blog-public', $1, $2)`,
+      [path, userId],
+    );
+  const addAsset = (userId: string, path: string) =>
+    t.as<{ id: string }>(
+      "authenticated",
+      userId,
+      `insert into public.media_assets
+         (uploaded_by, storage_bucket, storage_path, visibility, mime_type, alt_text)
+       values ($1, 'blog-public', $2, 'public', 'image/webp', 'Alt') returning id`,
+      [userId, path],
+    );
+
+  test("authors upload into their own folder only", async () => {
+    await upload(author, `media/${author}/a.webp`);
+    await addAsset(author, `media/${author}/a.webp`);
+    await expect(upload(author, `media/${editor}/b.webp`)).rejects.toThrow(/row-level security/);
+    await expect(upload(author, "branding/logo.webp")).rejects.toThrow(/row-level security/);
+    await upload(editor, "branding/logo.webp");
+  });
+
+  test("members change their own assets; editors change any", async () => {
+    const [asset] = await addAsset(author, `media/${author}/a.webp`);
+    const [other] = await addAsset(editor, `media/${editor}/e.webp`);
+    const rename = (userId: string, id: string) =>
+      t.as(
+        "authenticated",
+        userId,
+        "update public.media_assets set alt_text = 'New' where id = $1 returning id",
+        [id],
+      );
+    expect(await rename(author, asset!.id)).toHaveLength(1);
+    expect(await rename(author, other!.id)).toHaveLength(0);
+    expect(await rename(editor, asset!.id)).toHaveLength(1);
+  });
+});

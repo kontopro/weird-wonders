@@ -13,9 +13,9 @@ const validInput: ArticleWriteInput = {
 
 describe("parseArticleWriteInput", () => {
   test("accepts a valid payload and drops undefined optional keys", () => {
-    const parsed = parseArticleWriteInput({ ...validInput, image: undefined });
+    const parsed = parseArticleWriteInput({ ...validInput, imageAlt: undefined });
     expect(parsed).toEqual(validInput);
-    expect("image" in parsed).toBe(false);
+    expect("imageAlt" in parsed).toBe(false);
   });
 
   test("rejects unknown fields so clients cannot write columns they do not own", () => {

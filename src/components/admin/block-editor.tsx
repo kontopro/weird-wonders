@@ -1,3 +1,5 @@
+import { ImageField } from "@/components/admin/media-library";
+import type { MediaAsset } from "@/domain/media";
 import {
   ChevronDown,
   ChevronUp,
@@ -64,13 +66,16 @@ const blockOptions: Array<{
 ];
 
 function createImage() {
-  return {
-    assetId: crypto.randomUUID(),
-    alt: "Περιγραφή εικόνας",
-    caption: "",
-    credit: "",
-  };
+  // No image chosen yet; validation asks for one before saving.
+  return { assetId: "", alt: "", caption: "", credit: "" };
 }
+
+/** Picks an image and fills the alt text from the library when it is still empty. */
+const withAsset = <T extends { assetId: string; alt: string }>(image: T, asset: MediaAsset): T => ({
+  ...image,
+  assetId: asset.id,
+  alt: image.alt.trim() ? image.alt : asset.alt,
+});
 
 function createBlock(type: ArticleBlockType): ArticleBlock {
   const id = crypto.randomUUID();
@@ -207,9 +212,10 @@ function BlockFields({
     case "image":
       return (
         <>
-          <div className="block-storage-note">
-            <Image /> Η σύνδεση αρχείου θα ενεργοποιηθεί με το Supabase Storage.
-          </div>
+          <ImageField
+            assetId={block.data.assetId}
+            onSelect={(asset) => onChange({ ...block, data: withAsset(block.data, asset) })}
+          />
           <input
             value={block.data.alt}
             onChange={(event) =>
@@ -264,8 +270,22 @@ function BlockFields({
           </select>
           <div className="gallery-editor-grid">
             {block.data.images.map((image, imageIndex) => (
-              <fieldset key={image.assetId}>
+              <fieldset key={imageIndex}>
                 <legend>Εικόνα {imageIndex + 1}</legend>
+                <ImageField
+                  assetId={image.assetId}
+                  onSelect={(asset) =>
+                    onChange({
+                      ...block,
+                      data: {
+                        ...block.data,
+                        images: block.data.images.map((item, index) =>
+                          index === imageIndex ? withAsset(item, asset) : item,
+                        ),
+                      },
+                    })
+                  }
+                />
                 <input
                   value={image.alt}
                   onChange={(event) => updateImage(imageIndex, "alt", event.target.value)}

@@ -14,6 +14,8 @@ export type ArticleDetail = Article & {
 
 export type EditableArticle = AdminArticle & {
   authorId: string | null;
+  /** Media library id of the cover image; `image` holds its URL for previews. */
+  coverAssetId: string | null;
   language: string;
   /** Shared by all language versions of the same piece. */
   translationGroupId: string;
@@ -39,7 +41,8 @@ export type ArticleWriteInput = {
   categorySlug: string;
   status: ArticleStatus;
   dateValue: string;
-  image?: string;
+  /** Media library id of the cover; `null` removes it. */
+  coverAssetId?: string | null;
   imageAlt?: string;
   /** Tag display names; each adapter resolves or creates them by slug. */
   tags?: string[];
@@ -76,7 +79,7 @@ const articleWriteInputSchema = z
     categorySlug: z.string().refine(isSlug, "Μη έγκυρη κατηγορία."),
     status: z.enum(articleStatuses),
     dateValue: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    image: z.string().max(2048).optional(),
+    coverAssetId: z.string().min(1).max(100).nullable().optional(),
     imageAlt: z.string().max(500).optional(),
     tags: z.array(z.string().trim().min(1).max(100)).max(30).optional(),
     content: articleContentDocumentSchema,

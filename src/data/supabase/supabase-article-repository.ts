@@ -12,6 +12,7 @@ import { toDomainError } from "@/data/supabase/supabase-errors";
 import { publiclyVisibleFilter } from "@/data/supabase/visibility";
 import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
+import { collectAssetIds } from "@/domain/media";
 import { isEditorRole } from "@/domain/permissions";
 import { effectiveStatus, scheduledAtFor } from "@/domain/publishing";
 import {
@@ -44,9 +45,10 @@ type ArticleRow = {
   slug: string;
   language: string;
   translation_group_id: string;
+  cover_image_id: string | null;
+  cover_image_alt: string | null;
   excerpt: string | null;
   content_blocks?: unknown;
-  cover_image_alt: string | null;
   status: ArticleStatus;
   is_featured: boolean;
   is_trending: boolean;
@@ -75,7 +77,8 @@ const toTagInputs = (names: string[]) =>
 // Relations are embedded in one request. The cover FK is named because
 // `articles` has two foreign keys to `media_assets` (cover and social image).
 const LIST_COLUMNS = [
-  "id, author_id, title, slug, language, translation_group_id, excerpt, cover_image_alt",
+  "id, author_id, title, slug, language, translation_group_id, excerpt, cover_image_id",
+  "cover_image_alt",
   "status, is_featured, is_trending",
   "is_highlighted, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes",
   "created_at, updated_at",
@@ -87,19 +90,6 @@ const DETAIL_COLUMNS = `${LIST_COLUMNS}, content_blocks`;
 
 const toDateValue = (row: ArticleRow) =>
   (row.published_at ?? row.scheduled_at ?? row.updated_at ?? row.created_at).slice(0, 10);
-
-/** Finds every `assetId` referenced inside the content blocks. */
-function collectAssetIds(value: unknown, found = new Set<string>()): Set<string> {
-  if (Array.isArray(value)) {
-    for (const item of value) collectAssetIds(item, found);
-  } else if (value && typeof value === "object") {
-    for (const [key, item] of Object.entries(value)) {
-      if (key === "assetId" && typeof item === "string") found.add(item);
-      else collectAssetIds(item, found);
-    }
-  }
-  return found;
-}
 
 export class SupabaseArticleRepository implements ArticleRepository {
   constructor(private readonly client: SupabaseClient) {}
@@ -156,6 +146,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       date: formatArticleDate(toDateValue(row)),
       minutes: row.reading_time_minutes ?? 1,
       image: this.mediaSource(row.cover)?.src ?? "",
+      imageAlt: row.cover_image_alt ?? "",
       popularity: row.is_trending ? 1 : 0,
       category: this.categoryRef(row),
       author: (row.author_id && authors.get(row.author_id)) || editorialTeam,
@@ -186,6 +177,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
     return {
       ...this.toAdmin(row, authors),
       authorId: row.author_id,
+      coverAssetId: row.cover_image_id,
       language: row.language,
       translationGroupId: row.translation_group_id,
       content: parseArticleContent(row.content_blocks),
@@ -356,6 +348,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       excerpt: input.excerpt,
       content_version: input.content.version,
       content_blocks: input.content,
+      ...(input.coverAssetId !== undefined ? { cover_image_id: input.coverAssetId } : {}),
       cover_image_alt: input.imageAlt || null,
       status: databaseStatus,
       scheduled_at: databaseStatus === "scheduled" ? scheduledAtFor(input.dateValue) : null,

@@ -10,6 +10,8 @@ import {
 import { scheduleOf, type MockArticleRow, type MockStore } from "@/data/mock/mock-store";
 import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
+import { collectAssetIds } from "@/domain/media";
+import { MockMediaRepository } from "@/data/mock/mock-media-repository";
 import { effectiveStatus, isPubliclyVisible } from "@/domain/publishing";
 import { authorEditableStatuses, canEditArticle, isEditorRole } from "@/domain/permissions";
 import {
@@ -49,6 +51,10 @@ export class MockArticleRepository implements ArticleRepository {
     });
   }
 
+  private coverSrc(assetId: string | null) {
+    return (assetId && this.store.media.find((item) => item.id === assetId)?.src) || "";
+  }
+
   private toPublic(row: MockArticleRow): Article {
     return {
       slug: row.slug,
@@ -57,7 +63,8 @@ export class MockArticleRepository implements ArticleRepository {
       excerpt: row.excerpt,
       date: formatArticleDate(row.dateValue),
       minutes: row.minutes ?? calculateReadingTimeMinutes(row.content),
-      image: row.image,
+      image: this.coverSrc(row.coverAssetId),
+      imageAlt: row.imageAlt,
       popularity: row.popularity,
       category: this.categoryRef(row.categoryId),
       author: this.authorRef(row.authorId),
@@ -79,7 +86,7 @@ export class MockArticleRepository implements ArticleRepository {
       date: formatArticleDate(row.dateValue),
       dateValue: row.dateValue,
       views: row.views,
-      image: row.image,
+      image: this.coverSrc(row.coverAssetId),
     };
   }
 
@@ -87,6 +94,7 @@ export class MockArticleRepository implements ArticleRepository {
     return {
       ...this.toAdmin(row),
       authorId: row.authorId,
+      coverAssetId: row.coverAssetId,
       language: row.language,
       translationGroupId: row.translationGroupId,
       content: structuredClone(row.content),
@@ -133,7 +141,10 @@ export class MockArticleRepository implements ArticleRepository {
   async findPublishedBySlug(slug: string) {
     const row = this.published().find((item) => item.slug === slug);
     if (!row) return null;
-    return { ...this.toPublic(row), content: structuredClone(row.content), mediaAssets: {} };
+    const mediaAssets = await new MockMediaRepository(this.store).resolve([
+      ...collectAssetIds(row.content),
+    ]);
+    return { ...this.toPublic(row), content: structuredClone(row.content), mediaAssets };
   }
 
   async listAdmin() {
@@ -210,6 +221,10 @@ export class MockArticleRepository implements ArticleRepository {
       throw new DomainError("Υπάρχει ήδη εκδοχή του άρθρου σε αυτή τη γλώσσα.", "conflict");
     }
 
+    if (input.coverAssetId && !this.store.media.some((item) => item.id === input.coverAssetId)) {
+      throw new DomainError("Η εικόνα εξωφύλλου δεν βρέθηκε.", "invalid");
+    }
+
     const tagIds = input.tags ? this.resolveTagIds(input.tags, context) : (existing?.tagIds ?? []);
 
     const next: MockArticleRow = {
@@ -224,7 +239,8 @@ export class MockArticleRepository implements ArticleRepository {
       tagIds,
       status: input.status,
       dateValue: input.dateValue,
-      image: input.image ?? existing?.image ?? "",
+      coverAssetId:
+        input.coverAssetId === undefined ? (existing?.coverAssetId ?? null) : input.coverAssetId,
       imageAlt: input.imageAlt ?? existing?.imageAlt ?? "",
       content: structuredClone(input.content),
       seoTitle: input.seoTitle ?? existing?.seoTitle ?? "",

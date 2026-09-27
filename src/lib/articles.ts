@@ -10,7 +10,9 @@ export type Article = {
   excerpt: string;
   date: string;
   minutes: number;
+  /** Cover image URL ("" when the article has none). */
   image: string;
+  imageAlt: string;
   popularity: number;
   category: CategoryRef;
   author: AuthorRef;

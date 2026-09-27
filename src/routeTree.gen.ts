@@ -19,6 +19,7 @@ import { Route as SxetikaRouteImport } from './routes/sxetika'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminArticlesRouteImport } from './routes/admin.articles'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminPasswordRouteImport } from './routes/admin.password'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminTeamRouteImport } from './routes/admin.team'
@@ -29,6 +30,7 @@ import { Route as KatigoriaSlugRouteImport } from './routes/katigoria.$slug'
 import { Route as SyntaktisSlugRouteImport } from './routes/syntaktis.$slug'
 import { Route as AdminArticlesIndexRouteImport } from './routes/admin.articles.index'
 import { Route as AdminArticlesNewRouteImport } from './routes/admin.articles.new'
+import { Route as MediaDemoIdRouteImport } from './routes/media.demo.$id'
 import { Route as AdminArticlesSlugEditRouteImport } from './routes/admin.articles.$slug.edit'
 
 const IndexRoute = IndexRouteImport.update({
@@ -81,6 +83,11 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMediaRoute = AdminMediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminPasswordRoute = AdminPasswordRouteImport.update({
   id: '/password',
   path: '/password',
@@ -131,6 +138,11 @@ const AdminArticlesNewRoute = AdminArticlesNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AdminArticlesRoute,
 } as any)
+const MediaDemoIdRoute = MediaDemoIdRouteImport.update({
+  id: '/media/demo/$id',
+  path: '/media/demo/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminArticlesSlugEditRoute = AdminArticlesSlugEditRouteImport.update({
   id: '/$slug/edit',
   path: '/$slug/edit',
@@ -147,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/sxetika': typeof SxetikaRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/team': typeof AdminTeamRoute
@@ -157,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/syntaktis/$slug': typeof SyntaktisSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/articles/new': typeof AdminArticlesNewRoute
+  '/media/demo/$id': typeof MediaDemoIdRoute
   '/admin/articles/': typeof AdminArticlesIndexRoute
   '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
 }
@@ -168,6 +182,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/sxetika': typeof SxetikaRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/team': typeof AdminTeamRoute
@@ -178,6 +193,7 @@ export interface FileRoutesByTo {
   '/syntaktis/$slug': typeof SyntaktisSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/articles/new': typeof AdminArticlesNewRoute
+  '/media/demo/$id': typeof MediaDemoIdRoute
   '/admin/articles': typeof AdminArticlesIndexRoute
   '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
 }
@@ -192,6 +208,7 @@ export interface FileRoutesById {
   '/sxetika': typeof SxetikaRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/team': typeof AdminTeamRoute
@@ -202,6 +219,7 @@ export interface FileRoutesById {
   '/syntaktis/$slug': typeof SyntaktisSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/articles/new': typeof AdminArticlesNewRoute
+  '/media/demo/$id': typeof MediaDemoIdRoute
   '/admin/articles/': typeof AdminArticlesIndexRoute
   '/admin/articles/$slug/edit': typeof AdminArticlesSlugEditRoute
 }
@@ -217,6 +235,7 @@ export interface FileRouteTypes {
     | '/sxetika'
     | '/admin/articles'
     | '/admin/categories'
+    | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
     | '/admin/team'
@@ -227,6 +246,7 @@ export interface FileRouteTypes {
     | '/syntaktis/$slug'
     | '/admin/'
     | '/admin/articles/new'
+    | '/media/demo/$id'
     | '/admin/articles/'
     | '/admin/articles/$slug/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -238,6 +258,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/sxetika'
     | '/admin/categories'
+    | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
     | '/admin/team'
@@ -248,6 +269,7 @@ export interface FileRouteTypes {
     | '/syntaktis/$slug'
     | '/admin'
     | '/admin/articles/new'
+    | '/media/demo/$id'
     | '/admin/articles'
     | '/admin/articles/$slug/edit'
   id:
@@ -261,6 +283,7 @@ export interface FileRouteTypes {
     | '/sxetika'
     | '/admin/articles'
     | '/admin/categories'
+    | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
     | '/admin/team'
@@ -271,6 +294,7 @@ export interface FileRouteTypes {
     | '/syntaktis/$slug'
     | '/admin/'
     | '/admin/articles/new'
+    | '/media/demo/$id'
     | '/admin/articles/'
     | '/admin/articles/$slug/edit'
   fileRoutesById: FileRoutesById
@@ -288,6 +312,7 @@ export interface RootRouteChildren {
   EtiketaSlugRoute: typeof EtiketaSlugRoute
   KatigoriaSlugRoute: typeof KatigoriaSlugRoute
   SyntaktisSlugRoute: typeof SyntaktisSlugRoute
+  MediaDemoIdRoute: typeof MediaDemoIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -362,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/media': {
+      id: '/admin/media'
+      path: '/media'
+      fullPath: '/admin/media'
+      preLoaderRoute: typeof AdminMediaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/password': {
       id: '/admin/password'
       path: '/password'
@@ -432,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminArticlesNewRouteImport
       parentRoute: typeof AdminArticlesRoute
     }
+    '/media/demo/$id': {
+      id: '/media/demo/$id'
+      path: '/media/demo/$id'
+      fullPath: '/media/demo/$id'
+      preLoaderRoute: typeof MediaDemoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/articles/$slug/edit': {
       id: '/admin/articles/$slug/edit'
       path: '/$slug/edit'
@@ -461,6 +500,7 @@ const AdminArticlesRouteWithChildren = AdminArticlesRoute._addFileChildren(
 interface AdminRouteChildren {
   AdminArticlesRoute: typeof AdminArticlesRouteWithChildren
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminMediaRoute: typeof AdminMediaRoute
   AdminPasswordRoute: typeof AdminPasswordRoute
   AdminProfileRoute: typeof AdminProfileRoute
   AdminTeamRoute: typeof AdminTeamRoute
@@ -470,6 +510,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminArticlesRoute: AdminArticlesRouteWithChildren,
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminMediaRoute: AdminMediaRoute,
   AdminPasswordRoute: AdminPasswordRoute,
   AdminProfileRoute: AdminProfileRoute,
   AdminTeamRoute: AdminTeamRoute,
@@ -491,6 +532,7 @@ const rootRouteChildren: RootRouteChildren = {
   EtiketaSlugRoute: EtiketaSlugRoute,
   KatigoriaSlugRoute: KatigoriaSlugRoute,
   SyntaktisSlugRoute: SyntaktisSlugRoute,
+  MediaDemoIdRoute: MediaDemoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

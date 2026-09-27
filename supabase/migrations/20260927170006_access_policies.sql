@@ -141,6 +141,9 @@ using (
   )
 );
 
+-- Every active member uploads (authors need images in their drafts); uploads
+-- are public by URL, like in most CMSs. Editors manage every asset, others
+-- only their own.
 create policy media_assets_insert
 on public.media_assets
 for insert
@@ -148,10 +151,6 @@ to authenticated
 with check (
   (select private.is_active_member())
   and uploaded_by = (select auth.uid())
-  and (
-    visibility = 'private'
-    or (select private.has_role(array['owner', 'admin', 'editor']))
-  )
 );
 
 create policy media_assets_update
@@ -159,15 +158,11 @@ on public.media_assets
 for update
 to authenticated
 using (
-  (uploaded_by = (select auth.uid()) and visibility = 'private')
+  uploaded_by = (select auth.uid())
   or (select private.has_role(array['owner', 'admin', 'editor']))
 )
 with check (
-  (
-    uploaded_by = (select auth.uid())
-    and visibility = 'private'
-    and storage_bucket = 'blog-private'
-  )
+  uploaded_by = (select auth.uid())
   or (select private.has_role(array['owner', 'admin', 'editor']))
 );
 
@@ -176,7 +171,7 @@ on public.media_assets
 for delete
 to authenticated
 using (
-  (uploaded_by = (select auth.uid()) and visibility = 'private')
+  uploaded_by = (select auth.uid())
   or (select private.has_role(array['owner', 'admin', 'editor']))
 );
 

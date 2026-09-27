@@ -7,11 +7,43 @@ import type { MockStore } from "@/data/mock/mock-store";
  * Everything here is illustrative demo content, not real editorial material.
  */
 
-// Demo images are static files in `public/demo`, served as-is.
-const forest = "/demo/forest-network.jpg";
-const observatory = "/demo/observatory.jpg";
-const octopus = "/demo/octopus.jpg";
-const timeMachine = "/demo/time-machine.jpg";
+// Demo images are static files in `public/demo`, registered as media assets.
+const forest = "demo-forest";
+const observatory = "demo-observatory";
+const octopus = "demo-octopus";
+const timeMachine = "demo-time-machine";
+
+const demoMedia: MockStore["media"] = [
+  ["demo-forest", "/demo/forest-network.jpg", 1600, 1008, 497124, "Δάσος με φωτεινό δίκτυο ριζών"],
+  [
+    "demo-observatory",
+    "/demo/observatory.jpg",
+    1200,
+    912,
+    184752,
+    "Αστεροσκοπείο κάτω από έναστρο ουρανό",
+  ],
+  ["demo-octopus", "/demo/octopus.jpg", 1200, 912, 165659, "Χταπόδι σε μπλε νερά"],
+  [
+    "demo-time-machine",
+    "/demo/time-machine.jpg",
+    1200,
+    912,
+    162276,
+    "Παλιό ρολόι και κυκλώματα υπολογιστή",
+  ],
+].map(([id, src, width, height, sizeBytes, alt]) => ({
+  id: String(id),
+  src: String(src),
+  width: Number(width),
+  height: Number(height),
+  mimeType: "image/jpeg",
+  sizeBytes: Number(sizeBytes),
+  alt: String(alt),
+  caption: "",
+  uploadedBy: null,
+  createdAt: "2026-09-01T00:00:00.000Z",
+}));
 
 export const DEMO_USER_ID = "00000000-0000-4000-8000-000000000001";
 
@@ -186,7 +218,7 @@ type SeedArticle = Pick<
   | "tagIds"
   | "status"
   | "dateValue"
-  | "image"
+  | "coverAssetId"
   | "views"
   | "popularity"
   | "minutes"
@@ -204,7 +236,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-oikosystimata"],
     status: "published",
     dateValue: "2026-09-18",
-    image: forest,
+    coverAssetId: forest,
     views: 12480,
     popularity: 98,
     minutes: 7,
@@ -219,7 +251,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-fos", "tag-chronos"],
     status: "published",
     dateValue: "2026-09-16",
-    image: observatory,
+    coverAssetId: observatory,
     views: 9210,
     popularity: 94,
     minutes: 5,
@@ -234,7 +266,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-zoa"],
     status: "scheduled",
     dateValue: "2026-09-22",
-    image: octopus,
+    coverAssetId: octopus,
     views: 0,
     popularity: 91,
     minutes: 4,
@@ -250,7 +282,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-chronos"],
     status: "draft",
     dateValue: "2026-09-19",
-    image: timeMachine,
+    coverAssetId: timeMachine,
     views: 0,
     popularity: 87,
     minutes: 6,
@@ -266,7 +298,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-imerologio", "tag-chronos"],
     status: "published",
     dateValue: "2026-09-10",
-    image: observatory,
+    coverAssetId: observatory,
     views: 7860,
     popularity: 83,
     minutes: 8,
@@ -281,7 +313,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-mousiki"],
     status: "draft",
     dateValue: "2026-09-08",
-    image: timeMachine,
+    coverAssetId: timeMachine,
     views: 0,
     popularity: 79,
     minutes: 5,
@@ -296,7 +328,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-egkefalos"],
     status: "published",
     dateValue: "2026-09-06",
-    image: forest,
+    coverAssetId: forest,
     views: 5120,
     popularity: 76,
     minutes: 4,
@@ -311,7 +343,7 @@ const seedArticles: SeedArticle[] = [
     tagIds: ["tag-aisthiseis"],
     status: "published",
     dateValue: "2026-09-04",
-    image: forest,
+    coverAssetId: forest,
     views: 4380,
     popularity: 72,
     minutes: 3,
@@ -322,6 +354,7 @@ const demoSeed: MockStore = {
   categories,
   tags,
   profiles,
+  media: demoMedia,
   members: [
     { userId: DEMO_USER_ID, email: "maria@example.com", role: "owner", status: "active" },
     { userId: "author-aris", email: "aris@example.com", role: "editor", status: "active" },
@@ -335,7 +368,7 @@ const demoSeed: MockStore = {
     language: "el",
     translationGroupId: `group-${article.id}`,
     content: demoArticleContent satisfies ArticleContentDocument,
-    imageAlt: "",
+    imageAlt: demoMedia.find((media) => media.id === article.coverAssetId)?.alt ?? "",
     seoTitle: "",
     seoDescription: "",
     isFeatured: article.id === "1",

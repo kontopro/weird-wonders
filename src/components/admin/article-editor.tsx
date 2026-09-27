@@ -242,7 +242,7 @@ export function ArticleEditor({
   const [tags, setTags] = useState(article?.tags.map((tag) => tag.name).join(", ") ?? "");
   const [featured, setFeatured] = useState(article?.isFeatured ?? false);
   const [popular, setPopular] = useState(article?.isTrending ?? false);
-  const [daily, setDaily] = useState(article?.isFactOfDay ?? false);
+  const [daily, setDaily] = useState(article?.isHighlighted ?? false);
   const [seoTitle, setSeoTitle] = useState(
     (article?.seoTitle || article?.title || "").slice(0, 60),
   );
@@ -288,7 +288,7 @@ export function ArticleEditor({
         seoDescription: seoDescription.slice(0, 160),
         isFeatured: canPublish && featured,
         isTrending: canPublish && popular,
-        isFactOfDay: canPublish && daily,
+        isHighlighted: canPublish && daily,
       });
       setSavedId(saved.id);
       setSavedSlug(saved.slug);
@@ -467,7 +467,7 @@ export function ArticleEditor({
                       />
                     </label>
                     <label>
-                      <span>{siteConfig.contentLabels.singular} της ημέρας</span>
+                      <span>{siteConfig.contentLabels.highlight}</span>
                       <Switch
                         checked={daily}
                         disabled={status !== "published"}

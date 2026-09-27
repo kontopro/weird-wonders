@@ -13,6 +13,8 @@ export type SiteConfig = {
   contentLabels: {
     singular: string;
     plural: string;
+    /** Name of the one highlighted article shown on the homepage. */
+    highlight: string;
   };
   seo: {
     title: string;
@@ -37,6 +39,7 @@ export const factakiSite = {
   contentLabels: {
     singular: "FACTάκι",
     plural: "FACTάκια",
+    highlight: "FACTάκι της ημέρας",
   },
   seo: {
     title: "FACTάκι — Μικρό fact. Μεγάλη έκπληξη.",

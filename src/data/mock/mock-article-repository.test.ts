@@ -106,16 +106,16 @@ describe("MockArticleRepository — writing", () => {
   });
 
   test("keeps a single fact of the day", async () => {
-    await repository.save(draftInput({ status: "published", isFactOfDay: true }), editor);
+    await repository.save(draftInput({ status: "published", isHighlighted: true }), editor);
     await repository.save(
-      draftInput({ slug: "allo-arthro", status: "published", isFactOfDay: true }),
+      draftInput({ slug: "allo-arthro", status: "published", isHighlighted: true }),
       editor,
     );
-    expect(store.articles.filter((article) => article.isFactOfDay)).toHaveLength(1);
+    expect(store.articles.filter((article) => article.isHighlighted)).toHaveLength(1);
   });
 
   test("rejects a fact-of-day flag on an unpublished article", async () => {
-    await expect(repository.save(draftInput({ isFactOfDay: true }), editor)).rejects.toThrow();
+    await expect(repository.save(draftInput({ isHighlighted: true }), editor)).rejects.toThrow();
   });
 
   test("duplicating creates an independent draft owned by the actor", async () => {

@@ -1,3 +1,5 @@
+-- Baseline 3/7 — media library metadata (files live in Storage, see 7/7).
+
 create table public.media_assets (
   id uuid primary key default gen_random_uuid(),
   uploaded_by uuid references public.members(user_id) on delete restrict,

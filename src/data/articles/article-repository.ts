@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import { z } from "zod";
 import type { MemberRole } from "@/lib/auth-types";
 import { articleContentDocumentSchema, type ArticleContentDocument } from "@/lib/article-content";
@@ -20,7 +21,7 @@ export type EditableArticle = AdminArticle & {
   seoDescription: string;
   isFeatured: boolean;
   isTrending: boolean;
-  isFactOfDay: boolean;
+  isHighlighted: boolean;
 };
 
 export type ArticleWriteInput = {
@@ -40,7 +41,7 @@ export type ArticleWriteInput = {
   seoDescription?: string;
   isFeatured?: boolean;
   isTrending?: boolean;
-  isFactOfDay?: boolean;
+  isHighlighted?: boolean;
 };
 
 export type PublishedArticleFilter = {
@@ -69,7 +70,7 @@ const articleWriteInputSchema = z
     seoDescription: z.string().max(160).optional(),
     isFeatured: z.boolean().optional(),
     isTrending: z.boolean().optional(),
-    isFactOfDay: z.boolean().optional(),
+    isHighlighted: z.boolean().optional(),
   })
   .strict();
 
@@ -83,8 +84,8 @@ export function parseArticleWriteInput(input: unknown): ArticleWriteInput {
 }
 
 export function assertArticleWriteInvariants(input: ArticleWriteInput) {
-  if (input.isFactOfDay && input.status !== "published") {
-    throw new Error(`Το FACTάκι της ημέρας πρέπει να είναι δημοσιευμένο.`);
+  if (input.isHighlighted && input.status !== "published") {
+    throw new Error(`${siteConfig.contentLabels.highlight}: μόνο δημοσιευμένο άρθρο.`);
   }
 }
 

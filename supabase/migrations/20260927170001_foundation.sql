@@ -1,3 +1,8 @@
+-- Baseline 1/7 — schemas and generic helpers.
+--
+-- Each blog has its own Supabase project, so no table carries a tenant/blog id.
+-- Internal helpers live in the `private` schema, which the API does not expose.
+
 create extension if not exists pgcrypto with schema extensions;
 
 create schema if not exists private;

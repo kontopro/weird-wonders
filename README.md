@@ -17,7 +17,9 @@ bun run dev
 
 The repository contains a version-controlled Supabase baseline for one independent blog. A new blog gets its own repository and hosted Supabase project, then applies the same migrations from `supabase/migrations`.
 
-The baseline enables RLS in the same migration that creates each table and seeds only public, non-secret FACTάκι settings plus the eight initial categories. It never seeds users, credentials or article content.
+The baseline (`supabase/migrations`, seven files) builds the structure only and enables RLS in the same migration that creates each table. A blog's own starting data — its categories — lives in `supabase/seed.sql`. Nothing seeds users, credentials or article content. The site's identity (name, SEO, labels) lives in `src/config/site.ts`.
+
+`bun test` also applies the migrations to an in-process Postgres (PGlite) and checks the access rules per role (`supabase/tests`), so the schema is tested without a Supabase project.
 
 Nothing in the repository applies migrations automatically. No local database setup is required. Copy `.env.example` to `.env.local` only after a hosted project has been created, and never place secret/service-role credentials in a `VITE_*` variable.
 
@@ -65,7 +67,7 @@ When a fresh hosted project is available:
 bunx supabase login
 bunx supabase link --project-ref <project-ref>
 bunx supabase db push --dry-run
-bunx supabase db push
+bunx supabase db push --include-seed
 ```
 
 Always review the dry run before applying changes. Do not run `db reset --linked` against production; it deletes remote data before replaying migrations.

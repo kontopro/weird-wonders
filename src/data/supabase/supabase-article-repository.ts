@@ -8,16 +8,24 @@ import {
   type WriteContext,
 } from "@/data/articles/article-repository";
 import { toDomainError } from "@/data/supabase/supabase-errors";
+import { publiclyVisibleFilter } from "@/data/supabase/visibility";
 import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
-import { toCategoryIconKey, uncategorized, type CategoryRef, type TagRef } from "@/domain/taxonomy";
+import { isEditorRole } from "@/domain/permissions";
+import { effectiveStatus, scheduledAtFor } from "@/domain/publishing";
+import {
+  findMatchingTag,
+  newTagForbiddenMessage,
+  toCategoryIconKey,
+  uncategorized,
+  type CategoryRef,
+  type TagRef,
+} from "@/domain/taxonomy";
 import type { AdminArticle, ArticleStatus } from "@/lib/admin-data";
 import { calculateReadingTimeMinutes, parseArticleContent } from "@/lib/article-content";
 import type { Article } from "@/lib/articles";
 import { formatArticleDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
-import { effectiveStatus, scheduledAtFor } from "@/domain/publishing";
-import { publiclyVisibleFilter } from "@/data/supabase/visibility";
 
 type MediaRow = {
   id?: string;
@@ -39,7 +47,7 @@ type ArticleRow = {
   status: ArticleStatus;
   is_featured: boolean;
   is_trending: boolean;
-  is_fact_of_day: boolean;
+  is_highlighted: boolean;
   scheduled_at: string | null;
   published_at: string | null;
   seo_title: string | null;
@@ -52,6 +60,12 @@ type ArticleRow = {
   article_tags: Array<{ tag: { slug: string; name: string } | null }>;
 };
 
+const toTagInputs = (names: string[]) =>
+  names.flatMap((name) => {
+    const slug = slugify(name);
+    return slug ? [{ slug, name: name.trim() }] : [];
+  });
+
 // Status codes are identical in the domain and the database; no mapping needed.
 // `public_at` (generated: published_at ?? scheduled_at) orders public lists.
 
@@ -59,7 +73,7 @@ type ArticleRow = {
 // `articles` has two foreign keys to `media_assets` (cover and social image).
 const LIST_COLUMNS = [
   "id, author_id, title, slug, excerpt, cover_image_alt, status, is_featured, is_trending",
-  "is_fact_of_day, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes",
+  "is_highlighted, scheduled_at, published_at, seo_title, seo_description, reading_time_minutes",
   "created_at, updated_at",
   "category:categories(slug, name, icon_key)",
   "cover:media_assets!articles_cover_image_id_fkey(storage_bucket, storage_path, visibility, width, height)",
@@ -141,6 +155,8 @@ export class SupabaseArticleRepository implements ArticleRepository {
       category: this.categoryRef(row),
       author: (row.author_id && authors.get(row.author_id)) || editorialTeam,
       tags: this.tagRefs(row),
+      isFeatured: row.is_featured,
+      isHighlighted: row.is_highlighted,
     };
   }
 
@@ -172,7 +188,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       seoDescription: row.seo_description ?? "",
       isFeatured: row.is_featured,
       isTrending: row.is_trending,
-      isFactOfDay: row.is_fact_of_day,
+      isHighlighted: row.is_highlighted,
     };
   }
 
@@ -283,22 +299,33 @@ export class SupabaseArticleRepository implements ArticleRepository {
     return this.findEditable("slug", slug);
   }
 
+  /**
+   * Rejects new tags from authors before anything is written, so a failed save
+   * never leaves the article saved without its tags. The database enforces the
+   * same rule again inside `public.set_article_tags`.
+   */
+  private async assertMayUseTags(names: string[], context: WriteContext) {
+    if (isEditorRole(context.actorRole) || names.length === 0) return;
+    // Tag lists are small for a blog; one read keeps the matching rule in one place.
+    const { data, error } = await this.client.from("tags").select("slug, name");
+    if (error) throw toDomainError(error, "");
+    const existing = (data ?? []) as Array<{ slug: string; name: string }>;
+    const missing = toTagInputs(names).find((tag) => !findMatchingTag(existing, tag));
+    if (missing) {
+      throw new DomainError(`«${missing.name}»: ${newTagForbiddenMessage}`, "forbidden");
+    }
+  }
+
   /** Replaces the article's tags atomically (see `public.set_article_tags`). */
   private async setTags(articleId: string, names: string[]) {
-    const tags = names.flatMap((name) => {
-      const slug = slugify(name);
-      return slug ? [{ slug, name: name.trim() }] : [];
-    });
+    const tags = toTagInputs(names);
     const { error } = await this.client.rpc("set_article_tags", {
       p_article_id: articleId,
       p_tags: tags,
     });
     if (error) {
       throw error.code === "42501"
-        ? new DomainError(
-            "Μόνο οι επιμελητές δημιουργούν νέες ετικέτες. Διάλεξε από τις υπάρχουσες.",
-            "forbidden",
-          )
+        ? new DomainError(newTagForbiddenMessage, "forbidden")
         : toDomainError(error, "Διπλή ετικέτα.");
     }
   }
@@ -308,6 +335,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
 
     const categoryId = await this.idBySlug("categories", input.categorySlug);
     if (!categoryId) throw new DomainError("Η κατηγορία δεν υπάρχει.", "invalid");
+    if (input.tags) await this.assertMayUseTags(input.tags, context);
 
     const databaseStatus = input.status;
     const payload = {
@@ -325,7 +353,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
       reading_time_minutes: calculateReadingTimeMinutes(input.content),
       is_featured: input.isFeatured ?? false,
       is_trending: input.isTrending ?? false,
-      is_fact_of_day: input.isFactOfDay ?? false,
+      is_highlighted: input.isHighlighted ?? false,
     };
 
     const query = input.id

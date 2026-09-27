@@ -1,8 +1,24 @@
-insert into storage.buckets (id, name, public)
+-- Baseline 7/7 — Storage buckets and their access policies.
+--
+-- `blog-public` serves published images by URL; `blog-private` holds uploads
+-- that are not public yet. Both accept images only, up to 10 MB. SVG is
+-- excluded because it can carry scripts.
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
-  ('blog-private', 'blog-private', false),
-  ('blog-public', 'blog-public', true)
-on conflict (id) do nothing;
+  (
+    'blog-private', 'blog-private', false, 10485760,
+    array['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
+  ),
+  (
+    'blog-public', 'blog-public', true, 10485760,
+    array['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
+  )
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 create policy storage_private_member_read
 on storage.objects
@@ -70,6 +86,8 @@ with check (
   and (storage.foldername(name))[1] in ('branding', 'articles', 'media')
 );
 
+-- Lets editors read upload responses; anonymous visitors use public URLs and
+-- cannot list the bucket.
 create policy storage_public_editor_read
 on storage.objects
 for select

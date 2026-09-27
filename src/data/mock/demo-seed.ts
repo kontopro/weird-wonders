@@ -338,7 +338,7 @@ const demoSeed: MockStore = {
     seoDescription: "",
     isFeatured: article.id === "1",
     isTrending: article.popularity > 80,
-    isFactOfDay: false,
+    isHighlighted: article.slug === "h-myrwdia-ths-vroxhs",
   })),
 };
 

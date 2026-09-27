@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Clipboard, Clock, Share2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { articleApi } from "@/data/articles";
+import { newsletterApi } from "@/data/newsletter";
 import { taxonomyApi } from "@/data/taxonomy";
 import { ArticleCard } from "@/components/article-card";
 import { CategoryIcon } from "@/components/category-icon";
@@ -16,11 +17,13 @@ import { useLocalized } from "@/i18n/links";
 export const Route = createFileRoute("/{-$lang}/")({
   loader: async ({ params }) => {
     const language = langOf(params);
-    const [articles, categories] = await Promise.all([
-      articleApi.listPublished({ language }),
+    // Enough recent articles to find the featured and highlighted ones.
+    const [articles, categories, popular] = await Promise.all([
+      articleApi.listPublished({ language, limit: 24 }),
       taxonomyApi.listCategories(language),
+      articleApi.listPopular(language, 5),
     ]);
-    return { articles, categories };
+    return { articles, categories, popular };
   },
   head: ({ params }) => {
     const language = langOf(params);
@@ -42,14 +45,15 @@ export const Route = createFileRoute("/{-$lang}/")({
 });
 
 function Index() {
-  const { articles, categories } = Route.useLoaderData();
+  const { articles, categories, popular } = Route.useLoaderData();
   const t = useT();
-  const { lp } = useLocalized();
+  const { lang, lp } = useLocalized();
   const { bookmarks, toggle } = useBookmarks();
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [subscribing, setSubscribing] = useState(false);
   // Editors choose the lead story; otherwise the newest article leads.
   const featured = articles.find((article) => article.isFeatured) ?? articles[0];
   const others = articles.filter((article) => article !== featured);
@@ -68,10 +72,22 @@ function Index() {
     );
   }
   const highlightText = highlighted ? highlighted.excerpt || highlighted.title : "";
-  const subscribe = (event: React.FormEvent) => {
+  const subscribe = async (event: React.FormEvent) => {
     event.preventDefault();
-    const ok = /^\S+@\S+\.\S+$/.test(email);
-    setMessage({ ok, text: ok ? t.home.subscribed : t.home.invalidEmail });
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setMessage({ ok: false, text: t.home.invalidEmail });
+      return;
+    }
+    setSubscribing(true);
+    try {
+      await newsletterApi.subscribe({ email, language: lang });
+      setMessage({ ok: true, text: t.home.subscribed });
+      setEmail("");
+    } catch {
+      setMessage({ ok: false, text: t.home.subscribeFailed });
+    } finally {
+      setSubscribing(false);
+    }
   };
   return (
     <div>
@@ -226,7 +242,7 @@ function Index() {
             <h2>{t.home.popularTitle}</h2>
           </div>
           <ol>
-            {articles.slice(0, 5).map((article, index) => (
+            {popular.map((article, index) => (
               <li key={article.slug}>
                 <span>0{index + 1}</span>
                 <Link to="/{-$lang}/arthro/$slug" params={{ lang: lp, slug: article.slug }}>
@@ -244,7 +260,7 @@ function Index() {
           <p className="eyebrow">{t.home.newsletterEyebrow}</p>
           <h2>{t.home.newsletterTitle}</h2>
         </div>
-        <form onSubmit={subscribe} noValidate>
+        <form onSubmit={(event) => void subscribe(event)} noValidate>
           <label htmlFor="newsletter-email">{t.home.emailLabel}</label>
           <div>
             <input
@@ -254,10 +270,11 @@ function Index() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t.home.emailPlaceholder}
             />
-            <Button type="submit">
+            <Button type="submit" disabled={subscribing}>
               {t.home.subscribe} <ArrowRight />
             </Button>
           </div>
+          <p className="newsletter-consent">{t.home.consent}</p>
           {message && (
             <p className={message.ok ? "success" : "error"}>
               {message.ok && <Check />} {message.text}

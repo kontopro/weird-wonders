@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, redirect } from "@tanstack/react-router";
 import { Bookmark, CheckCircle2, Clock, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ArticleCard } from "@/components/article-card";
@@ -19,8 +19,19 @@ export const Route = createFileRoute("/{-$lang}/arthro/$slug")({
   loader: async ({ params }) => {
     const language = langOf(params);
     const article = await articleApi.findPublishedBySlug(params.slug, language);
-    if (!article) throw notFound();
-    const articles = await articleApi.listPublished({ language });
+    if (!article) {
+      // An old address of an article whose slug changed: redirect permanently.
+      const current = await articleApi.resolveOldSlug(params.slug, language);
+      if (current) {
+        throw redirect({
+          to: "/{-$lang}/arthro/$slug",
+          params: { lang: params.lang, slug: current },
+          statusCode: 301,
+        });
+      }
+      throw notFound();
+    }
+    const articles = await articleApi.listPublished({ language, limit: 12 });
     // Related: same category first, then the most recent others.
     const others = articles.filter((item) => item.slug !== article.slug);
     const related = [
@@ -73,6 +84,17 @@ function ArticlePage() {
   const [progress, setProgress] = useState(0);
   const [reaction, setReaction] = useState<string>();
   const headings = getArticleHeadings(article.content);
+  // Count one view per article per browser session (no visitor data is stored).
+  useEffect(() => {
+    const key = `viewed:${article.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      // Storage unavailable (private mode): count anyway.
+    }
+    void articleApi.recordView(article.id).catch(() => undefined);
+  }, [article.id]);
   useEffect(() => {
     const onScroll = () =>
       setProgress(

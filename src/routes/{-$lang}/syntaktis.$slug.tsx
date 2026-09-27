@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { z } from "zod";
 import { ArticleListing } from "@/components/article-listing";
 import { brandedTitle } from "@/config/site";
 import { articleApi } from "@/data/articles";
@@ -8,14 +9,16 @@ import { langOf, ogLocale, sitewideAlternates } from "@/i18n/head";
 import { initialsOf } from "@/lib/auth-types";
 
 export const Route = createFileRoute("/{-$lang}/syntaktis/$slug")({
-  loader: async ({ params }) => {
+  validateSearch: z.object({ page: z.coerce.number().int().min(1).optional() }),
+  loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
+  loader: async ({ params, deps }) => {
     const language = langOf(params);
-    const [author, articles] = await Promise.all([
+    const [author, page] = await Promise.all([
       authorApi.findPublicBySlug(params.slug),
-      articleApi.listPublished({ language, authorSlug: params.slug }),
+      articleApi.pagePublished({ language, authorSlug: params.slug }, deps.page),
     ]);
     if (!author) throw notFound();
-    return { author, articles };
+    return { author, page };
   },
   head: ({ params, loaderData }) => {
     const language = langOf(params);
@@ -37,7 +40,7 @@ export const Route = createFileRoute("/{-$lang}/syntaktis/$slug")({
 });
 
 function AuthorPage() {
-  const { author, articles } = Route.useLoaderData();
+  const { author, page } = Route.useLoaderData();
   const t = useT();
   return (
     <ArticleListing
@@ -51,7 +54,7 @@ function AuthorPage() {
           {author.bio && <p>{author.bio}</p>}
         </div>
       }
-      articles={articles}
+      page={page}
       emptyMessage={t.authorPage.empty}
     />
   );

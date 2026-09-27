@@ -437,6 +437,9 @@ const demoSeed: MockStore = {
   tagTranslations,
   profiles,
   media: demoMedia,
+  articleViews: [],
+  slugHistory: [],
+  subscribers: [],
   members: [
     { userId: DEMO_USER_ID, email: "maria@example.com", role: "owner", status: "active" },
     { userId: "author-aris", email: "aris@example.com", role: "editor", status: "active" },
@@ -500,5 +503,14 @@ export function createDemoStore(now: Date = new Date()): MockStore {
   for (const article of store.articles) {
     if (article.status === "scheduled") article.dateValue = addDays(now, 7);
   }
+  // Recent views so "popular" has something to rank: yesterday's count
+  // follows the demo popularity score.
+  store.articleViews = store.articles
+    .filter((article) => article.status === "published" && article.popularity > 0)
+    .map((article) => ({
+      articleId: article.id,
+      day: addDays(now, -1),
+      views: article.popularity * 10,
+    }));
   return store;
 }

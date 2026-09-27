@@ -18,6 +18,7 @@ import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminPasswordRouteImport } from './routes/admin.password'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
+import { Route as AdminSubscribersRouteImport } from './routes/admin.subscribers'
 import { Route as AdminTagsRouteImport } from './routes/admin.tags'
 import { Route as AdminTeamRouteImport } from './routes/admin.team'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
@@ -25,6 +26,7 @@ import { Route as Char123LangChar125IndexRouteImport } from './routes/{-$lang}/i
 import { Route as Char123LangChar125AnakalypseRouteImport } from './routes/{-$lang}/anakalypse'
 import { Route as Char123LangChar125DimofiliRouteImport } from './routes/{-$lang}/dimofili'
 import { Route as Char123LangChar125KatigoriesRouteImport } from './routes/{-$lang}/katigories'
+import { Route as Char123LangChar125NewsletterRouteImport } from './routes/{-$lang}/newsletter'
 import { Route as Char123LangChar125SxetikaRouteImport } from './routes/{-$lang}/sxetika'
 import { Route as AdminArticlesIndexRouteImport } from './routes/admin.articles.index'
 import { Route as AdminArticlesNewRouteImport } from './routes/admin.articles.new'
@@ -80,6 +82,11 @@ const AdminProfileRoute = AdminProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
+  id: '/subscribers',
+  path: '/subscribers',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminTagsRoute = AdminTagsRouteImport.update({
   id: '/tags',
   path: '/tags',
@@ -116,6 +123,12 @@ const Char123LangChar125KatigoriesRoute =
   Char123LangChar125KatigoriesRouteImport.update({
     id: '/katigories',
     path: '/katigories',
+    getParentRoute: () => Char123LangChar125RouteRoute,
+  } as any)
+const Char123LangChar125NewsletterRoute =
+  Char123LangChar125NewsletterRouteImport.update({
+    id: '/newsletter',
+    path: '/newsletter',
     getParentRoute: () => Char123LangChar125RouteRoute,
   } as any)
 const Char123LangChar125SxetikaRoute =
@@ -178,12 +191,14 @@ export interface FileRoutesByFullPath {
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
   '/admin/team': typeof AdminTeamRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/{-$lang}/anakalypse': typeof Char123LangChar125AnakalypseRoute
   '/{-$lang}/dimofili': typeof Char123LangChar125DimofiliRoute
   '/{-$lang}/katigories': typeof Char123LangChar125KatigoriesRoute
+  '/{-$lang}/newsletter': typeof Char123LangChar125NewsletterRoute
   '/{-$lang}/sxetika': typeof Char123LangChar125SxetikaRoute
   '/admin/': typeof AdminIndexRoute
   '/{-$lang}/': typeof Char123LangChar125IndexRoute
@@ -202,12 +217,14 @@ export interface FileRoutesByTo {
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
   '/admin/team': typeof AdminTeamRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/{-$lang}/anakalypse': typeof Char123LangChar125AnakalypseRoute
   '/{-$lang}/dimofili': typeof Char123LangChar125DimofiliRoute
   '/{-$lang}/katigories': typeof Char123LangChar125KatigoriesRoute
+  '/{-$lang}/newsletter': typeof Char123LangChar125NewsletterRoute
   '/{-$lang}/sxetika': typeof Char123LangChar125SxetikaRoute
   '/admin': typeof AdminIndexRoute
   '/{-$lang}': typeof Char123LangChar125IndexRoute
@@ -230,12 +247,14 @@ export interface FileRoutesById {
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
   '/admin/team': typeof AdminTeamRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/{-$lang}/anakalypse': typeof Char123LangChar125AnakalypseRoute
   '/{-$lang}/dimofili': typeof Char123LangChar125DimofiliRoute
   '/{-$lang}/katigories': typeof Char123LangChar125KatigoriesRoute
+  '/{-$lang}/newsletter': typeof Char123LangChar125NewsletterRoute
   '/{-$lang}/sxetika': typeof Char123LangChar125SxetikaRoute
   '/admin/': typeof AdminIndexRoute
   '/{-$lang}/': typeof Char123LangChar125IndexRoute
@@ -259,12 +278,14 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
+    | '/admin/subscribers'
     | '/admin/tags'
     | '/admin/team'
     | '/auth/confirm'
     | '/{-$lang}/anakalypse'
     | '/{-$lang}/dimofili'
     | '/{-$lang}/katigories'
+    | '/{-$lang}/newsletter'
     | '/{-$lang}/sxetika'
     | '/admin/'
     | '/{-$lang}/'
@@ -283,12 +304,14 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
+    | '/admin/subscribers'
     | '/admin/tags'
     | '/admin/team'
     | '/auth/confirm'
     | '/{-$lang}/anakalypse'
     | '/{-$lang}/dimofili'
     | '/{-$lang}/katigories'
+    | '/{-$lang}/newsletter'
     | '/{-$lang}/sxetika'
     | '/admin'
     | '/{-$lang}'
@@ -310,12 +333,14 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
+    | '/admin/subscribers'
     | '/admin/tags'
     | '/admin/team'
     | '/auth/confirm'
     | '/{-$lang}/anakalypse'
     | '/{-$lang}/dimofili'
     | '/{-$lang}/katigories'
+    | '/{-$lang}/newsletter'
     | '/{-$lang}/sxetika'
     | '/admin/'
     | '/{-$lang}/'
@@ -402,6 +427,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProfileRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/subscribers': {
+      id: '/admin/subscribers'
+      path: '/subscribers'
+      fullPath: '/admin/subscribers'
+      preLoaderRoute: typeof AdminSubscribersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/tags': {
       id: '/admin/tags'
       path: '/tags'
@@ -449,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/katigories'
       fullPath: '/{-$lang}/katigories'
       preLoaderRoute: typeof Char123LangChar125KatigoriesRouteImport
+      parentRoute: typeof Char123LangChar125RouteRoute
+    }
+    '/{-$lang}/newsletter': {
+      id: '/{-$lang}/newsletter'
+      path: '/newsletter'
+      fullPath: '/{-$lang}/newsletter'
+      preLoaderRoute: typeof Char123LangChar125NewsletterRouteImport
       parentRoute: typeof Char123LangChar125RouteRoute
     }
     '/{-$lang}/sxetika': {
@@ -521,6 +560,7 @@ interface Char123LangChar125RouteRouteChildren {
   Char123LangChar125AnakalypseRoute: typeof Char123LangChar125AnakalypseRoute
   Char123LangChar125DimofiliRoute: typeof Char123LangChar125DimofiliRoute
   Char123LangChar125KatigoriesRoute: typeof Char123LangChar125KatigoriesRoute
+  Char123LangChar125NewsletterRoute: typeof Char123LangChar125NewsletterRoute
   Char123LangChar125SxetikaRoute: typeof Char123LangChar125SxetikaRoute
   Char123LangChar125IndexRoute: typeof Char123LangChar125IndexRoute
   Char123LangChar125ArthroSlugRoute: typeof Char123LangChar125ArthroSlugRoute
@@ -534,6 +574,7 @@ const Char123LangChar125RouteRouteChildren: Char123LangChar125RouteRouteChildren
     Char123LangChar125AnakalypseRoute: Char123LangChar125AnakalypseRoute,
     Char123LangChar125DimofiliRoute: Char123LangChar125DimofiliRoute,
     Char123LangChar125KatigoriesRoute: Char123LangChar125KatigoriesRoute,
+    Char123LangChar125NewsletterRoute: Char123LangChar125NewsletterRoute,
     Char123LangChar125SxetikaRoute: Char123LangChar125SxetikaRoute,
     Char123LangChar125IndexRoute: Char123LangChar125IndexRoute,
     Char123LangChar125ArthroSlugRoute: Char123LangChar125ArthroSlugRoute,
@@ -569,6 +610,7 @@ interface AdminRouteChildren {
   AdminMediaRoute: typeof AdminMediaRoute
   AdminPasswordRoute: typeof AdminPasswordRoute
   AdminProfileRoute: typeof AdminProfileRoute
+  AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminTagsRoute: typeof AdminTagsRoute
   AdminTeamRoute: typeof AdminTeamRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -580,6 +622,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMediaRoute: AdminMediaRoute,
   AdminPasswordRoute: AdminPasswordRoute,
   AdminProfileRoute: AdminProfileRoute,
+  AdminSubscribersRoute: AdminSubscribersRoute,
   AdminTagsRoute: AdminTagsRoute,
   AdminTeamRoute: AdminTeamRoute,
   AdminIndexRoute: AdminIndexRoute,

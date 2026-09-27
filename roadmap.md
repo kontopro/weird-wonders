@@ -43,7 +43,8 @@
 - [x] Editor: έντονα/πλάγια/σύνδεσμοι, έξυπνη επικόλληση, δομημένες πηγές, βίντεο click-to-load
 - [x] Πολυγλωσσικό site: κείμενα ανά γλώσσα (`src/config/messages`), URLs `/en/article/…`, hreflang, επιλογή γλώσσας στο άρθρο
 - [x] «Δημιουργία έκδοσης» μετάφρασης στον editor, μεταφράσεις κατηγοριών (`/admin/categories`) και ετικετών (`/admin/tags`)
-- [ ] Pagination λιστών άρθρων
+- [x] Αναζήτηση χωρίς τόνους, pagination, ανακατεύθυνση παλιών διευθύνσεων, μετρητής προβολών, newsletter (αποθήκευση εγγραφών)
+- [ ] Αποστολή newsletter μέσω παρόχου email (π.χ. Resend)
 - [ ] Έλεγχος σε hosted project (`docs/hosted-supabase-validation.md`)
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports
 - [ ] Ενεργοποίηση πραγματικού Supabase CRUD μετά τη δημιουργία hosted project

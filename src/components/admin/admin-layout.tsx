@@ -7,6 +7,7 @@ import {
   Images,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
   PenLine,
   UserRound,
@@ -28,6 +29,7 @@ const navItems = [
   { label: "Ετικέτες", to: "/admin/tags", icon: Tags },
   { label: "Εικόνες", to: "/admin/media", icon: Images },
   { label: "Ομάδα", to: "/admin/team", icon: Users, teamOnly: true },
+  { label: "Newsletter", to: "/admin/subscribers", icon: Mail, teamOnly: true },
   { label: "Προφίλ", to: "/admin/profile", icon: UserRound },
 ] as const;
 

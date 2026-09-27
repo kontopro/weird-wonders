@@ -1,28 +1,46 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Search, SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { ArticleCard } from "@/components/article-card";
+import { Pager } from "@/components/pager";
+import { Button } from "@/components/ui/button";
 import { brandedTitle } from "@/config/site";
+import type { PublishedArticleFilter } from "@/data/articles";
 import { articleApi } from "@/data/articles";
 import { taxonomyApi } from "@/data/taxonomy";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { messagesFor, useT } from "@/i18n";
 import { langOf, ogLocale, sitewideAlternates } from "@/i18n/head";
-import { useLocalized } from "@/i18n/links";
 
-type Duration = "any" | "short" | "long";
+/** Reading-time buckets (minutes). */
+const lengths = { short: { maxMinutes: 5 }, long: { minMinutes: 6 } } as const;
+
+const searchSchema = z.object({
+  q: z.string().trim().max(200).optional().catch(undefined),
+  category: z.string().max(200).optional().catch(undefined),
+  length: z.enum(["short", "long"]).optional().catch(undefined),
+  page: z.coerce.number().int().min(1).optional().catch(undefined),
+});
 
 export const Route = createFileRoute("/{-$lang}/anakalypse")({
-  loader: async ({ params }) => {
+  validateSearch: searchSchema,
+  loaderDeps: ({ search }) => search,
+  loader: async ({ params, deps }) => {
     const language = langOf(params);
-    const [articles, categories] = await Promise.all([
-      articleApi.listPublished({ language }),
+    const filter: PublishedArticleFilter = {
+      language,
+      ...(deps.category ? { categorySlug: deps.category } : {}),
+      ...(deps.length ? lengths[deps.length] : {}),
+    };
+    const [page, categories] = await Promise.all([
+      deps.q
+        ? articleApi.search(deps.q, filter, deps.page ?? 1)
+        : articleApi.pagePublished(filter, deps.page ?? 1),
       taxonomyApi.listCategories(language),
     ]);
-    return { articles, categories };
+    return { page, categories };
   },
-  validateSearch: z.object({ category: z.string().optional() }),
   head: ({ params }) => {
     const language = langOf(params);
     const t = messagesFor(language).discover;
@@ -43,53 +61,53 @@ export const Route = createFileRoute("/{-$lang}/anakalypse")({
 });
 
 function Discover() {
-  const { articles, categories } = Route.useLoaderData();
-  const initial = Route.useSearch();
+  const { page, categories } = Route.useLoaderData();
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   const t = useT();
-  const { lang } = useLocalized();
-  const [query, setQuery] = useState("");
-  // Category filter holds a slug; "" means all categories.
-  const [category, setCategory] = useState(initial.category ?? "");
-  const [duration, setDuration] = useState<Duration>("any");
-  const [sort, setSort] = useState("recent");
   const { bookmarks, toggle } = useBookmarks();
-  const results = useMemo(
-    () =>
-      articles
-        .filter(
-          (article) =>
-            [article.title, article.excerpt, ...article.tags.map((tag) => tag.name)]
-              .join(" ")
-              .toLocaleLowerCase(lang)
-              .includes(query.toLocaleLowerCase(lang)) &&
-            (category === "" || article.category.slug === category) &&
-            (duration === "any" ||
-              (duration === "short" ? article.minutes <= 5 : article.minutes > 5)),
-        )
-        .sort((a, b) =>
-          sort === "popular"
-            ? b.popularity - a.popularity
-            : articles.indexOf(a) - articles.indexOf(b),
-        ),
-    [articles, query, category, duration, sort, lang],
-  );
+  const [query, setQuery] = useState(search.q ?? "");
+
+  /** Any filter change starts again from page 1. */
+  const update = (next: Partial<z.infer<typeof searchSchema>>) =>
+    navigate({
+      search: (previous) => {
+        const merged = { ...previous, ...next, page: undefined };
+        return Object.fromEntries(
+          Object.entries(merged).filter(([, value]) => value !== undefined && value !== ""),
+        );
+      },
+    });
+
+  const onSearch = (event: FormEvent) => {
+    event.preventDefault();
+    void update({ q: query.trim() || undefined });
+  };
+
   return (
     <div className="section-shell page-top">
       <p className="eyebrow">{t.discover.eyebrow}</p>
       <h1 className="page-title">{t.discover.title}</h1>
       <div className="filters">
-        <label className="search-box">
+        <form className="search-box" role="search" onSubmit={onSearch}>
           <Search />
           <input
+            type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.discover.searchPlaceholder}
             aria-label={t.nav.search}
           />
-        </label>
+          <Button type="submit" size="sm">
+            {t.discover.searchButton}
+          </Button>
+        </form>
         <label>
           <span>{t.discover.category}</span>
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <select
+            value={search.category ?? ""}
+            onChange={(e) => void update({ category: e.target.value || undefined })}
+          >
             <option value="">{t.discover.all}</option>
             {categories.map((item) => (
               <option key={item.slug} value={item.slug}>
@@ -100,34 +118,36 @@ function Discover() {
         </label>
         <label>
           <span>{t.discover.time}</span>
-          <select value={duration} onChange={(e) => setDuration(e.target.value as Duration)}>
-            <option value="any">{t.discover.anyTime}</option>
+          <select
+            value={search.length ?? ""}
+            onChange={(e) =>
+              void update({ length: (e.target.value || undefined) as "short" | "long" | undefined })
+            }
+          >
+            <option value="">{t.discover.anyTime}</option>
             <option value="short">{t.discover.short}</option>
             <option value="long">{t.discover.long}</option>
           </select>
         </label>
-        <label>
-          <span>{t.discover.sort}</span>
-          <select value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="recent">{t.discover.recent}</option>
-            <option value="popular">{t.discover.popular}</option>
-          </select>
-        </label>
       </div>
       <div className="results-label">
-        <SlidersHorizontal /> {t.common.resultCount(results.length)}
+        <SlidersHorizontal /> {t.common.resultCount(page.total)}
+        {search.q ? ` ${t.discover.resultsFor(search.q)}` : ""}
       </div>
-      {results.length ? (
-        <div className="article-grid">
-          {results.map((article) => (
-            <ArticleCard
-              key={article.slug}
-              article={article}
-              saved={bookmarks.includes(article.slug)}
-              onBookmark={() => toggle(article.slug)}
-            />
-          ))}
-        </div>
+      {page.items.length ? (
+        <>
+          <div className="article-grid">
+            {page.items.map((article) => (
+              <ArticleCard
+                key={article.slug}
+                article={article}
+                saved={bookmarks.includes(article.slug)}
+                onBookmark={() => toggle(article.slug)}
+              />
+            ))}
+          </div>
+          <Pager page={page} />
+        </>
       ) : (
         <div className="empty-state">
           <span>?</span>

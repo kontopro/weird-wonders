@@ -13,7 +13,7 @@ This checklist is intentionally hosted-only. It does not start, reset or depend 
 
 ## Baseline verification
 
-- Confirm migrations `20260927170001` through `20260927170007` are recorded as applied.
+- Confirm migrations `20260927170001` through `20260927170008` are recorded as applied.
 - Confirm RLS is enabled on `profiles`, `members`, `media_assets`, `categories`, `tags`, `articles` and `article_tags`.
 - Confirm both buckets accept only images up to 10 MB.
 - Confirm the eight configured categories exist with their expected normalized slugs.
@@ -34,6 +34,13 @@ This checklist is intentionally hosted-only. It does not start, reset or depend 
 - As an author, upload an image from the editor's picker; confirm it lands in `blog-public/media/<author id>/` and appears at `/admin/media`.
 - Confirm an author cannot edit or delete an editor's image, and that an image used in an article cannot be deleted.
 - Publish an article with a cover, an image block, formatted text and sources; check the public page.
+
+## Reader features verification
+
+- Search Discover for a word without accents (e.g. `δεντρα`) and with a partial word; confirm drafts never appear.
+- Change the slug of a published article; confirm the old address redirects (301) to the new one.
+- Open an article, reload in a new session and confirm `article_views` counts one view per session; check the popular page.
+- Subscribe from the homepage twice with the same address; confirm one row; check `/admin/subscribers` as owner (visible) and editor (not visible); try the confirm and unsubscribe links with the row's token.
 
 ## Team verification
 

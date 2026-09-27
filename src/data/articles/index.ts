@@ -1,4 +1,9 @@
 import {
+  listPopularArticles,
+  pagePublishedArticles,
+  recordArticleView,
+  resolveOldArticleSlug,
+  searchPublishedArticles,
   createArticleTranslation,
   deleteArticle,
   duplicateArticle,
@@ -8,6 +13,8 @@ import {
   listPublishedArticles,
   saveArticle,
 } from "@/functions/articles";
+
+import type { PublishedArticleFilter } from "@/data/articles/article-repository";
 
 export type {
   ArticleDetail,
@@ -22,14 +29,19 @@ export type {
  * session — callers never pass identity or roles.
  */
 export const articleApi = {
-  listPublished: (filter?: {
-    language?: string;
-    categorySlug?: string;
-    tagSlug?: string;
-    authorSlug?: string;
-  }) => listPublishedArticles({ data: filter }),
+  listPublished: (filter?: PublishedArticleFilter & { limit?: number }) =>
+    listPublishedArticles({ data: filter }),
   findPublishedBySlug: (slug: string, language?: string) =>
     getPublishedArticle({ data: { slug, ...(language ? { language } : {}) } }),
+  pagePublished: (filter: PublishedArticleFilter, page = 1) =>
+    pagePublishedArticles({ data: { filter, page } }),
+  search: (query: string, filter: PublishedArticleFilter, page = 1) =>
+    searchPublishedArticles({ data: { query, filter, page } }),
+  listPopular: (language?: string, limit = 5) =>
+    listPopularArticles({ data: { ...(language ? { language } : {}), limit } }),
+  resolveOldSlug: (slug: string, language?: string) =>
+    resolveOldArticleSlug({ data: { slug, ...(language ? { language } : {}) } }),
+  recordView: (articleId: string) => recordArticleView({ data: articleId }),
   listAdmin: () => listAdminArticles(),
   findAdminById: (id: string) => getAdminArticle({ data: id }),
   createTranslation: (sourceId: string, language: string) =>

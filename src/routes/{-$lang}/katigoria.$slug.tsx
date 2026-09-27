@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { z } from "zod";
 import { ArticleListing } from "@/components/article-listing";
 import { brandedTitle } from "@/config/site";
 import { articleApi } from "@/data/articles";
@@ -7,14 +8,16 @@ import { localizedPath, messagesFor, useT } from "@/i18n";
 import { alternateLinks, langOf, ogLocale } from "@/i18n/head";
 
 export const Route = createFileRoute("/{-$lang}/katigoria/$slug")({
-  loader: async ({ params }) => {
+  validateSearch: z.object({ page: z.coerce.number().int().min(1).optional() }),
+  loaderDeps: ({ search }) => ({ page: search.page ?? 1 }),
+  loader: async ({ params, deps }) => {
     const language = langOf(params);
-    const [category, articles] = await Promise.all([
+    const [category, page] = await Promise.all([
       taxonomyApi.findCategoryBySlug(params.slug, language),
-      articleApi.listPublished({ language, categorySlug: params.slug }),
+      articleApi.pagePublished({ language, categorySlug: params.slug }, deps.page),
     ]);
     if (!category) throw notFound();
-    return { category, articles };
+    return { category, page };
   },
   head: ({ params, loaderData }) => {
     const language = langOf(params);
@@ -41,14 +44,14 @@ export const Route = createFileRoute("/{-$lang}/katigoria/$slug")({
 });
 
 function CategoryPage() {
-  const { category, articles } = Route.useLoaderData();
+  const { category, page } = Route.useLoaderData();
   const t = useT();
   return (
     <ArticleListing
       eyebrow={t.categoryPage.eyebrow}
       title={category.name}
       intro={category.description ? <p>{category.description}</p> : undefined}
-      articles={articles}
+      page={page}
       emptyMessage={t.categoryPage.empty}
     />
   );

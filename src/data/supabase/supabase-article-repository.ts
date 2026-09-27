@@ -14,6 +14,13 @@ import { publiclyVisibleFilter } from "@/data/supabase/visibility";
 import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
 import { collectAssetIds } from "@/domain/media";
+import {
+  clampPage,
+  defaultPageSize,
+  maxPageSize,
+  pageFrom,
+  popularWindowDays,
+} from "@/domain/listing";
 import { isEditorRole } from "@/domain/permissions";
 import { effectiveStatus, scheduledAtFor } from "@/domain/publishing";
 import {
@@ -179,6 +186,7 @@ export class SupabaseArticleRepository implements ArticleRepository {
 
   private toPublic(row: ArticleRow, authors: Map<string, AuthorRef>): Article {
     return {
+      id: row.id,
       slug: row.slug,
       language: row.language,
       title: row.title,
@@ -262,23 +270,33 @@ export class SupabaseArticleRepository implements ArticleRepository {
     return found?.id ?? null;
   }
 
-  async listPublished(filter: PublishedArticleFilter = {}) {
+  /**
+   * Public articles matching a filter, newest first. Returns null when a slug
+   * in the filter matches nothing (so the result is empty without a query).
+   * The builder is wrapped because it is thenable: returning it from an async
+   * function would run it.
+   */
+  private async publicQuery(filter: PublishedArticleFilter, withCount = false) {
     const language = filter.language ?? mainLanguage;
     const [categoryId, tagId, authorId] = await Promise.all([
       this.taxonomyId("category", filter.categorySlug, language),
       this.taxonomyId("tag", filter.tagSlug, language),
       this.idBySlug("profiles", filter.authorSlug),
     ]);
-    if (categoryId === null || tagId === null || authorId === null) return [];
+    if (categoryId === null || tagId === null || authorId === null) return null;
 
     let query = this.client
       .from("articles")
-      .select(LIST_COLUMNS)
+      .select(LIST_COLUMNS, withCount ? { count: "exact" } : {})
       .eq("language", language)
       .or(publiclyVisibleFilter())
       .order("public_at", { ascending: false });
     if (categoryId) query = query.eq("category_id", categoryId);
     if (authorId) query = query.eq("author_id", authorId);
+    if (filter.minMinutes !== undefined)
+      query = query.gte("reading_time_minutes", filter.minMinutes);
+    if (filter.maxMinutes !== undefined)
+      query = query.lte("reading_time_minutes", filter.maxMinutes);
     if (tagId) {
       const { data: links, error } = await this.client
         .from("article_tags")
@@ -286,15 +304,124 @@ export class SupabaseArticleRepository implements ArticleRepository {
         .eq("tag_id", tagId);
       if (error) throw error;
       const ids = (links ?? []).map((link) => String(link.article_id));
-      if (ids.length === 0) return [];
+      if (ids.length === 0) return null;
       query = query.in("id", ids);
     }
+    return { query };
+  }
 
-    const { data, error } = await query;
+  /** Views per article in the last `days` days (all time when omitted). */
+  private async viewCounts(days?: number) {
+    const { data, error } = await this.client.rpc("article_view_counts", {
+      p_days: days ?? null,
+    });
+    if (error) throw error;
+    return new Map(
+      ((data ?? []) as Array<{ article_id: string; views: number }>).map((row) => [
+        row.article_id,
+        Number(row.views),
+      ]),
+    );
+  }
+
+  private async toPublicList(rows: ArticleRow[]) {
+    const [authors, views] = await Promise.all([
+      this.loadAuthors(rows),
+      this.viewCounts(popularWindowDays),
+    ]);
+    return rows.map((row) => ({
+      ...this.toPublic(row, authors),
+      popularity: views.get(row.id) ?? 0,
+    }));
+  }
+
+  async listPublished(filter: PublishedArticleFilter & { limit?: number } = {}) {
+    const built = await this.publicQuery(filter);
+    if (!built) return [];
+    const { data, error } = await (filter.limit ? built.query.limit(filter.limit) : built.query);
+    if (error) throw error;
+    return this.toPublicList((data ?? []) as unknown as ArticleRow[]);
+  }
+
+  async pagePublished(filter: PublishedArticleFilter, page: number, pageSize = defaultPageSize) {
+    const current = clampPage(page);
+    const size = Math.min(Math.max(pageSize, 1), maxPageSize);
+    const built = await this.publicQuery(filter, true);
+    if (!built) return pageFrom<Article>([], 0, current, size);
+    const from = (current - 1) * size;
+    const { data, error, count } = await built.query.range(from, from + size - 1);
+    if (error) throw error;
+    const items = await this.toPublicList((data ?? []) as unknown as ArticleRow[]);
+    return pageFrom(items, count ?? items.length, current, size);
+  }
+
+  /** Loads public articles by id, keeping the given order. */
+  private async byIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    const { data, error } = await this.client
+      .from("articles")
+      .select(LIST_COLUMNS)
+      .in("id", ids)
+      .or(publiclyVisibleFilter());
     if (error) throw error;
     const rows = (data ?? []) as unknown as ArticleRow[];
-    const authors = await this.loadAuthors(rows);
-    return rows.map((row) => this.toPublic(row, authors));
+    const ordered = ids.flatMap((id) => rows.filter((row) => row.id === id));
+    return this.toPublicList(ordered);
+  }
+
+  async search(
+    query: string,
+    filter: PublishedArticleFilter,
+    page: number,
+    pageSize = defaultPageSize,
+  ) {
+    const current = clampPage(page);
+    const size = Math.min(Math.max(pageSize, 1), maxPageSize);
+    // Search runs in the database (accent-insensitive, ranked); other filters
+    // are not combined with it here.
+    const { data, error } = await this.client.rpc("search_articles", {
+      p_query: query,
+      p_language: filter.language ?? mainLanguage,
+      p_limit: size,
+      p_offset: (current - 1) * size,
+    });
+    if (error) throw error;
+    const hits = (data ?? []) as Array<{ article_id: string; total: number }>;
+    const items = await this.byIds(hits.map((hit) => hit.article_id));
+    return pageFrom(items, Number(hits[0]?.total ?? 0), current, size);
+  }
+
+  async listPopular(language: string | undefined, limit: number) {
+    const views = await this.viewCounts(popularWindowDays);
+    const { data, error } = await this.client
+      .from("articles")
+      .select("id, public_at")
+      .eq("language", language ?? mainLanguage)
+      .or(publiclyVisibleFilter());
+    if (error) throw error;
+    const ids = ((data ?? []) as Array<{ id: string; public_at: string | null }>)
+      .sort(
+        (a, b) =>
+          (views.get(b.id) ?? 0) - (views.get(a.id) ?? 0) ||
+          String(b.public_at).localeCompare(String(a.public_at)),
+      )
+      .slice(0, limit)
+      .map((row) => row.id);
+    return this.byIds(ids);
+  }
+
+  async resolveOldSlug(slug: string, language = mainLanguage) {
+    const { data, error } = await this.client.rpc("resolve_article_slug", {
+      p_slug: slug,
+      p_language: language,
+    });
+    if (error) throw error;
+    return typeof data === "string" ? data : null;
+  }
+
+  async recordView(articleId: string) {
+    const { error } = await this.client.rpc("record_article_view", { p_article_id: articleId });
+    if (error) throw error;
   }
 
   async findPublishedBySlug(slug: string, language = mainLanguage) {
@@ -345,8 +472,9 @@ export class SupabaseArticleRepository implements ArticleRepository {
       .order("updated_at", { ascending: false });
     if (error) throw error;
     const rows = (data ?? []) as unknown as ArticleRow[];
-    const authors = await this.loadAuthors(rows);
-    return rows.map((row) => this.toAdmin(row, authors));
+    const [authors, views] = await Promise.all([this.loadAuthors(rows), this.viewCounts()]);
+    // All-time views for the admin list.
+    return rows.map((row) => ({ ...this.toAdmin(row, authors), views: views.get(row.id) ?? 0 }));
   }
 
   private async findEditable(id: string) {

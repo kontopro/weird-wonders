@@ -6,7 +6,7 @@ import { langOf, ogLocale, sitewideAlternates } from "@/i18n/head";
 import { useLocalized } from "@/i18n/links";
 
 export const Route = createFileRoute("/{-$lang}/dimofili")({
-  loader: ({ params }) => articleApi.listPublished({ language: langOf(params) }),
+  loader: ({ params }) => articleApi.listPopular(langOf(params), 10),
   head: ({ params }) => {
     const language = langOf(params);
     const t = messagesFor(language).popularPage;
@@ -35,24 +35,22 @@ function PopularPage() {
       <p className="eyebrow">{t.popularPage.eyebrow}</p>
       <h1 className="page-title">{t.popularPage.title}</h1>
       <ol className="ranking-page">
-        {[...articles]
-          .sort((a, b) => b.popularity - a.popularity)
-          .slice(0, 5)
-          .map((article, index) => (
-            <li key={article.slug}>
-              <span>0{index + 1}</span>
-              <img src={article.image} alt="" />
-              <div>
-                <small>
-                  {article.category.name} · {t.common.readingTime(article.minutes)}
-                </small>
-                <Link to="/{-$lang}/arthro/$slug" params={{ lang: lp, slug: article.slug }}>
-                  {article.title}
-                </Link>
-                <p>{article.excerpt}</p>
-              </div>
-            </li>
-          ))}
+        {articles.map((article, index) => (
+          <li key={article.slug}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <img src={article.image} alt="" />
+            <div>
+              <small>
+                {article.category.name} · {t.common.readingTime(article.minutes)} ·{" "}
+                {t.popularPage.views(article.popularity)}
+              </small>
+              <Link to="/{-$lang}/arthro/$slug" params={{ lang: lp, slug: article.slug }}>
+                {article.title}
+              </Link>
+              <p>{article.excerpt}</p>
+            </div>
+          </li>
+        ))}
       </ol>
     </div>
   );

@@ -1,6 +1,7 @@
 import { messages } from "@/config/messages";
 import { mainLanguage } from "@/config/site";
 import { z } from "zod";
+import type { Page } from "@/domain/listing";
 import type { MemberRole } from "@/lib/auth-types";
 import { articleContentDocumentSchema, type ArticleContentDocument } from "@/lib/article-content";
 import { articleStatuses, type AdminArticle, type ArticleStatus } from "@/lib/admin-data";
@@ -75,6 +76,9 @@ export type PublishedArticleFilter = {
   categorySlug?: string;
   tagSlug?: string;
   authorSlug?: string;
+  /** Reading-time bounds in minutes (inclusive). */
+  minMinutes?: number;
+  maxMinutes?: number;
 };
 
 /** Who performs a write. Adapters use it for authorship and role rules. */
@@ -124,7 +128,27 @@ export function assertArticleWriteInvariants(input: ArticleWriteInput) {
 }
 
 export interface ArticleRepository {
-  listPublished(filter?: PublishedArticleFilter): Promise<Article[]>;
+  /** Newest first; `limit` caps the result (home page, related articles). */
+  listPublished(filter?: PublishedArticleFilter & { limit?: number }): Promise<Article[]>;
+  /** One page of public articles, newest first, with the total. */
+  pagePublished(
+    filter: PublishedArticleFilter,
+    page: number,
+    pageSize?: number,
+  ): Promise<Page<Article>>;
+  /** Accent-insensitive prefix search over title, excerpt and text (public only). */
+  search(
+    query: string,
+    filter: PublishedArticleFilter,
+    page: number,
+    pageSize?: number,
+  ): Promise<Page<Article>>;
+  /** Most viewed public articles in the last `popularWindowDays` days. */
+  listPopular(language: string | undefined, limit: number): Promise<Article[]>;
+  /** Current slug of a public article that used to have `slug`, for 301 redirects. */
+  resolveOldSlug(slug: string, language?: string): Promise<string | null>;
+  /** Counts one view of a public article (no visitor data is kept). */
+  recordView(articleId: string): Promise<void>;
   /** A public article by its slug in a language (default: the main language). */
   findPublishedBySlug(slug: string, language?: string): Promise<ArticleDetail | null>;
   listAdmin(): Promise<AdminArticle[]>;

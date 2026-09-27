@@ -83,6 +83,14 @@ A blog has a **main language** and may publish in others (`src/config/site.ts`: 
 - **Public pages** link to the other published versions and emit `hreflang`, `x-default`, canonical and `og:locale`.
 - **Categories and tags** are named in the main language; translations (name, slug, description) are edited on `/admin/categories` and `/admin/tags`. Pages fall back to the main-language name when a translation is missing. The admin always shows main-language names so tags are never duplicated.
 
+## Reader features
+
+- **Search** (`/anakalypse?q=…`): accent- and case-insensitive, matches the start of words ("δεντρ" finds "Δέντρα") across title, excerpt and article text. In Supabase it is a ranked full-text search (`unaccent` + GIN index); mock mode applies the same rule in memory.
+- **Pagination:** Discover, category, tag and author pages show 12 articles per page (`?page=2`).
+- **Old addresses:** changing the slug of a published article keeps the old address working with a permanent (301) redirect.
+- **Views:** each article page counts one view per browser session. Only daily totals per article are stored — no visitor data. "Popular" means most viewed in the last 30 days; the admin shows all-time views.
+- **Newsletter:** the homepage form stores sign-ups with language and consent time (silently idempotent, so it cannot reveal who is subscribed). Owners and admins see the list at `/admin/subscribers`, export it as CSV and erase entries. Confirm/unsubscribe links (`/newsletter?action=confirm|unsubscribe&token=…`) work; **sending e-mails needs an e-mail provider** (e.g. Resend), which is not connected yet.
+
 ## Team
 
 Owners and admins manage the team at `/admin/team`: invite members, change roles, suspend and reactivate, and remove members without articles (members with articles are suspended instead, so their bylines stay). Admins cannot create or change owners, nobody changes their own membership there, and the team always keeps an active owner. The same rules live in `src/domain/team.ts` and in the database.

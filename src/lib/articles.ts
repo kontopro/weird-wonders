@@ -3,6 +3,7 @@ import type { CategoryRef, TagRef } from "@/domain/taxonomy";
 
 /** A published article as shown on public pages. */
 export type Article = {
+  id: string;
   slug: string;
   /** BCP 47 language of this version, e.g. "el". */
   language: string;
@@ -16,6 +17,7 @@ export type Article = {
   /** Cover image URL ("" when the article has none). */
   image: string;
   imageAlt: string;
+  /** Views in the last `popularWindowDays` days. */
   popularity: number;
   category: CategoryRef;
   author: AuthorRef;

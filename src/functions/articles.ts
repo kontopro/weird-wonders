@@ -20,8 +20,17 @@ const filterSchema = z
     categorySlug: slugSchema.optional(),
     tagSlug: slugSchema.optional(),
     authorSlug: slugSchema.optional(),
+    minMinutes: z.number().int().min(0).max(1000).optional(),
+    maxMinutes: z.number().int().min(0).max(1000).optional(),
   })
   .strict();
+const pageSchema = z.number().int().min(1).max(10_000).default(1);
+
+/** Drops keys set to undefined (exactOptionalPropertyTypes). */
+const withoutUndefined = (value: object): PublishedArticleFilter =>
+  Object.fromEntries(
+    Object.entries(value).filter(([, item]) => item !== undefined),
+  ) as PublishedArticleFilter;
 
 const contextOf = (user: SessionUser): WriteContext => ({
   actorId: user.id,
@@ -29,11 +38,13 @@ const contextOf = (user: SessionUser): WriteContext => ({
 });
 
 export const listPublishedArticles = createServerFn({ method: "GET" })
-  .validator((filter: PublishedArticleFilter | undefined) => {
-    const parsed = filterSchema.parse(filter ?? {});
+  .validator((filter: (PublishedArticleFilter & { limit?: number }) | undefined) => {
+    const parsed = filterSchema
+      .extend({ limit: z.number().int().min(1).max(50).optional() })
+      .parse(filter ?? {});
     return Object.fromEntries(
       Object.entries(parsed).filter(([, value]) => value !== undefined),
-    ) as PublishedArticleFilter;
+    ) as PublishedArticleFilter & { limit?: number };
   })
   .handler(({ data: filter }) => getRepositories().articles.listPublished(filter));
 
@@ -87,4 +98,52 @@ export const deleteArticle = createServerFn({ method: "POST" })
   .handler(async ({ data: id }) => {
     await requireMember(editorRoles);
     await getRepositories().articles.delete(id);
+  });
+
+export const pagePublishedArticles = createServerFn({ method: "GET" })
+  .validator((input: { filter?: PublishedArticleFilter; page?: number }) =>
+    z.object({ filter: filterSchema.optional(), page: pageSchema }).strict().parse(input),
+  )
+  .handler(({ data }) =>
+    getRepositories().articles.pagePublished(withoutUndefined(data.filter ?? {}), data.page),
+  );
+
+export const searchPublishedArticles = createServerFn({ method: "GET" })
+  .validator((input: { query: string; filter?: PublishedArticleFilter; page?: number }) =>
+    z
+      .object({
+        query: z.string().trim().min(1).max(200),
+        filter: filterSchema.optional(),
+        page: pageSchema,
+      })
+      .strict()
+      .parse(input),
+  )
+  .handler(({ data }) =>
+    getRepositories().articles.search(data.query, withoutUndefined(data.filter ?? {}), data.page),
+  );
+
+export const listPopularArticles = createServerFn({ method: "GET" })
+  .validator((input: { language?: string; limit?: number }) =>
+    z
+      .object({
+        language: languageSchema.optional(),
+        limit: z.number().int().min(1).max(50).default(5),
+      })
+      .strict()
+      .parse(input),
+  )
+  .handler(({ data }) => getRepositories().articles.listPopular(data.language, data.limit));
+
+export const resolveOldArticleSlug = createServerFn({ method: "GET" })
+  .validator((input: { slug: string; language?: string }) =>
+    z.object({ slug: slugSchema, language: languageSchema.optional() }).strict().parse(input),
+  )
+  .handler(({ data }) => getRepositories().articles.resolveOldSlug(data.slug, data.language));
+
+/** Public: counts one view (the page calls it once per article per session). */
+export const recordArticleView = createServerFn({ method: "POST" })
+  .validator((articleId: string) => idSchema.parse(articleId))
+  .handler(async ({ data }) => {
+    await getRepositories().articles.recordView(data);
   });

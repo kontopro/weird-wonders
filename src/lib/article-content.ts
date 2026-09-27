@@ -282,6 +282,11 @@ export function createEmptyArticleContent(): ArticleContentDocument {
   return { version: 1, blocks: [] };
 }
 
+/** Visible text of a document (for search and reading time). */
+export function documentText(document: ArticleContentDocument): string {
+  return document.blocks.flatMap(readableTextForBlock).map(stripInline).join(" ");
+}
+
 function readableTextForBlock(block: ArticleBlock): string[] {
   switch (block.type) {
     case "paragraph":

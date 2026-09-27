@@ -60,7 +60,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
     document.documentElement.classList.toggle("dark", next);
   };
   const random = async () => {
-    const articles = await articleApi.listPublished({ language: lang });
+    const articles = await articleApi.listPublished({ language: lang, limit: 50 });
     const article = articles[Math.floor(Math.random() * articles.length)];
     if (article) {
       void navigate({ to: "/{-$lang}/arthro/$slug", params: { lang: lp, slug: article.slug } });

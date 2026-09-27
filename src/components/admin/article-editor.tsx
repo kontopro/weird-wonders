@@ -180,7 +180,13 @@ export function ArticleEditor({
   );
   const [publishOpen, setPublishOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const slug = useMemo(() => savedSlug ?? (slugify(title) || "neo-arthro"), [savedSlug, title]);
+  // An edited slug wins; otherwise the saved one, or one derived from the title.
+  const [customSlug, setCustomSlug] = useState<string | null>(null);
+  const slug = useMemo(
+    () => customSlug ?? savedSlug ?? (slugify(title) || "neo-arthro"),
+    [customSlug, savedSlug, title],
+  );
+  const wasPublic = article?.status === "published" || article?.status === "archived";
   // Empty optional source fields are dropped before validating and saving.
   const cleanedContent = (): ArticleContentDocument => ({
     ...contentDocument,
@@ -228,6 +234,7 @@ export function ArticleEditor({
       setLanguage(saved.language);
       setTranslations(saved.translations);
       setSavedSlug(saved.slug);
+      setCustomSlug(null);
       setStatus(nextStatus);
       setDirty(false);
       return true;
@@ -275,6 +282,24 @@ export function ArticleEditor({
                   {siteConfig.domain}
                   {localizedPath(language, "/arthro/").replace(/\/$/, "")}/<strong>{slug}</strong>
                 </p>
+                <label className="description-field">
+                  <span>Διεύθυνση (slug)</span>
+                  <input
+                    value={slug}
+                    maxLength={200}
+                    pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                    onChange={(e) => {
+                      setCustomSlug(slugify(e.target.value) || e.target.value.toLowerCase());
+                      setDirty(true);
+                    }}
+                  />
+                  {wasPublic && customSlug !== null && customSlug !== savedSlug && (
+                    <small>
+                      Το άρθρο έχει δημοσιευτεί: η παλιά διεύθυνση θα ανακατευθύνεται αυτόματα στη
+                      νέα.
+                    </small>
+                  )}
+                </label>
                 {!savedId && siteConfig.languages.length > 1 && (
                   <label className="description-field">
                     <span>Γλώσσα άρθρου</span>

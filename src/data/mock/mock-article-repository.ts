@@ -11,6 +11,7 @@ import { scheduleOf, type MockArticleRow, type MockStore } from "@/data/mock/moc
 import { editorialTeam, type AuthorRef } from "@/domain/authors";
 import { DomainError } from "@/domain/errors";
 import { collectAssetIds } from "@/domain/media";
+import { matchesSearch, pageOf, popularWindowDays, searchTerms } from "@/domain/listing";
 import { MockMediaRepository } from "@/data/mock/mock-media-repository";
 import { effectiveStatus, isPubliclyVisible } from "@/domain/publishing";
 import { authorEditableStatuses, canEditArticle, isEditorRole } from "@/domain/permissions";
@@ -23,7 +24,7 @@ import {
   type TagRef,
 } from "@/domain/taxonomy";
 import type { AdminArticle } from "@/lib/admin-data";
-import { calculateReadingTimeMinutes } from "@/lib/article-content";
+import { calculateReadingTimeMinutes, documentText } from "@/lib/article-content";
 import type { Article } from "@/lib/articles";
 import { formatArticleDate } from "@/lib/format";
 import { slugify } from "@/lib/slug";
@@ -68,8 +69,17 @@ export class MockArticleRepository implements ArticleRepository {
     return (assetId && this.store.media.find((item) => item.id === assetId)?.src) || "";
   }
 
+  /** Views in the last `popularWindowDays` days (like `article_view_counts`). */
+  private recentViews(id: string) {
+    const since = new Date(Date.now() - popularWindowDays * 86_400_000).toISOString().slice(0, 10);
+    return this.store.articleViews
+      .filter((entry) => entry.articleId === id && entry.day > since)
+      .reduce((total, entry) => total + entry.views, 0);
+  }
+
   private toPublic(row: MockArticleRow): Article {
     return {
+      id: row.id,
       slug: row.slug,
       language: row.language,
       title: row.title,
@@ -79,7 +89,7 @@ export class MockArticleRepository implements ArticleRepository {
       minutes: row.minutes ?? calculateReadingTimeMinutes(row.content),
       image: this.coverSrc(row.coverAssetId),
       imageAlt: row.imageAlt,
-      popularity: row.popularity,
+      popularity: this.recentViews(row.id),
       category: this.categoryRef(row.categoryId, row.language),
       author: this.authorRef(row.authorId),
       tags: this.tagRefs(row.tagIds, row.language),
@@ -138,8 +148,19 @@ export class MockArticleRepository implements ArticleRepository {
     );
   }
 
-  async listPublished(filter: PublishedArticleFilter = {}) {
-    const { categorySlug, tagSlug, authorSlug, language = mainLanguage } = filter;
+  private minutesOf(row: MockArticleRow) {
+    return row.minutes ?? calculateReadingTimeMinutes(row.content);
+  }
+
+  private filterRows(filter: PublishedArticleFilter): MockArticleRow[] {
+    const {
+      categorySlug,
+      tagSlug,
+      authorSlug,
+      minMinutes,
+      maxMinutes,
+      language = mainLanguage,
+    } = filter;
     // Category and tag slugs are matched in the requested language.
     const categoryId = categorySlug
       ? this.store.categories.find(
@@ -161,10 +182,58 @@ export class MockArticleRepository implements ArticleRepository {
         (row) =>
           (!categoryId || row.categoryId === categoryId) &&
           (!tagId || row.tagIds.includes(tagId)) &&
-          (!authorId || row.authorId === authorId),
+          (!authorId || row.authorId === authorId) &&
+          (minMinutes === undefined || this.minutesOf(row) >= minMinutes) &&
+          (maxMinutes === undefined || this.minutesOf(row) <= maxMinutes),
       )
-      .sort(byNewest)
-      .map((row) => this.toPublic(row));
+      .sort(byNewest);
+  }
+
+  async listPublished(filter: PublishedArticleFilter & { limit?: number } = {}) {
+    const rows = this.filterRows(filter);
+    return (filter.limit ? rows.slice(0, filter.limit) : rows).map((row) => this.toPublic(row));
+  }
+
+  async pagePublished(filter: PublishedArticleFilter, page: number, pageSize?: number) {
+    const result = pageOf(this.filterRows(filter), page, pageSize);
+    return { ...result, items: result.items.map((row) => this.toPublic(row)) };
+  }
+
+  async search(query: string, filter: PublishedArticleFilter, page: number, pageSize?: number) {
+    const terms = searchTerms(query);
+    const matches = this.filterRows(filter).filter((row) =>
+      matchesSearch(`${row.title} ${row.excerpt} ${documentText(row.content)}`, terms),
+    );
+    const result = pageOf(matches, page, pageSize);
+    return { ...result, items: result.items.map((row) => this.toPublic(row)) };
+  }
+
+  async listPopular(language: string | undefined, limit: number) {
+    return this.published(language ?? mainLanguage)
+      .map((row) => ({ row, views: this.recentViews(row.id) }))
+      .sort((a, b) => b.views - a.views || byNewest(a.row, b.row))
+      .slice(0, limit)
+      .map(({ row }) => this.toPublic(row));
+  }
+
+  async resolveOldSlug(slug: string, language = mainLanguage) {
+    const entry = this.store.slugHistory.find(
+      (item) => item.language === language && item.slug === slug,
+    );
+    const row = entry && this.published(language).find((item) => item.id === entry.articleId);
+    return row?.slug ?? null;
+  }
+
+  async recordView(articleId: string) {
+    const row = this.store.articles.find((item) => item.id === articleId);
+    if (!row || !isPubliclyVisible(scheduleOf(row))) return;
+    const day = new Date().toISOString().slice(0, 10);
+    const entry = this.store.articleViews.find(
+      (item) => item.articleId === articleId && item.day === day,
+    );
+    if (entry) entry.views += 1;
+    else this.store.articleViews.push({ articleId, day, views: 1 });
+    row.views += 1;
   }
 
   async findPublishedBySlug(slug: string, language = mainLanguage) {
@@ -296,6 +365,22 @@ export class MockArticleRepository implements ArticleRepository {
     }
 
     const tagIds = input.tags ? this.resolveTagIds(input.tags, context) : (existing?.tagIds ?? []);
+
+    // Mirrors `article_slug_history`: a public article's old slug keeps redirecting.
+    this.store.slugHistory = this.store.slugHistory.filter(
+      (item) => !(item.language === language && item.slug === input.slug),
+    );
+    if (
+      existing &&
+      existing.slug !== input.slug &&
+      (isPubliclyVisible(scheduleOf(existing)) || existing.status === "archived")
+    ) {
+      this.store.slugHistory.push({
+        language: existing.language,
+        slug: existing.slug,
+        articleId: existing.id,
+      });
+    }
 
     const next: MockArticleRow = {
       id: existing?.id ?? crypto.randomUUID(),

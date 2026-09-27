@@ -14,6 +14,7 @@ Status: **approved architecture — baseline squashed on 2026-09-27, not yet app
 > - Buckets accept images only (no SVG), up to 10 MB.
 > - The migrations are tested in an in-process Postgres (PGlite): `supabase/tests`.
 > - Languages: `articles.language` + `translation_group_id` (slug unique per language, one version per language per group); `category_translations` and `tag_translations`.
+> - Reader features (`…170008`): `search_articles()` (unaccent full-text, prefix), `article_slug_history` + `resolve_article_slug()`, `article_views` daily counts, `newsletter_subscribers` (owners/admins only).
 > - Media: every active member uploads to `blog-public` under `media/<own id>/`; editors manage all assets, others their own. Uploads are public by URL.
 
 This document defines the database contract for a reusable blog starter. FACTάκι is the first real implementation, but every new blog will be created as an independent repository with an independent Supabase project. The same version-controlled migrations will initialize each project.
@@ -299,6 +300,7 @@ Query plans should be measured before adding more indexes.
 5. `20260927170005_articles` — articles, publishing rules, article tags and `set_article_tags`.
 6. `20260927170006_access_policies` — explicit grants and RLS policies; RLS is already enabled in each table-creation migration so an interrupted initial push never leaves a table exposed.
 7. `20260927170007_storage` — buckets (images only, 10 MB) and Storage object policies.
+8. `20260927170008_reader_features` — search, old-URL redirects, view counts, newsletter sign-ups.
 
 `supabase/seed.sql` holds the current blog's categories; never users, credentials or article content.
 

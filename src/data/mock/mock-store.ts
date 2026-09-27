@@ -3,6 +3,7 @@ import { scheduledAtFor } from "@/domain/publishing";
 import type { ArticleContentDocument } from "@/lib/article-content";
 import type { CategoryIconKey, TaxonomyTranslation } from "@/domain/taxonomy";
 import type { MemberRole } from "@/lib/auth-types";
+import type { Subscriber } from "@/domain/newsletter";
 
 /**
  * In-memory tables for mock mode, shaped like the database schema so that the
@@ -38,6 +39,12 @@ export type MockStore = {
     uploadedBy: string | null;
     createdAt: string;
   }>;
+  /** Daily view counts, like `public.article_views`. */
+  articleViews: Array<{ articleId: string; day: string; views: number }>;
+  /** Old slugs of public articles, like `public.article_slug_history`. */
+  slugHistory: Array<{ language: string; slug: string; articleId: string }>;
+  /** Newsletter sign-ups, like `public.newsletter_subscribers`. */
+  subscribers: Array<Subscriber & { token: string }>;
   /** Editorial team access, like `public.members`. */
   members: Array<{
     userId: string;

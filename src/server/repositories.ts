@@ -4,6 +4,9 @@ import type { AuthProvider, SessionCookie } from "@/data/auth/auth-provider";
 import type { AuthorRepository } from "@/data/authors/author-repository";
 import type { TeamRepository } from "@/data/team/team-repository";
 import type { MediaRepository } from "@/data/media/media-repository";
+import type { NewsletterRepository } from "@/data/newsletter/newsletter-repository";
+import { MockNewsletterRepository } from "@/data/mock/mock-newsletter-repository";
+import { SupabaseNewsletterRepository } from "@/data/supabase/supabase-newsletter-repository";
 import { MockMediaRepository } from "@/data/mock/mock-media-repository";
 import { SupabaseMediaRepository } from "@/data/supabase/supabase-media-repository";
 import { MockTeamRepository } from "@/data/mock/mock-team-repository";
@@ -29,6 +32,7 @@ export type Repositories = {
   authors: AuthorRepository;
   team: TeamRepository;
   media: MediaRepository;
+  newsletter: NewsletterRepository;
 };
 
 // Mock data lives in server memory and resets on restart.
@@ -64,6 +68,7 @@ export function getRepositories(): Repositories {
       authors: new MockAuthorRepository(store),
       team: new MockTeamRepository(store),
       media: new MockMediaRepository(store),
+      newsletter: new MockNewsletterRepository(store),
     };
   }
 
@@ -73,6 +78,7 @@ export function getRepositories(): Repositories {
     taxonomy: new SupabaseTaxonomyRepository(client),
     authors: new SupabaseAuthorRepository(client),
     media: new SupabaseMediaRepository(client),
+    newsletter: new SupabaseNewsletterRepository(client),
     team: new SupabaseTeamRepository(
       client,
       createSupabaseAdminClient(),

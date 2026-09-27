@@ -66,7 +66,7 @@ const demoArticleContent: ArticleContentDocument = {
       id: "69fbbfb8-5013-448a-a66b-235f2ed3d6b7",
       type: "paragraph",
       data: {
-        text: "Η μυκόρριζα είναι μια συμβιωτική σχέση ανάμεσα σε μύκητες και φυτά. Οι μύκητες βοηθούν τις ρίζες να απορροφήσουν νερό και θρεπτικά στοιχεία, ενώ λαμβάνουν άνθρακα από το φυτό. Η επιστημονική εικόνα είναι συναρπαστική — αλλά και πιο σύνθετη από τις δημοφιλείς μεταφορές περί «διαδικτύου του δάσους».",
+        text: "Η **μυκόρριζα** είναι μια *συμβιωτική* σχέση ανάμεσα σε μύκητες και φυτά. Οι μύκητες βοηθούν τις ρίζες να απορροφήσουν νερό και θρεπτικά στοιχεία, ενώ λαμβάνουν άνθρακα από το φυτό. Η επιστημονική εικόνα είναι συναρπαστική — αλλά και πιο σύνθετη από τις δημοφιλείς μεταφορές περί «διαδικτύου του δάσους».",
       },
     },
     {
@@ -107,6 +107,21 @@ const demoArticleContent: ArticleContentDocument = {
       data: {
         text: "Η έρευνα συνεχίζεται και αρκετοί ισχυρισμοί παραμένουν υπό συζήτηση. Γι’ αυτό ξεχωρίζουμε τις παρατηρήσεις από τις ερμηνείες και συνδέουμε κάθε δημοσιευμένο άρθρο με πρωτογενείς ή αξιόπιστες δευτερογενείς πηγές.",
       },
+    },
+  ],
+  sources: [
+    {
+      title: "Net transfer of carbon between ectomycorrhizal tree species in the field",
+      url: "https://doi.org/10.1038/41557",
+      publisher: "Nature (Simard κ.ά.)",
+      date: "1997",
+    },
+    {
+      title:
+        "Positive citation bias and overinterpreted results lead to misinformation on common mycorrhizal networks in forests",
+      url: "https://doi.org/10.1038/s41559-023-01986-1",
+      publisher: "Nature Ecology & Evolution (Karst κ.ά.)",
+      date: "2023",
     },
   ],
 };

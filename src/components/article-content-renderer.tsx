@@ -1,3 +1,5 @@
+import { EmbedBlock } from "@/components/embed-block";
+import { InlineText } from "@/components/inline-text";
 import type { ReactNode } from "react";
 import {
   articleBlockSchema,
@@ -74,7 +76,11 @@ function renderBlock(
 ): ReactNode {
   switch (block.type) {
     case "paragraph":
-      return <p className={index === 0 ? "lead" : undefined}>{block.data.text}</p>;
+      return (
+        <p className={index === 0 ? "lead" : undefined}>
+          <InlineText text={block.data.text} />
+        </p>
+      );
     case "heading":
       return block.data.level === 2 ? (
         <h2 id={block.id}>{block.data.text}</h2>
@@ -86,7 +92,9 @@ function renderBlock(
       return (
         <List className="content-list">
           {block.data.items.map((item, itemIndex) => (
-            <li key={`${block.id}-${itemIndex}`}>{item}</li>
+            <li key={`${block.id}-${itemIndex}`}>
+              <InlineText text={item} />
+            </li>
           ))}
         </List>
       );
@@ -94,7 +102,9 @@ function renderBlock(
     case "quote":
       return (
         <blockquote>
-          <p>{block.data.text}</p>
+          <p>
+            <InlineText text={block.data.text} />
+          </p>
           {block.data.attribution && <cite>{block.data.attribution}</cite>}
         </blockquote>
       );
@@ -149,7 +159,9 @@ function renderBlock(
       return (
         <aside className="fact-box">
           <strong>{block.data.title ?? "Κράτησέ το"}</strong>
-          <p>{block.data.text}</p>
+          <p>
+            <InlineText text={block.data.text} />
+          </p>
         </aside>
       );
     case "scorecard":
@@ -166,12 +178,7 @@ function renderBlock(
         </aside>
       );
     case "embed":
-      return (
-        <aside className="content-embed">
-          <span>{block.data.provider}</span>
-          <a href={block.data.url}>{block.data.title ?? "Άνοιγμα εξωτερικού περιεχομένου"}</a>
-        </aside>
-      );
+      return <EmbedBlock data={block.data} />;
     case "divider":
       return (
         <div className="content-divider" role="separator">
@@ -183,7 +190,11 @@ function renderBlock(
         <aside className={`content-cta tone-${block.data.tone}`}>
           <div>
             <strong>{block.data.title}</strong>
-            {block.data.text && <p>{block.data.text}</p>}
+            {block.data.text && (
+              <p>
+                <InlineText text={block.data.text} />
+              </p>
+            )}
           </div>
           <a href={block.data.url}>{block.data.label}</a>
         </aside>

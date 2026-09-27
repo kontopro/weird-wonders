@@ -1,4 +1,5 @@
 import { ImageField } from "@/components/admin/media-library";
+import { RichTextArea } from "@/components/admin/rich-text-area";
 import type { MediaAsset } from "@/domain/media";
 import {
   ChevronDown,
@@ -128,18 +129,29 @@ function parseTableRows(value: string, columnCount: number) {
 function BlockFields({
   block,
   onChange,
+  onInsertAfter,
 }: {
   block: ArticleBlock;
   onChange: (block: ArticleBlock) => void;
+  onInsertAfter: (blocks: ArticleBlock[]) => void;
 }) {
   switch (block.type) {
     case "paragraph":
       return (
-        <textarea
+        <RichTextArea
           rows={6}
           value={block.data.text}
-          onChange={(event) => onChange({ ...block, data: { text: event.target.value } })}
-          placeholder="Γράψε την παράγραφο…"
+          onChange={(text) => onChange({ ...block, data: { text } })}
+          placeholder="Γράψε την παράγραφο… (επικόλληση πολλών παραγράφων = πολλά blocks)"
+          onPasteParagraphs={(paragraphs) =>
+            onInsertAfter(
+              paragraphs.map((text) => ({
+                id: crypto.randomUUID(),
+                type: "paragraph" as const,
+                data: { text },
+              })),
+            )
+          }
         />
       );
     case "heading":
@@ -180,11 +192,11 @@ function BlockFields({
             <option value="bullet">Bullets</option>
             <option value="numbered">Αριθμημένη</option>
           </select>
-          <textarea
+          <RichTextArea
             rows={5}
             value={block.data.items.join("\n")}
-            onChange={(event) =>
-              onChange({ ...block, data: { ...block.data, items: event.target.value.split("\n") } })
+            onChange={(text) =>
+              onChange({ ...block, data: { ...block.data, items: text.split("\n") } })
             }
             placeholder="Ένα στοιχείο ανά γραμμή"
           />
@@ -193,12 +205,10 @@ function BlockFields({
     case "quote":
       return (
         <>
-          <textarea
+          <RichTextArea
             rows={4}
             value={block.data.text}
-            onChange={(event) =>
-              onChange({ ...block, data: { ...block.data, text: event.target.value } })
-            }
+            onChange={(text) => onChange({ ...block, data: { ...block.data, text } })}
           />
           <input
             value={block.data.attribution ?? ""}
@@ -380,12 +390,10 @@ function BlockFields({
             }
             placeholder="Τίτλος"
           />
-          <textarea
+          <RichTextArea
             rows={4}
             value={block.data.text}
-            onChange={(event) =>
-              onChange({ ...block, data: { ...block.data, text: event.target.value } })
-            }
+            onChange={(text) => onChange({ ...block, data: { ...block.data, text } })}
           />
         </>
       );
@@ -538,7 +546,8 @@ function BlockFields({
 export function BlockEditor({ document, onChange, onDirty }: BlockEditorProps) {
   const validation = articleContentDocumentSchema.safeParse(document);
   const updateBlocks = (blocks: ArticleBlock[]) => {
-    onChange({ version: 1, blocks });
+    // Keep document-level data (e.g. sources) when blocks change.
+    onChange({ ...document, blocks });
     onDirty();
   };
   const replace = (index: number, block: ArticleBlock) =>
@@ -661,7 +670,17 @@ export function BlockEditor({ document, onChange, onDirty }: BlockEditorProps) {
               </div>
             </header>
             <div className="block-card-fields">
-              <BlockFields block={block} onChange={(next) => replace(index, next)} />
+              <BlockFields
+                block={block}
+                onChange={(next) => replace(index, next)}
+                onInsertAfter={(blocks) =>
+                  updateBlocks([
+                    ...document.blocks.slice(0, index + 1),
+                    ...blocks,
+                    ...document.blocks.slice(index + 1),
+                  ])
+                }
+              />
             </div>
             <details className="block-preview">
               <summary>Προεπισκόπηση block</summary>

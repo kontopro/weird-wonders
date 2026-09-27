@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { stripInline } from "@/lib/inline-markup";
 
 const blockIdSchema = z.string().uuid("Το block ID πρέπει να είναι UUID.");
 const shortTextSchema = z.string().max(500);
@@ -230,10 +231,24 @@ export const articleBlockSchema = z.discriminatedUnion("type", [
   callToActionBlockSchema,
 ]);
 
+/** A reference shown under the article ("Πηγές") and in its structured data. */
+export const articleSourceSchema = z
+  .object({
+    title: z.string().trim().min(1, "Κάθε πηγή χρειάζεται τίτλο.").max(300),
+    url: safeContentUrlSchema.optional(),
+    publisher: shortTextSchema.optional(),
+    /** Free text, e.g. "2023" or "Νοέμβριος 2023". */
+    date: z.string().max(40).optional(),
+  })
+  .strict();
+export type ArticleSource = z.infer<typeof articleSourceSchema>;
+
 export const articleContentDocumentSchema = z
   .object({
     version: z.literal(1),
     blocks: z.array(articleBlockSchema).max(500),
+    /** Optional, so documents saved before sources existed stay valid. */
+    sources: z.array(articleSourceSchema).max(50).optional(),
   })
   .strict()
   .superRefine((document, context) => {
@@ -309,6 +324,7 @@ export function calculateReadingTimeMinutes(
 
   const wordCount = document.blocks
     .flatMap(readableTextForBlock)
+    .map(stripInline)
     .reduce((total, text) => total + text.trim().split(/\s+/u).filter(Boolean).length, 0);
 
   return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
@@ -324,4 +340,14 @@ export function getArticleHeadings(value: unknown) {
     if (!parsed.success || parsed.data.type !== "heading") return [];
     return [{ id: parsed.data.id, text: parsed.data.data.text, level: parsed.data.data.level }];
   });
+}
+
+/** Drops empty optional fields so the document stays clean and valid. */
+export function cleanArticleSources(sources: ArticleSource[]): ArticleSource[] {
+  return sources.map(({ title, url, publisher, date }) => ({
+    title: title.trim(),
+    ...(url?.trim() ? { url: url.trim() } : {}),
+    ...(publisher?.trim() ? { publisher: publisher.trim() } : {}),
+    ...(date?.trim() ? { date: date.trim() } : {}),
+  }));
 }

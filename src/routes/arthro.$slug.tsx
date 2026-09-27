@@ -1,3 +1,4 @@
+import { ArticleSources } from "@/components/article-sources";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Bookmark, CheckCircle2, Clock, Link2, Share2, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -139,13 +140,7 @@ function ArticlePage() {
               document={article.content}
               resolveAsset={(assetId) => article.mediaAssets[assetId]}
             />
-            <section className="sources">
-              <h2>Πηγές & βιβλιογραφία</h2>
-              <ol>
-                <li>Demo αναφορά — θα αντικατασταθεί από επαληθευμένη επιστημονική πηγή.</li>
-                <li>Demo αναφορά — ανασκόπηση μυκορριζικών δικτύων.</li>
-              </ol>
-            </section>
+            <ArticleSources sources={article.content.sources} />
             {article.tags.length > 0 && (
               <div className="tags" aria-label="Ετικέτες">
                 {article.tags.map((tag) => (

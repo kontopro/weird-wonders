@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/admin/admin-ui";
 import { BlockEditor } from "@/components/admin/block-editor";
 import { ImageField, MediaLibraryProvider } from "@/components/admin/media-library";
+import { SourcesEditor } from "@/components/admin/sources-editor";
 import { articleStatusLabels, articleStatuses, type ArticleStatus } from "@/lib/admin-data";
 import { authorEditableStatuses, isEditorRole } from "@/domain/permissions";
 import type { CategoryRef, TagRef } from "@/domain/taxonomy";
@@ -15,6 +16,7 @@ import { errorMessage } from "@/lib/error-message";
 import { slugify } from "@/lib/slug";
 import { siteConfig } from "@/config/site";
 import {
+  cleanArticleSources,
   createEmptyArticleContent,
   safeParseArticleContent,
   type ArticleContentDocument,
@@ -174,8 +176,13 @@ export function ArticleEditor({
   const [publishOpen, setPublishOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
   const slug = useMemo(() => savedSlug ?? (slugify(title) || "neo-arthro"), [savedSlug, title]);
+  // Empty optional source fields are dropped before validating and saving.
+  const cleanedContent = (): ArticleContentDocument => ({
+    ...contentDocument,
+    sources: cleanArticleSources(contentDocument.sources ?? []),
+  });
   const contentIsValid = () => {
-    const result = safeParseArticleContent(contentDocument);
+    const result = safeParseArticleContent(cleanedContent());
     if (result.success) return true;
     toast.error(result.error.issues[0]?.message ?? "Το περιεχόμενο χρειάζεται διόρθωση.");
     return false;
@@ -205,7 +212,7 @@ export function ArticleEditor({
           .split(",")
           .map((tag) => tag.trim())
           .filter(Boolean),
-        content: contentDocument,
+        content: cleanedContent(),
         seoTitle: seoTitle.slice(0, 60),
         seoDescription: seoDescription.slice(0, 160),
         isFeatured: canPublish && featured,
@@ -279,6 +286,20 @@ export function ArticleEditor({
                   onChange={setContentDocument}
                   onDirty={() => setDirty(true)}
                 />
+              </section>
+              <section className="editor-panel">
+                <header>
+                  <h2>Πηγές & βιβλιογραφία</h2>
+                </header>
+                <div className="panel-body">
+                  <SourcesEditor
+                    sources={contentDocument.sources ?? []}
+                    onChange={(sources) => {
+                      setContentDocument({ ...contentDocument, sources });
+                      setDirty(true);
+                    }}
+                  />
+                </div>
               </section>
             </div>
             <aside className="editor-aside">

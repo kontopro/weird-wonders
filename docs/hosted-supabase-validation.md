@@ -12,7 +12,7 @@ This checklist is intentionally hosted-only. It does not start, reset or depend 
 
 ## Baseline verification
 
-- Confirm migrations `20260921132001` through `20260921132010` are recorded as applied.
+- Confirm migrations `20260921132001` through `20260927120000` are recorded as applied.
 - Confirm RLS is enabled on `profiles`, `members`, `media_assets`, `site_settings`, `categories`, `tags`, `articles` and `article_tags`.
 - Confirm `site_settings` contains exactly one row.
 - Confirm the eight configured categories exist with their expected normalized slugs.
@@ -21,11 +21,12 @@ This checklist is intentionally hosted-only. It does not start, reset or depend 
 
 ## Auth and role verification
 
-Run these checks only after cookie-based SSR auth and the admin guard are implemented.
-
-- Create the first user through Supabase Auth and confirm the profile trigger creates one matching `profiles` row.
-- As that authenticated user, call `claim_initial_owner()` once and confirm an active owner membership is created.
-- Confirm a second claim fails.
+- Confirm **Allow new users to sign up** is off, and that a sign-up attempt through the API is rejected.
+- Create the first user through **Authentication → Users → Add user** and confirm the profile trigger creates one matching `profiles` row.
+- In the SQL editor, run `select private.bootstrap_owner('<owner email>');` and confirm an active owner membership is created.
+- Confirm a second bootstrap fails, and that `authenticated` cannot execute `private.bootstrap_owner`.
+- Sign in at `/login`, confirm the session cookie is HTTP-only, and that `/admin` opens and shows the owner's name and role.
+- Sign out and confirm `/admin` redirects to `/login` again.
 - Confirm the final active owner cannot be suspended, demoted or deleted.
 - Confirm an anonymous request cannot enter the admin flow.
 

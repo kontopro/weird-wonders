@@ -23,7 +23,19 @@ Nothing in the repository applies migrations automatically. No local database se
 
 Article reads and writes use a shared repository contract. The default `VITE_DATA_SOURCE=mock` keeps the application entirely on demo data. The Supabase adapter is activated only when `VITE_DATA_SOURCE=supabase` is set together with a hosted project URL and publishable key.
 
-To initialize the first owner, create/sign in a user and call the one-time `claim_initial_owner()` RPC. The call is concurrency-safe and stops working as soon as the first membership exists.
+## Authentication
+
+All data access runs on the server through TanStack Start server functions (`src/functions`). Each request gets its own Supabase client (`src/server/supabase.ts`) that reads and refreshes the session from HTTP-only cookies, so RLS always sees the correct user. `/admin` redirects to `/login` unless the visitor is an active member; server functions check membership again, and RLS remains the final security boundary.
+
+Blogs are invite-only. Before anyone can reach the project:
+
+1. In the Supabase dashboard, open **Authentication → Sign In / Providers** and turn off **Allow new users to sign up**.
+2. Create the owner under **Authentication → Users → Add user** (auto-confirm the email).
+3. In the **SQL editor**, run once: `select private.bootstrap_owner('owner@example.com');`
+
+The bootstrap runs only as the database owner, is concurrency-safe, and refuses to run once any member exists.
+
+In mock mode there are no accounts. The admin is open during `bun run dev`; a deployed demo keeps it closed unless `VITE_ENABLE_DEMO_ADMIN=true` is set.
 
 When a fresh hosted project is available:
 

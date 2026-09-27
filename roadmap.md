@@ -28,7 +28,9 @@
 - [x] Version-controlled initial Supabase migrations, χωρίς εφαρμογή σε βάση
 - [x] Pre-Supabase hardening: άμεσο RLS, deterministic site/category seed και ασφαλές category/status/reading-time mapping
 - [x] Ενιαίο article repository με ενεργό mock και ανενεργό Supabase adapter
-- [ ] Authentication, RLS και role/storage integration tests
+- [x] Authentication: cookie sessions ανά request, server functions, admin guard, login/logout
+- [x] Ασφαλές bootstrap πρώτου owner (χωρίς self-service claim) και invite-only sign-ups
+- [ ] RLS και role/storage integration tests σε hosted project
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports
 - [ ] Ενεργοποίηση πραγματικού Supabase CRUD μετά τη δημιουργία hosted project
 - [ ] Εξαγωγή ουδέτερου `reusable-blog-starter` μετά τη σταθεροποίηση του FACTάκι

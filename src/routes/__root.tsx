@@ -123,8 +123,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Admin and login pages render without the public site header/footer.
   const isAdmin = useRouterState({
-    select: (state) => state.location.pathname.startsWith("/admin"),
+    select: ({ location }) =>
+      location.pathname.startsWith("/admin") || location.pathname === "/login",
   });
 
   return (

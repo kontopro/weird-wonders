@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   BookOpen,
   Eye,
@@ -13,6 +13,8 @@ import {
 import { useState, type ReactNode } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
+import { signOut } from "@/functions/auth";
+import { initialsOf, memberRoleLabels, type SessionUser } from "@/lib/auth-types";
 
 const navItems = [
   { label: "Επισκόπηση", to: "/admin", icon: LayoutDashboard },
@@ -22,8 +24,23 @@ const navItems = [
   { label: "Προφίλ", to: "/admin/profile", icon: UserRound },
 ] as const;
 
-export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
+type SidebarProps = { user: SessionUser; onNavigate?: () => void };
+
+export function AdminSidebar({ user, onNavigate }: SidebarProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const router = useRouter();
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+  const onSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await signOut();
+      await router.invalidate();
+      await navigate({ to: "/login" });
+    } finally {
+      setSigningOut(false);
+    }
+  };
   return (
     <aside className="admin-sidebar">
       <div className="admin-brand">
@@ -49,30 +66,37 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
       <div className="admin-profile-card">
-        <div className="admin-avatar">ΜΠ</div>
+        <div className="admin-avatar" aria-hidden="true">
+          {initialsOf(user.displayName)}
+        </div>
         <div>
-          <strong>Μαρία Παπαδοπούλου</strong>
-          <span>Αρχισυντάκτρια</span>
+          <strong>{user.displayName}</strong>
+          <span>
+            {memberRoleLabels[user.role]}
+            {user.isDemo ? " · demo" : ""}
+          </span>
         </div>
       </div>
       <div className="admin-sidebar-actions">
         <Link to="/" className="admin-view-site" onClick={onNavigate}>
           <Eye /> Προβολή site
         </Link>
-        <Button variant="ghost" onClick={() => undefined}>
-          <LogOut /> Αποσύνδεση
-        </Button>
+        {!user.isDemo && (
+          <Button variant="ghost" onClick={onSignOut} disabled={signingOut}>
+            <LogOut /> Αποσύνδεση
+          </Button>
+        )}
       </div>
     </aside>
   );
 }
 
-export function AdminLayout({ children }: { children: ReactNode }) {
+export function AdminLayout({ user, children }: { user: SessionUser; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="admin-shell">
       <div className="admin-desktop-sidebar">
-        <AdminSidebar />
+        <AdminSidebar user={user} />
       </div>
       <header className="admin-mobile-header">
         <BrandLogo />
@@ -93,7 +117,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
             aria-label="Κλείσιμο μενού"
           />
           <div className="admin-mobile-drawer">
-            <AdminSidebar onNavigate={() => setOpen(false)} />
+            <AdminSidebar user={user} onNavigate={() => setOpen(false)} />
           </div>
         </>
       )}

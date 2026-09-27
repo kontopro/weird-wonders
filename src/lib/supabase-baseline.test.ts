@@ -58,4 +58,19 @@ describe("Supabase migration baseline", () => {
     );
     expect(sql).toContain("create unique index tags_name_ci_idx on public.tags (lower(name));");
   });
+
+  test("assigns the first owner only through an operator-run bootstrap", async () => {
+    const sql = await migrationFile("20260927120000_secure_owner_bootstrap.sql");
+    expect(sql).toContain("drop function if exists public.claim_initial_owner();");
+    expect(sql).toContain("create or replace function private.bootstrap_owner(owner_email text)");
+    expect(sql).toContain(
+      "revoke all on function private.bootstrap_owner(text) from public, anon, authenticated;",
+    );
+    expect(sql).not.toMatch(/grant\s+execute[\s\S]*bootstrap_owner/i);
+  });
+
+  test("disables public sign-ups in the reference Supabase config", async () => {
+    const config = await Bun.file(new URL("../../supabase/config.toml", import.meta.url)).text();
+    expect(config).not.toMatch(/^enable_signup = true$/m);
+  });
 });

@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AnakalyChar968Char949RouteImport } from './routes/anakalyψε'
 import { Route as DimofiliRouteImport } from './routes/dimofili'
 import { Route as KatigoriesRouteImport } from './routes/katigories'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as SxetikaRouteImport } from './routes/sxetika'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminArticlesRouteImport } from './routes/admin.articles'
@@ -47,6 +48,11 @@ const DimofiliRoute = DimofiliRouteImport.update({
 const KatigoriesRoute = KatigoriesRouteImport.update({
   id: '/katigories',
   path: '/katigories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SxetikaRoute = SxetikaRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/anakalyψε': typeof AnakalyChar968Char949Route
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
+  '/login': typeof LoginRoute
   '/sxetika': typeof SxetikaRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/anakalyψε': typeof AnakalyChar968Char949Route
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
+  '/login': typeof LoginRoute
   '/sxetika': typeof SxetikaRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/profile': typeof AdminProfileRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/anakalyψε': typeof AnakalyChar968Char949Route
   '/dimofili': typeof DimofiliRoute
   '/katigories': typeof KatigoriesRoute
+  '/login': typeof LoginRoute
   '/sxetika': typeof SxetikaRoute
   '/admin/articles': typeof AdminArticlesRouteWithChildren
   '/admin/categories': typeof AdminCategoriesRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/anakalyψε'
     | '/dimofili'
     | '/katigories'
+    | '/login'
     | '/sxetika'
     | '/admin/articles'
     | '/admin/categories'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/anakalyψε'
     | '/dimofili'
     | '/katigories'
+    | '/login'
     | '/sxetika'
     | '/admin/categories'
     | '/admin/profile'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/anakalyψε'
     | '/dimofili'
     | '/katigories'
+    | '/login'
     | '/sxetika'
     | '/admin/articles'
     | '/admin/categories'
@@ -197,6 +209,7 @@ export interface RootRouteChildren {
   AnakalyChar968Char949Route: typeof AnakalyChar968Char949Route
   DimofiliRoute: typeof DimofiliRoute
   KatigoriesRoute: typeof KatigoriesRoute
+  LoginRoute: typeof LoginRoute
   SxetikaRoute: typeof SxetikaRoute
   ArthroSlugRoute: typeof ArthroSlugRoute
 }
@@ -236,6 +249,13 @@ declare module '@tanstack/react-router' {
       path: '/katigories'
       fullPath: '/katigories'
       preLoaderRoute: typeof KatigoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sxetika': {
@@ -342,6 +362,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnakalyChar968Char949Route: AnakalyChar968Char949Route,
   DimofiliRoute: DimofiliRoute,
   KatigoriesRoute: KatigoriesRoute,
+  LoginRoute: LoginRoute,
   SxetikaRoute: SxetikaRoute,
   ArthroSlugRoute: ArthroSlugRoute,
 }

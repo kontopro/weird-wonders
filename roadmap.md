@@ -47,6 +47,7 @@
 - [x] SEO: `sitemap.xml` με hreflang, `robots.txt`, RSS ανά γλώσσα, social previews, JSON-LD, `VITE_SITE_URL`
 - [x] Ταχύτητα/προσβασιμότητα: responsive εικόνες (srcset), self-hosted fonts, dark mode χωρίς αναβόσβημα, skip link, εικονίδια, χωρίς cookie banner
 - [x] Browser tests (Playwright): δημόσιο site και admin από άκρη σε άκρη, `bun run test:e2e`
+- [x] CI στο GitHub: έλεγχοι και browser tests σε κάθε pull request
 - [x] Admin: λίστα άρθρων με σελίδες και φίλτρα στη διεύθυνση, πραγματικά νούμερα στην επισκόπηση
 - [x] Email: double opt-in επιβεβαίωση newsletter μέσω Resend (ή demo outbox), όριο επανάληψης, επιβεβαίωση με κουμπί
 - [ ] Ενεργοποίηση Resend (API key, επαλήθευση domain) και αποστολή τευχών newsletter στη λίστα

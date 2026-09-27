@@ -46,7 +46,8 @@ test.describe("admin", () => {
     await picker.locator('input[type="file"]').setInputFiles(wideImage);
     await picker.getByRole("textbox", { name: /Alt text/ }).fill("Κίτρινες ρίγες");
     await picker.getByRole("button", { name: "Ανέβασμα και επιλογή" }).click();
-    await expect(picker).toBeHidden();
+    // Resizing and encoding four WebP copies can take a while on a slow machine.
+    await expect(picker).toBeHidden({ timeout: 20_000 });
     await expect(page.getByRole("textbox", { name: "Alt text κεντρικής εικόνας" })).toHaveValue(
       "Κίτρινες ρίγες",
     );

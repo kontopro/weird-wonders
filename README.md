@@ -13,6 +13,12 @@ bun install
 bun run dev
 ```
 
+## Checks
+
+`bun run check` runs formatting, lint, the type check and the unit tests (schema tests included). GitHub runs it on every pull request and push to `main`, together with the browser tests below (`.github/workflows/ci.yml`); a red check on a pull request means something broke. Failed browser tests attach their screenshots and traces to the run (_Artifacts_).
+
+To block merging while checks fail: GitHub → _Settings → Branches → Add rule_ for `main` → _Require status checks to pass_ and pick both CI jobs.
+
 ## Browser tests
 
 `bun run test:e2e` builds the site with demo data and the demo admin (`e2e/serve.ts`, never Supabase), starts it on port 4173 and drives a real Chromium through the public site and the admin: publishing an article with an uploaded cover, its responsive copies, feeds, a translation draft, the article list filters, role limits and team invitations. Any browser console error fails a test. It needs Node.js for the built server.

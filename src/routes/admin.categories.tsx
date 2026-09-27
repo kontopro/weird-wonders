@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/admin/admin-ui";
 import { categoryClass } from "@/lib/category-class";
 import { Button } from "@/components/ui/button";
-import { brandedTitle } from "@/config/site";
+import { brandedTitle, mainLanguage, siteConfig } from "@/config/site";
+import { messagesFor } from "@/i18n";
 import { taxonomyApi } from "@/data/taxonomy";
 import { canManageTaxonomy } from "@/domain/permissions";
 import {
@@ -14,6 +15,7 @@ import {
   toCategoryIconKey,
   type Category,
   type CategoryInput,
+  type TaxonomyTranslation,
 } from "@/domain/taxonomy";
 import { errorMessage } from "@/lib/error-message";
 import { slugify } from "@/lib/slug";
@@ -24,13 +26,35 @@ export const Route = createFileRoute("/admin/categories")({
   head: () => ({ meta: [{ title: brandedTitle("Κατηγορίες") }] }),
 });
 
+/** Languages other than the main one, which get translation fields. */
+const otherLanguages = siteConfig.languages.filter((language) => language !== mainLanguage);
+
 const emptyDraft = (sortOrder: number): CategoryInput => ({
   name: "",
   slug: "",
   description: "",
   iconKey: null,
   sortOrder,
+  translations: [],
 });
+
+/** One translation row per other language, filled from the saved ones. */
+const translationFields = (saved: TaxonomyTranslation[] = []): TaxonomyTranslation[] =>
+  otherLanguages.map(
+    (language) =>
+      saved.find((item) => item.language === language) ?? {
+        language,
+        name: "",
+        slug: "",
+        description: "",
+      },
+  );
+
+/** Keeps only filled-in translations; an empty slug is derived from the name. */
+const cleanTranslations = (items: TaxonomyTranslation[] = []) =>
+  items
+    .filter((item) => item.name.trim())
+    .map((item) => ({ ...item, slug: item.slug || slugify(item.name) }));
 
 function CategoriesAdmin() {
   const categories = Route.useLoaderData();
@@ -45,7 +69,7 @@ function CategoriesAdmin() {
   const [target, setTarget] = useState<Category>();
 
   const startCreate = () => {
-    setDraft(emptyDraft(nextSortOrder));
+    setDraft({ ...emptyDraft(nextSortOrder), translations: translationFields() });
     setSlugTouched(false);
   };
   const startEdit = (category: Category) => {
@@ -56,6 +80,7 @@ function CategoriesAdmin() {
       description: category.description,
       iconKey: category.iconKey,
       sortOrder: category.sortOrder,
+      translations: translationFields(category.translations),
     });
     setSlugTouched(true);
   };
@@ -65,7 +90,10 @@ function CategoriesAdmin() {
     if (!draft) return;
     setSaving(true);
     try {
-      await taxonomyApi.saveCategory(draft);
+      await taxonomyApi.saveCategory({
+        ...draft,
+        translations: cleanTranslations(draft.translations),
+      });
       toast.success(draft.id ? "Η κατηγορία ενημερώθηκε." : "Η κατηγορία δημιουργήθηκε.");
       setDraft(null);
       await router.invalidate();
@@ -171,6 +199,47 @@ function CategoriesAdmin() {
                   onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                 />
               </label>
+              {(draft.translations ?? []).map((translation, index) => {
+                const update = (patch: Partial<TaxonomyTranslation>) =>
+                  setDraft({
+                    ...draft,
+                    translations: (draft.translations ?? []).map((item, current) =>
+                      current === index ? { ...item, ...patch } : item,
+                    ),
+                  });
+                return (
+                  <fieldset key={translation.language} className="full translation-fields">
+                    <legend>{messagesFor(translation.language).languageName}</legend>
+                    <label>
+                      <span>Όνομα</span>
+                      <input
+                        maxLength={100}
+                        value={translation.name}
+                        onChange={(e) => update({ name: e.target.value })}
+                        placeholder="Αφήστε κενό αν δεν υπάρχει μετάφραση"
+                      />
+                    </label>
+                    <label>
+                      <span>Slug</span>
+                      <input
+                        maxLength={120}
+                        pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                        value={translation.slug}
+                        onChange={(e) => update({ slug: e.target.value })}
+                        placeholder={slugify(translation.name) || "auto"}
+                      />
+                    </label>
+                    <label className="full">
+                      <span>Περιγραφή</span>
+                      <textarea
+                        maxLength={1000}
+                        value={translation.description}
+                        onChange={(e) => update({ description: e.target.value })}
+                      />
+                    </label>
+                  </fieldset>
+                );
+              })}
             </div>
             <div className="form-actions">
               <Button type="button" variant="outline" onClick={() => setDraft(null)}>
@@ -191,7 +260,14 @@ function CategoriesAdmin() {
             <span aria-hidden="true" />
             <i className={categoryClass(category)} />
             <div>
-              <strong>{category.name}</strong>
+              <strong>
+                {category.name}
+                {category.translations.map((item) => (
+                  <small key={item.language} className="lang-badge" title={item.slug}>
+                    {item.language.toUpperCase()}: {item.name}
+                  </small>
+                ))}
+              </strong>
               <span>
                 /{category.slug} ·{" "}
                 {category.publishedCount === 1

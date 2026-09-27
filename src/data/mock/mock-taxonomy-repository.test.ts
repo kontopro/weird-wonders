@@ -67,3 +67,52 @@ describe("MockTaxonomyRepository", () => {
     expect(tags.find((tag) => tag.slug === "chronos")?.publishedCount).toBe(2);
   });
 });
+
+describe("MockTaxonomyRepository — translations", () => {
+  test("lists and finds categories by their slug in a language", async () => {
+    const repository = new MockTaxonomyRepository(createDemoStore());
+    const english = await repository.listCategories("en");
+    expect(english.find((item) => item.id === "cat-fysi")).toMatchObject({
+      name: "Nature",
+      slug: "nature",
+      slugsByLanguage: { el: "fysi", en: "nature" },
+    });
+    expect(await repository.findCategoryBySlug("nature", "en")).not.toBeNull();
+    expect(await repository.findCategoryBySlug("nature")).toBeNull();
+  });
+
+  test("saves category translations and rejects clashing ones", async () => {
+    const repository = new MockTaxonomyRepository(createDemoStore());
+    const [science] = await repository.listCategories();
+    const saved = await repository.saveCategory({
+      id: science!.id,
+      name: science!.name,
+      slug: science!.slug,
+      description: science!.description,
+      iconKey: science!.iconKey,
+      sortOrder: science!.sortOrder,
+      translations: [{ language: "en", name: "Sciences", slug: "sciences", description: "" }],
+    });
+    expect(saved.translations).toEqual([
+      { language: "en", name: "Sciences", slug: "sciences", description: "" },
+    ]);
+    await expect(
+      repository.saveCategory({
+        ...saved,
+        id: "cat-istoria",
+        name: "Ιστορία",
+        slug: "istoria",
+        translations: [{ language: "en", name: "Other", slug: "sciences", description: "" }],
+      }),
+    ).rejects.toThrow("ήδη");
+  });
+
+  test("saves tag translations used by English tag pages", async () => {
+    const repository = new MockTaxonomyRepository(createDemoStore());
+    await repository.saveTagTranslations({
+      tagId: "tag-mousiki",
+      translations: [{ language: "en", name: "music", slug: "music", description: "" }],
+    });
+    expect((await repository.findTagBySlug("music", "en"))?.id).toBe("tag-mousiki");
+  });
+});

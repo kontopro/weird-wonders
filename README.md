@@ -75,9 +75,13 @@ In mock mode uploads live in server memory until restart; with Supabase they go 
 
 ## Languages
 
-Each blog sets its main language in `src/config/site.ts` (`defaultLanguage`) and lists the languages it publishes in (`languages`). Every article has a language; translations are separate, linked articles (same `translationGroupId`), each with its own slug, SEO and status, so a Greek article can be published before its English version. Categories and tags are written in the main language, with translations in `category_translations` / `tag_translations`.
+A blog has a **main language** and may publish in others (`src/config/site.ts`: `defaultLanguage`, `languages`). FACTάκι publishes in Greek (main) and English.
 
-The schema and data layer support translations today; the English public pages (`/en/…`, `hreflang`) and a "create translation" action in the editor are the next step.
+- **Words:** everything the public site says — menus, labels, SEO text, the About page and the URL words — lives in one file per language: `src/config/messages/el.ts`, `en.ts`. To add a language, copy a file, translate it, register it in `src/config/messages/index.ts` and add the code to `languages`. The admin stays in the main language.
+- **URLs:** the main language has no prefix (`/arthro/…`); other languages are prefixed and use their own words (`/en/article/…`, `/en/category/…`). Routes are defined once; the router rewrite in `src/router.tsx` translates the words (`src/i18n/paths.ts`). `/el/…` redirects to the unprefixed URL.
+- **Articles:** each version is its own article in a translation group, with its own slug, SEO and status. In the editor, a saved article's **Γλώσσες** panel creates a linked draft in another language (content, cover, category and tags are copied) for translating. New articles can pick their language.
+- **Public pages** link to the other published versions and emit `hreflang`, `x-default`, canonical and `og:locale`.
+- **Categories and tags** are named in the main language; translations (name, slug, description) are edited on `/admin/categories` and `/admin/tags`. Pages fall back to the main-language name when a translation is missing. The admin always shows main-language names so tags are never duplicated.
 
 ## Team
 

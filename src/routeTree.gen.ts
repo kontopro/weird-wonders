@@ -18,6 +18,7 @@ import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminMediaRouteImport } from './routes/admin.media'
 import { Route as AdminPasswordRouteImport } from './routes/admin.password'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
+import { Route as AdminTagsRouteImport } from './routes/admin.tags'
 import { Route as AdminTeamRouteImport } from './routes/admin.team'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as Char123LangChar125IndexRouteImport } from './routes/{-$lang}/index'
@@ -77,6 +78,11 @@ const AdminPasswordRoute = AdminPasswordRouteImport.update({
 const AdminProfileRoute = AdminProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTagsRoute = AdminTagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminTeamRoute = AdminTeamRouteImport.update({
@@ -172,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/tags': typeof AdminTagsRoute
   '/admin/team': typeof AdminTeamRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/{-$lang}/anakalypse': typeof Char123LangChar125AnakalypseRoute
@@ -195,6 +202,7 @@ export interface FileRoutesByTo {
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/tags': typeof AdminTagsRoute
   '/admin/team': typeof AdminTeamRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/{-$lang}/anakalypse': typeof Char123LangChar125AnakalypseRoute
@@ -222,6 +230,7 @@ export interface FileRoutesById {
   '/admin/media': typeof AdminMediaRoute
   '/admin/password': typeof AdminPasswordRoute
   '/admin/profile': typeof AdminProfileRoute
+  '/admin/tags': typeof AdminTagsRoute
   '/admin/team': typeof AdminTeamRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/{-$lang}/anakalypse': typeof Char123LangChar125AnakalypseRoute
@@ -250,6 +259,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
+    | '/admin/tags'
     | '/admin/team'
     | '/auth/confirm'
     | '/{-$lang}/anakalypse'
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
+    | '/admin/tags'
     | '/admin/team'
     | '/auth/confirm'
     | '/{-$lang}/anakalypse'
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/admin/media'
     | '/admin/password'
     | '/admin/profile'
+    | '/admin/tags'
     | '/admin/team'
     | '/auth/confirm'
     | '/{-$lang}/anakalypse'
@@ -388,6 +400,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/admin/profile'
       preLoaderRoute: typeof AdminProfileRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tags': {
+      id: '/admin/tags'
+      path: '/tags'
+      fullPath: '/admin/tags'
+      preLoaderRoute: typeof AdminTagsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/team': {
@@ -550,6 +569,7 @@ interface AdminRouteChildren {
   AdminMediaRoute: typeof AdminMediaRoute
   AdminPasswordRoute: typeof AdminPasswordRoute
   AdminProfileRoute: typeof AdminProfileRoute
+  AdminTagsRoute: typeof AdminTagsRoute
   AdminTeamRoute: typeof AdminTeamRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -560,6 +580,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMediaRoute: AdminMediaRoute,
   AdminPasswordRoute: AdminPasswordRoute,
   AdminProfileRoute: AdminProfileRoute,
+  AdminTagsRoute: AdminTagsRoute,
   AdminTeamRoute: AdminTeamRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

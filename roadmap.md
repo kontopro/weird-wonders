@@ -41,7 +41,9 @@
 - [x] Γλώσσες: κύρια γλώσσα ανά blog, `language` + `translation_group_id`, μεταφράσεις κατηγοριών/ετικετών (schema + data layer)
 - [x] Βιβλιοθήκη εικόνων: upload με WebP resize, picker για εξώφυλλο/εικόνες/gallery, σελίδα `/admin/media`
 - [x] Editor: έντονα/πλάγια/σύνδεσμοι, έξυπνη επικόλληση, δομημένες πηγές, βίντεο click-to-load
-- [ ] Αγγλικές δημόσιες σελίδες (`/en/…`, hreflang) και «Δημιουργία μετάφρασης» στον editor
+- [x] Πολυγλωσσικό site: κείμενα ανά γλώσσα (`src/config/messages`), URLs `/en/article/…`, hreflang, επιλογή γλώσσας στο άρθρο
+- [x] «Δημιουργία έκδοσης» μετάφρασης στον editor, μεταφράσεις κατηγοριών (`/admin/categories`) και ετικετών (`/admin/tags`)
+- [ ] Pagination λιστών άρθρων
 - [ ] Έλεγχος σε hosted project (`docs/hosted-supabase-validation.md`)
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports
 - [ ] Ενεργοποίηση πραγματικού Supabase CRUD μετά τη δημιουργία hosted project

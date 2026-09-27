@@ -3171,3 +3171,56 @@ select:focus-visible {
   color: var(--muted-foreground);
   vertical-align: 2px;
 }
+.translation-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 12px;
+}
+.translation-fields legend {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0 4px;
+}
+.translation-fields label {
+  display: grid;
+  gap: 6px;
+}
+.tag-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) repeat(auto-fit, minmax(220px, 1.5fr)) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.tag-row:last-child {
+  border-bottom: 0;
+}
+.tag-row > div {
+  display: grid;
+  gap: 3px;
+}
+.tag-row > div span {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+.tag-row fieldset {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+}
+.tag-row legend {
+  font-size: 0.68rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+@media (max-width: 760px) {
+  .tag-row {
+    grid-template-columns: 1fr;
+  }
+}

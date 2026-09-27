@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { brandedTitle, siteConfig } from "@/config/site";
 import { taxonomyApi } from "@/data/taxonomy";
-import { messagesFor, useT } from "@/i18n";
-import { langOf, ogLocale, sitewideAlternates } from "@/i18n/head";
+import { localizedPath, messagesFor, useT } from "@/i18n";
+import { langOf, sitewideAlternates } from "@/i18n/head";
+import { socialMeta } from "@/i18n/seo";
 import { useLocalized } from "@/i18n/links";
 import { categoryClass } from "@/lib/category-class";
 
@@ -14,12 +15,13 @@ export const Route = createFileRoute("/{-$lang}/katigories")({
     return {
       meta: [
         { title: brandedTitle(t.title) },
+        ...socialMeta({
+          language,
+          title: brandedTitle(t.title),
+          description: t.socialDescription,
+          path: localizedPath(language, "/katigories"),
+        }),
         { name: "description", content: t.description(siteConfig.name) },
-        { property: "og:title", content: brandedTitle(t.title) },
-        { property: "og:description", content: t.socialDescription },
-        { property: "og:type", content: "website" },
-        ogLocale(language),
-        { name: "twitter:card", content: "summary_large_image" },
       ],
       links: sitewideAlternates(language, "/katigories"),
     };

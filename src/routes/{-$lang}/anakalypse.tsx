@@ -10,8 +10,9 @@ import type { PublishedArticleFilter } from "@/data/articles";
 import { articleApi } from "@/data/articles";
 import { taxonomyApi } from "@/data/taxonomy";
 import { useBookmarks } from "@/hooks/use-bookmarks";
-import { messagesFor, useT } from "@/i18n";
-import { langOf, ogLocale, sitewideAlternates } from "@/i18n/head";
+import { localizedPath, messagesFor, useT } from "@/i18n";
+import { langOf, sitewideAlternates } from "@/i18n/head";
+import { socialMeta } from "@/i18n/seo";
 
 /** Reading-time buckets (minutes). */
 const lengths = { short: { maxMinutes: 5 }, long: { minMinutes: 6 } } as const;
@@ -47,12 +48,13 @@ export const Route = createFileRoute("/{-$lang}/anakalypse")({
     return {
       meta: [
         { title: brandedTitle(t.title) },
+        ...socialMeta({
+          language,
+          title: brandedTitle(t.title),
+          description: t.socialDescription,
+          path: localizedPath(language, "/anakalypse"),
+        }),
         { name: "description", content: t.description },
-        { property: "og:title", content: brandedTitle(t.title) },
-        { property: "og:description", content: t.socialDescription },
-        { property: "og:type", content: "website" },
-        ogLocale(language),
-        { name: "twitter:card", content: "summary_large_image" },
       ],
       links: sitewideAlternates(language, "/anakalypse"),
     };

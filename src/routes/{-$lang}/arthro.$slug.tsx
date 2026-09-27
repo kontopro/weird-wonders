@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { brandedTitle, siteConfig } from "@/config/site";
 import { articleApi } from "@/data/articles";
 import { useBookmarks } from "@/hooks/use-bookmarks";
-import { formatDate, localizedPath, messagesFor, useT } from "@/i18n";
-import { alternateLinks, langOf, ogLocale } from "@/i18n/head";
+import { absoluteUrl, formatDate, localizedPath, messagesFor, useT } from "@/i18n";
+import { alternateLinks, langOf } from "@/i18n/head";
+import { breadcrumbs, jsonLd, publisher, socialMeta } from "@/i18n/seo";
 import { useLocalized } from "@/i18n/links";
 import { getArticleHeadings } from "@/lib/article-content";
 import { initialsOf } from "@/lib/auth-types";
@@ -53,24 +54,76 @@ export const Route = createFileRoute("/{-$lang}/arthro/$slug")({
         version,
         `/arthro/${versions.find((item) => item.language === version)?.slug ?? params.slug}`,
       );
+    const title = article?.title ?? t.article.fallbackTitle;
+    const description = article?.excerpt || t.article.fallbackDescription(siteConfig.name);
+    const path = pathFor(language);
+    const authorPath = article?.author.slug
+      ? localizedPath(language, `/syntaktis/${article.author.slug}`)
+      : undefined;
+    const publishedTime = article ? `${article.dateValue}T09:00:00Z` : "";
     return {
       meta: [
-        { title: brandedTitle(article?.title ?? t.article.fallbackTitle) },
-        {
-          name: "description",
-          content: article?.excerpt || t.article.fallbackDescription(siteConfig.name),
-        },
-        { property: "og:title", content: article?.title ?? siteConfig.name },
-        { property: "og:description", content: article?.excerpt ?? "" },
-        { property: "og:type", content: "article" },
-        ogLocale(language),
-        { name: "twitter:card", content: "summary_large_image" },
+        { title: brandedTitle(title) },
+        { name: "description", content: description },
+        ...socialMeta({
+          language,
+          title,
+          description,
+          path,
+          type: "article",
+          ...(article?.image ? { image: article.image, imageAlt: article.imageAlt } : {}),
+          ...(article
+            ? {
+                article: {
+                  publishedTime,
+                  modifiedTime: article.updatedAt,
+                  ...(article.category.slug ? { section: article.category.name } : {}),
+                  tags: article.tags.map((tag) => tag.name),
+                  ...(authorPath ? { authorUrl: absoluteUrl(authorPath) } : {}),
+                },
+              }
+            : {}),
+        }),
       ],
       links: alternateLinks(
         language,
         pathFor,
         versions.map((item) => item.language),
       ),
+      scripts: article
+        ? [
+            jsonLd({
+              "@type": "Article",
+              headline: article.title,
+              description,
+              ...(article.image ? { image: [absoluteUrl(article.image)] } : {}),
+              datePublished: publishedTime,
+              dateModified: article.updatedAt,
+              inLanguage: language,
+              mainEntityOfPage: absoluteUrl(path),
+              author: authorPath
+                ? { "@type": "Person", name: article.author.name, url: absoluteUrl(authorPath) }
+                : { "@type": "Organization", name: article.author.name },
+              publisher: publisher(),
+              ...(article.category.slug ? { articleSection: article.category.name } : {}),
+              ...(article.tags.length
+                ? { keywords: article.tags.map((tag) => tag.name).join(", ") }
+                : {}),
+            }),
+            breadcrumbs([
+              { name: t.nav.home, path: localizedPath(language, "/") },
+              ...(article.category.slug
+                ? [
+                    {
+                      name: article.category.name,
+                      path: localizedPath(language, `/katigoria/${article.category.slug}`),
+                    },
+                  ]
+                : []),
+              { name: article.title, path },
+            ]),
+          ]
+        : [],
     };
   },
   component: ArticlePage,
@@ -119,7 +172,7 @@ function ArticlePage() {
             >
               {article.category.name}
             </Link>
-            <span>{formatDate(article.dateValue, lang)}</span>
+            <time dateTime={article.dateValue}>{formatDate(article.dateValue, lang)}</time>
             <span>
               <Clock /> {t.common.readingTime(article.minutes)}
             </span>

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { articleApi } from "@/data/articles";
 import { brandedTitle } from "@/config/site";
-import { messagesFor, useT } from "@/i18n";
-import { langOf, ogLocale, sitewideAlternates } from "@/i18n/head";
+import { localizedPath, messagesFor, useT } from "@/i18n";
+import { langOf, sitewideAlternates } from "@/i18n/head";
+import { socialMeta } from "@/i18n/seo";
 import { useLocalized } from "@/i18n/links";
 
 export const Route = createFileRoute("/{-$lang}/dimofili")({
@@ -13,12 +14,13 @@ export const Route = createFileRoute("/{-$lang}/dimofili")({
     return {
       meta: [
         { title: brandedTitle(t.title) },
+        ...socialMeta({
+          language,
+          title: brandedTitle(t.title),
+          description: t.socialDescription,
+          path: localizedPath(language, "/dimofili"),
+        }),
         { name: "description", content: t.description },
-        { property: "og:title", content: brandedTitle(t.title) },
-        { property: "og:description", content: t.socialDescription },
-        { property: "og:type", content: "website" },
-        ogLocale(language),
-        { name: "twitter:card", content: "summary_large_image" },
       ],
       links: sitewideAlternates(language, "/dimofili"),
     };

@@ -10,8 +10,9 @@ import { categoryClass } from "@/lib/category-class";
 import { Button } from "@/components/ui/button";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { siteConfig } from "@/config/site";
-import { messagesFor, useT } from "@/i18n";
-import { langOf, ogLocale, sitewideAlternates } from "@/i18n/head";
+import { localizedPath, messagesFor, useT } from "@/i18n";
+import { langOf, sitewideAlternates } from "@/i18n/head";
+import { socialMeta, websiteJsonLd } from "@/i18n/seo";
 import { useLocalized } from "@/i18n/links";
 
 export const Route = createFileRoute("/{-$lang}/")({
@@ -32,13 +33,15 @@ export const Route = createFileRoute("/{-$lang}/")({
       meta: [
         { title: seo.title },
         { name: "description", content: seo.description },
-        { property: "og:title", content: seo.socialTitle },
-        { property: "og:description", content: seo.socialDescription },
-        { property: "og:type", content: "website" },
-        ogLocale(language),
-        { name: "twitter:card", content: "summary_large_image" },
+        ...socialMeta({
+          language,
+          title: seo.socialTitle,
+          description: seo.socialDescription,
+          path: localizedPath(language, "/"),
+        }),
       ],
       links: sitewideAlternates(language, "/"),
+      scripts: [websiteJsonLd(language)],
     };
   },
   component: Index,

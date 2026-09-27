@@ -1,5 +1,5 @@
 import { mainLanguage, siteConfig } from "@/config/site";
-import { absoluteUrl, localizedPath, messagesFor } from "@/i18n";
+import { absoluteUrl, localizedPath } from "@/i18n";
 
 /** Language of a route from its `{-$lang}` param. */
 export const langOf = (params: { lang?: string | undefined }) => params.lang ?? mainLanguage;
@@ -29,9 +29,3 @@ export function alternateLinks(
 /** Alternates for a page with the same internal path in every language (home, lists…). */
 export const sitewideAlternates = (language: string, internalPath: string) =>
   alternateLinks(language, (version) => localizedPath(version, internalPath));
-
-/** `og:locale` meta for a language, e.g. el_GR. */
-export const ogLocale = (language: string) => ({
-  property: "og:locale",
-  content: messagesFor(language).locale.replace("-", "_"),
-});

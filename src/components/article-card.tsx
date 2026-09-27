@@ -58,7 +58,7 @@ export function ArticleCard({
         </Link>
         <p>{article.excerpt}</p>
         <div className="story-footer">
-          <span>{formatDate(article.dateValue, lang)}</span>
+          <time dateTime={article.dateValue}>{formatDate(article.dateValue, lang)}</time>
           <span>
             <Clock /> {t.common.readingTime(article.minutes)}
           </span>

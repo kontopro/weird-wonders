@@ -82,12 +82,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: siteConfig.name },
+      // Fallbacks; public pages set their own description and social previews.
       { name: "description", content: mainMessages.site.seo.description },
-      { name: "author", content: siteConfig.name },
-      { property: "og:title", content: mainMessages.site.seo.socialTitle },
-      { property: "og:description", content: mainMessages.site.seo.socialDescription },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       {

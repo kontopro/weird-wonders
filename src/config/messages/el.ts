@@ -34,6 +34,9 @@ export const el = {
       socialTitle: "FACTάκι — Κάθε μέρα κάτι που δεν ήξερες",
       socialDescription: "Μικρές πληροφορίες που κρύβουν μεγάλες εκπλήξεις.",
     },
+    /** Default social preview image (1200×630) for pages without their own. */
+    shareImage: "/og-default.png",
+    shareImageAlt: "FACTάκι — Μικρό fact. Μεγάλη έκπληξη.",
     footerLine: "Κάθε μέρα κρύβει κάτι που δεν γνώριζες.",
   },
   nav: {

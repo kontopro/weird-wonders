@@ -4,8 +4,9 @@ import { ArticleListing } from "@/components/article-listing";
 import { brandedTitle } from "@/config/site";
 import { articleApi } from "@/data/articles";
 import { authorApi } from "@/data/authors";
-import { messagesFor, useT } from "@/i18n";
-import { langOf, ogLocale, sitewideAlternates } from "@/i18n/head";
+import { absoluteUrl, localizedPath, messagesFor, useT } from "@/i18n";
+import { langOf, sitewideAlternates } from "@/i18n/head";
+import { jsonLd, socialMeta } from "@/i18n/seo";
 import { initialsOf } from "@/lib/auth-types";
 
 export const Route = createFileRoute("/{-$lang}/syntaktis/$slug")({
@@ -22,18 +23,37 @@ export const Route = createFileRoute("/{-$lang}/syntaktis/$slug")({
   },
   head: ({ params, loaderData }) => {
     const language = langOf(params);
+    const author = loaderData?.author;
+    const name = author?.displayName ?? messagesFor(language).authorPage.eyebrow;
+    const path = localizedPath(language, `/syntaktis/${params.slug}`);
     return {
       meta: [
-        {
-          title: brandedTitle(
-            loaderData?.author.displayName ?? messagesFor(language).authorPage.eyebrow,
-          ),
-        },
-        { name: "description", content: loaderData?.author.bio ?? "" },
-        { property: "og:type", content: "profile" },
-        ogLocale(language),
+        { title: brandedTitle(name) },
+        { name: "description", content: author?.bio ?? "" },
+        ...socialMeta({
+          language,
+          title: brandedTitle(name),
+          description: author?.bio || messagesFor(language).site.seo.socialDescription,
+          path,
+          type: "profile",
+        }),
       ],
       links: sitewideAlternates(language, `/syntaktis/${params.slug}`),
+      scripts: author
+        ? [
+            jsonLd({
+              "@type": "ProfilePage",
+              url: absoluteUrl(path),
+              inLanguage: language,
+              mainEntity: {
+                "@type": "Person",
+                name: author.displayName,
+                ...(author.bio ? { description: author.bio } : {}),
+                url: absoluteUrl(path),
+              },
+            }),
+          ]
+        : [],
     };
   },
   component: AuthorPage,

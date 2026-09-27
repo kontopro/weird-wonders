@@ -29,6 +29,9 @@ export const en: SiteMessages = {
       socialTitle: "FACTάκι — Something you didn't know, every day",
       socialDescription: "Small facts that hide big surprises.",
     },
+    /** Default social preview image (1200×630) for pages without their own. */
+    shareImage: "/og-default-en.png",
+    shareImageAlt: "FACTάκι — Small fact. Big surprise.",
     footerLine: "Every day hides something you didn't know.",
   },
   nav: {

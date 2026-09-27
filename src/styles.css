@@ -282,7 +282,9 @@ svg {
 }
 .hero-meta span,
 .story-footer span,
-.article-meta span {
+.story-footer time,
+.article-meta span,
+.article-meta time {
   display: inline-flex;
   align-items: center;
   gap: 6px;

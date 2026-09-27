@@ -5,7 +5,8 @@ import { brandedTitle } from "@/config/site";
 import { articleApi } from "@/data/articles";
 import { taxonomyApi } from "@/data/taxonomy";
 import { localizedPath, messagesFor, useT } from "@/i18n";
-import { alternateLinks, langOf, ogLocale } from "@/i18n/head";
+import { alternateLinks, langOf } from "@/i18n/head";
+import { socialMeta } from "@/i18n/seo";
 
 export const Route = createFileRoute("/{-$lang}/etiketa/$slug")({
   validateSearch: z.object({ page: z.coerce.number().int().min(1).optional() }),
@@ -28,8 +29,12 @@ export const Route = createFileRoute("/{-$lang}/etiketa/$slug")({
       meta: [
         { title: brandedTitle(`#${tag?.name ?? params.slug}`) },
         { name: "description", content: t.tagPage.description(tag?.name ?? "") },
-        { property: "og:type", content: "website" },
-        ogLocale(language),
+        ...socialMeta({
+          language,
+          title: brandedTitle(`#${tag?.name ?? params.slug}`),
+          description: t.tagPage.description(tag?.name ?? ""),
+          path: localizedPath(language, `/etiketa/${params.slug}`),
+        }),
       ],
       links: alternateLinks(
         language,

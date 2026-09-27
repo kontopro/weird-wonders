@@ -5,7 +5,8 @@ import { brandedTitle } from "@/config/site";
 import { articleApi } from "@/data/articles";
 import { taxonomyApi } from "@/data/taxonomy";
 import { localizedPath, messagesFor, useT } from "@/i18n";
-import { alternateLinks, langOf, ogLocale } from "@/i18n/head";
+import { alternateLinks, langOf } from "@/i18n/head";
+import { breadcrumbs, socialMeta } from "@/i18n/seo";
 
 export const Route = createFileRoute("/{-$lang}/katigoria/$slug")({
   validateSearch: z.object({ page: z.coerce.number().int().min(1).optional() }),
@@ -29,9 +30,19 @@ export const Route = createFileRoute("/{-$lang}/katigoria/$slug")({
       meta: [
         { title: brandedTitle(name) },
         { name: "description", content: category?.description ?? "" },
-        { property: "og:title", content: brandedTitle(name) },
-        { property: "og:type", content: "website" },
-        ogLocale(language),
+        ...socialMeta({
+          language,
+          title: brandedTitle(name),
+          description: category?.description || t.site.seo.socialDescription,
+          path: localizedPath(language, `/katigoria/${params.slug}`),
+        }),
+      ],
+      scripts: [
+        breadcrumbs([
+          { name: t.nav.home, path: localizedPath(language, "/") },
+          { name: t.nav.categories, path: localizedPath(language, "/katigories") },
+          { name, path: localizedPath(language, `/katigoria/${params.slug}`) },
+        ]),
       ],
       links: alternateLinks(
         language,

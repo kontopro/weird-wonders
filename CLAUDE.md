@@ -31,6 +31,8 @@ A **reusable blog/site starter**: each new site gets its own copy of this reposi
    - still to check from `docs/hosted-supabase-validation.md`: other roles (invite an editor and an author; needs SMTP, see below) and the RLS/Storage matrices with them; deleting an image and its copies; an image in use cannot be deleted
    - set the Vercel env vars (below)
 
+   **Planned next (the owner has no domain yet, so no Resend):** the owner creates two test users in the dashboard (Authentication → Users → Add user, auto-confirm, passwords stay with the owner); the agent makes them an editor and an author with SQL through `bunx supabase db query --linked`; the owner signs in as each in the browser pane and the agent checks the role limits, RLS and Storage; the test users are removed afterwards. Invite e-mails are checked once Resend is set up.
+
    The free plan's built-in e-mail sends only a few messages an hour, to the Supabase organisation's own members, so invites to others need custom SMTP (Resend offers SMTP; step 2).
 
    The Playwright suite targets mock mode; a Supabase variant should run against a separate test project, never the site's own.

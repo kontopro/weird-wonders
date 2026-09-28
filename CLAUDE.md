@@ -25,16 +25,17 @@ A **reusable blog/site starter**: each new site gets its own copy of this reposi
 
 **Next steps, in order:**
 
-1. **Local Supabase (Docker).** Run `bunx supabase start` (`supabase/config.toml` is ready) and apply the migrations. Then:
-   - set `VITE_DATA_SOURCE=supabase` with the local keys
+1. **Hosted Supabase project.** The owner skipped a local (Docker) Supabase: the site is not in production yet, so the adapters are exercised directly on a hosted project. Then:
+   - the owner creates the project, sets the dashboard (sign-ups off, e-mail confirmations on, _Secure password change_ on), links it and fills `.env.local`
+   - review `bunx supabase db push --dry-run` with the owner, then `db push --include-seed`
    - bootstrap the first owner (README → "Supabase: first owner")
-   - run the app and the browser tests against it, and fix what breaks in the adapters
+   - run the app with `VITE_DATA_SOURCE=supabase`, follow `docs/hosted-supabase-validation.md` step by step, and fix what breaks in the adapters
+   - set the Vercel env vars (below)
 
-   The Playwright suite currently targets mock mode; it needs a Supabase variant, or a seed.
+   The Playwright suite targets mock mode; a Supabase variant should run against a separate test project, never the site's own.
 
-2. **Hosted Supabase project.** Follow `docs/hosted-supabase-validation.md` step by step. In the dashboard: sign-ups off, e-mail confirmations on, _Secure password change_ on. Set the Vercel env vars (below).
-3. **Resend.** Verify the domain, then set `RESEND_API_KEY` and `EMAIL_FROM`.
-4. **Later / optional:**
+2. **Resend.** Verify the domain, then set `RESEND_API_KEY` and `EMAIL_FROM`.
+3. **Later / optional:**
    - sending newsletter issues to the list (not built)
    - a shared store for rate limits (Upstash)
    - CSP nonces
@@ -82,7 +83,7 @@ bun run build          # production build (.output/), run it with: node .output/
 ## Rules that must hold
 
 - **Database independence.** Pages and components call only `src/data/*/index.ts`, never Supabase. A new feature means: an interface method, then the mock adapter **and** the Supabase adapter, then a server function. Business rules go in `src/domain` and are mirrored in SQL/RLS; the mock mirrors the database rules.
-- **Migrations.** The baseline has **not** been applied to any hosted database yet, so it is still edited in place. **Once step 2 happens, never edit applied migrations; add new ones.** Every table has RLS enabled in the migration that creates it. `security definer` functions use `set search_path = ''`.
+- **Migrations.** The baseline has **not** been applied to any hosted database yet, so it is still edited in place. **Once they are pushed to the hosted project (next step 1), never edit applied migrations; add new ones.** Every table has RLS enabled in the migration that creates it. `security definer` functions use `set search_path = ''`.
 - **Grants.** Supabase grants every new function and table in `public` to `anon`/`authenticated` by default. Always `revoke ... from public, anon, authenticated` explicitly, then grant what is intended. A schema test lists the only functions visitors may call; update it deliberately.
 - **Server-only secrets.** `SUPABASE_SECRET_KEY`, `RESEND_API_KEY` and `EMAIL_FROM` are never prefixed `VITE_` and never logged. The service-role client (`src/server/supabase-admin.ts`) is used only after authorization, and only for:
   - Auth admin (invites)
@@ -122,7 +123,8 @@ See `.env.example`.
 ## Working with the owner
 
 - The owner writes in Greek or English; answer in the same language. Keep reports short and in plain words.
-- One branch per change (`feature/...`, `deps/...`). Commit only after `bun run check` (and `bun run test:e2e` for UI or flow changes) passes. **The owner pushes and merges pull requests themselves**, so don't push unless asked.
+- One branch per change (`feature/...`, `deps/...`, `docs/...`). Commit only after `bun run check` (and `bun run test:e2e` for UI or flow changes) passes.
+- Git flow: the agent commits and pushes the feature branch (never `main`) and opens the pull request (with `gh`; without it, the owner opens it from the link `git push` prints). **The owner reviews and merges on GitHub** and deletes the remote branch. When told it is merged, the agent runs `git checkout main`, `git pull`, `git fetch --prune` and `git branch -d <branch>`; if `-d` refuses (e.g. after a squash merge), ask before using `-D`.
 - Commit messages: an imperative subject, then a short body explaining why.
 - Ask before anything hard to reverse:
   - applying migrations to a hosted project

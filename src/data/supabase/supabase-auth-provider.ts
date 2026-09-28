@@ -28,7 +28,7 @@ export class SupabaseAuthProvider implements AuthProvider {
     const email = typeof claims.email === "string" ? claims.email : null;
     const { data, error } = await this.client
       .from("members")
-      .select("role, status, profile:profiles(display_name)")
+      .select("role, status, profile:profiles!members_user_id_fkey(display_name)")
       .eq("user_id", claims.sub)
       .maybeSingle();
     if (error) throw error;

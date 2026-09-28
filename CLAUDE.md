@@ -21,16 +21,18 @@ A **reusable blog/site starter**: each new site gets its own copy of this reposi
 - security: RLS on everything, CSP and other headers, rate limits, upload sniffing. Two independent reviews were fixed.
 - CI (GitHub Actions) and Dependabot
 
-**The app has only ever run in mock mode.** The database layer is designed and tested in PGlite, but the Supabase adapters (`src/data/supabase`) have **never run against a real Supabase**.
+**The hosted Supabase project exists** (free plan). On 2026-09-28 the eight migrations and the seed were pushed and the baseline checks passed (RLS on every table, visitor functions, buckets, categories, no seeded users). The app itself has still only run in mock mode: the Supabase adapters (`src/data/supabase`) have **never run against a real Supabase** yet.
 
 **Next steps, in order:**
 
 1. **Hosted Supabase project.** The owner skipped a local (Docker) Supabase: the site is not in production yet, so the adapters are exercised directly on a hosted project. Then:
-   - the owner creates the project, sets the dashboard (sign-ups off, e-mail confirmations on, _Secure password change_ on), links it and fills `.env.local`
-   - review `bunx supabase db push --dry-run` with the owner, then `db push --include-seed`
+   - ~~create and link the project, fill `.env.local`, push the migrations and the seed~~ (done)
+   - dashboard: sign-ups were still **on** after the push; the owner turns them off (plus _Secure password change_ on)
    - bootstrap the first owner (README → "Supabase: first owner")
    - run the app with `VITE_DATA_SOURCE=supabase`, follow `docs/hosted-supabase-validation.md` step by step, and fix what breaks in the adapters
    - set the Vercel env vars (below)
+
+   The free plan's built-in e-mail sends only a few messages an hour, to the Supabase organisation's own members, so invites to others need custom SMTP (Resend offers SMTP; step 2).
 
    The Playwright suite targets mock mode; a Supabase variant should run against a separate test project, never the site's own.
 
@@ -83,7 +85,7 @@ bun run build          # production build (.output/), run it with: node .output/
 ## Rules that must hold
 
 - **Database independence.** Pages and components call only `src/data/*/index.ts`, never Supabase. A new feature means: an interface method, then the mock adapter **and** the Supabase adapter, then a server function. Business rules go in `src/domain` and are mirrored in SQL/RLS; the mock mirrors the database rules.
-- **Migrations.** The baseline has **not** been applied to any hosted database yet, so it is still edited in place. **Once they are pushed to the hosted project (next step 1), never edit applied migrations; add new ones.** Every table has RLS enabled in the migration that creates it. `security definer` functions use `set search_path = ''`.
+- **Migrations.** The baseline is applied to the hosted project, but the site is not in production, so until the owner declares the schema stable it is still **edited in place**: fix the baseline files and reset the hosted database (`bunx supabase db reset --linked`, which deletes its data), **asking the owner before every reset**. **Once the owner declares it stable, never edit applied migrations; add new ones.** Every table has RLS enabled in the migration that creates it. `security definer` functions use `set search_path = ''`.
 - **Grants.** Supabase grants every new function and table in `public` to `anon`/`authenticated` by default. Always `revoke ... from public, anon, authenticated` explicitly, then grant what is intended. A schema test lists the only functions visitors may call; update it deliberately.
 - **Server-only secrets.** `SUPABASE_SECRET_KEY`, `RESEND_API_KEY` and `EMAIL_FROM` are never prefixed `VITE_` and never logged. The service-role client (`src/server/supabase-admin.ts`) is used only after authorization, and only for:
   - Auth admin (invites)

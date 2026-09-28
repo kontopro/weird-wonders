@@ -43,7 +43,7 @@ First time on a machine: `bunx playwright install chromium`. Failed runs keep a 
 
 The repository contains a version-controlled Supabase baseline for one independent blog. A new blog gets its own repository and hosted Supabase project, then applies the same migrations from `supabase/migrations`.
 
-The baseline (`supabase/migrations`, seven files) builds the structure only and enables RLS in the same migration that creates each table. A blog's own starting data — its categories — lives in `supabase/seed.sql`. Nothing seeds users, credentials or article content. The site's identity (name, SEO, labels) lives in `src/config/site.ts`.
+The baseline (`supabase/migrations`, eight files) builds the structure only and enables RLS in the same migration that creates each table. A blog's own starting data — its categories — lives in `supabase/seed.sql`. Nothing seeds users, credentials or article content. The site's identity (name, SEO, labels) lives in `src/config/site.ts`.
 
 `bun test` also applies the migrations to an in-process Postgres (PGlite) and checks the access rules per role (`supabase/tests`), so the schema is tested without a Supabase project.
 

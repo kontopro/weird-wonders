@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { hit, rateLimits, resetRateLimits } from "@/server/rate-limit";
+import { hit, isLimited, rateLimits, resetRateLimits } from "@/server/rate-limit";
 
 beforeEach(() => resetRateLimits());
 
@@ -22,5 +22,15 @@ describe("rate limits", () => {
     expect(hit("viewPerArticle", "visitor-a", "article-1", 0)).toBe(true);
     expect(hit("viewPerArticle", "visitor-a", "article-1", 1)).toBe(false);
     expect(hit("viewPerArticle", "visitor-a", "article-2", 2)).toBe(true);
+  });
+
+  test("a flood of new keys evicts the oldest counters instead of filling memory", () => {
+    expect(hit("subscribe", "early", "", 0)).toBe(true);
+    for (let index = 0; index < 50_000; index += 1) {
+      expect(hit("viewPerArticle", `visitor-${index}`, "x", 0)).toBe(true);
+    }
+    // New visitors are still served; the earliest counter was dropped.
+    expect(hit("subscribe", "late", "", 0)).toBe(true);
+    expect(isLimited("subscribe", "early", "", 0)).toBe(false);
   });
 });

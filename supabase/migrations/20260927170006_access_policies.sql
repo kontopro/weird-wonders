@@ -82,12 +82,14 @@ using (
   )
 );
 
+-- Only team members edit their profile (name, slug, bio): a signed-in account
+-- without membership cannot claim an author address.
 create policy profiles_update_self
 on public.profiles
 for update
 to authenticated
-using (id = (select auth.uid()))
-with check (id = (select auth.uid()));
+using (id = (select auth.uid()) and (select private.is_active_member()))
+with check (id = (select auth.uid()) and (select private.is_active_member()));
 
 -- Members ----------------------------------------------------------------
 
@@ -108,18 +110,19 @@ for insert
 to authenticated
 with check ((select private.can_manage_member(role)));
 
+-- Nobody changes or removes their own membership (no accidental lock-outs).
 create policy members_update
 on public.members
 for update
 to authenticated
-using ((select private.can_manage_member(role)))
-with check ((select private.can_manage_member(role)));
+using (user_id <> (select auth.uid()) and (select private.can_manage_member(role)))
+with check (user_id <> (select auth.uid()) and (select private.can_manage_member(role)));
 
 create policy members_delete
 on public.members
 for delete
 to authenticated
-using ((select private.can_manage_member(role)));
+using (user_id <> (select auth.uid()) and (select private.can_manage_member(role)));
 
 -- Media ------------------------------------------------------------------
 
@@ -158,12 +161,18 @@ on public.media_assets
 for update
 to authenticated
 using (
-  uploaded_by = (select auth.uid())
-  or (select private.has_role(array['owner', 'admin', 'editor']))
+  (select private.is_active_member())
+  and (
+    uploaded_by = (select auth.uid())
+    or (select private.has_role(array['owner', 'admin', 'editor']))
+  )
 )
 with check (
-  uploaded_by = (select auth.uid())
-  or (select private.has_role(array['owner', 'admin', 'editor']))
+  (select private.is_active_member())
+  and (
+    uploaded_by = (select auth.uid())
+    or (select private.has_role(array['owner', 'admin', 'editor']))
+  )
 );
 
 create policy media_assets_delete
@@ -171,8 +180,11 @@ on public.media_assets
 for delete
 to authenticated
 using (
-  uploaded_by = (select auth.uid())
-  or (select private.has_role(array['owner', 'admin', 'editor']))
+  (select private.is_active_member())
+  and (
+    uploaded_by = (select auth.uid())
+    or (select private.has_role(array['owner', 'admin', 'editor']))
+  )
 );
 
 -- Taxonomy ---------------------------------------------------------------

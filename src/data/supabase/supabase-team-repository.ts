@@ -128,6 +128,14 @@ export class SupabaseTeamRepository implements TeamRepository {
       if ((await this.rows()).some((row) => row.user_id === existing.id)) {
         throw new DomainError(teamMessages.alreadyMember, "conflict");
       }
+      // Only if the address was proven by its owner: otherwise anyone who
+      // registered that address first would receive the role.
+      if (!existing.email_confirmed_at) {
+        throw new DomainError(
+          "Υπάρχει λογαριασμός με αυτό το email χωρίς επιβεβαιωμένη διεύθυνση. Διέγραψέ τον από το Supabase (Authentication → Users) και στείλε ξανά την πρόσκληση.",
+          "conflict",
+        );
+      }
       userId = existing.id;
     } else {
       const { data, error } = await this.admin.auth.admin.inviteUserByEmail(input.email, {

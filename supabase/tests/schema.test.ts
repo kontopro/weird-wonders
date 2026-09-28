@@ -484,7 +484,7 @@ describe("old URLs", () => {
     expect(row?.slug).toBe("neo");
   });
 
-  test("ignores drafts and frees a slug that is reused", async () => {
+  test("ignores drafts; a slug is freed only when a public article reuses it", async () => {
     const draft = await article("Draft", { slug: "proxeiro" });
     await t.db.query("update public.articles set slug = 'proxeiro-2' where id = $1", [draft]);
     const history = await t.db.query("select 1 from public.article_slug_history");
@@ -492,19 +492,28 @@ describe("old URLs", () => {
 
     const published = await article("Pub", { slug: "a", status: "published" });
     await t.db.query("update public.articles set slug = 'b' where id = $1", [published]);
-    await article("Reuse", { slug: "a" });
-    const left = await t.db.query("select 1 from public.article_slug_history where slug = 'a'");
-    expect(left.rows).toHaveLength(0);
+    // A draft taking the old slug does not break the redirect…
+    const reuse = await article("Reuse", { slug: "a" });
+    const redirects = async () =>
+      (await t.db.query("select 1 from public.article_slug_history where slug = 'a'")).rows;
+    expect(await redirects()).toHaveLength(1);
+    // …publishing it does.
+    await t.db.query("update public.articles set status = 'published' where id = $1", [reuse]);
+    expect(await redirects()).toHaveLength(0);
   });
 });
 
 describe("views", () => {
-  test("anyone records views of public articles only; counts are readable", async () => {
+  test("the server records views of public articles only; counts are readable", async () => {
     const live = await article("Live", { slug: "live", status: "published" });
     const draft = await article("Draft", { slug: "draft" });
     for (const id of [live, live, draft]) {
-      await t.as("anon", null, "select public.record_article_view($1)", [id]);
+      await t.as("service_role", null, "select public.record_article_view($1)", [id]);
     }
+    // Visitors cannot call it directly (the app rate-limits views first).
+    await expect(
+      t.as("anon", null, "select public.record_article_view($1)", [live]),
+    ).rejects.toThrow(/permission denied/);
     const counts = await t.as<{ article_id: string; views: string }>(
       "anon",
       null,
@@ -532,12 +541,14 @@ describe("newsletter", () => {
     await expect(t.as("anon", null, "select * from public.newsletter_subscribers")).rejects.toThrow(
       /permission denied/,
     );
-    expect(
-      await t.as("authenticated", editor, "select * from public.newsletter_subscribers"),
-    ).toHaveLength(0);
-    expect(
-      await t.as("authenticated", owner, "select * from public.newsletter_subscribers"),
-    ).toHaveLength(1);
+    const listAs = (userId: string) =>
+      t.as("authenticated", userId, "select id, email, status from public.newsletter_subscribers");
+    expect(await listAs(editor)).toHaveLength(0);
+    expect(await listAs(owner)).toHaveLength(1);
+    // Not even owners read tokens (they could confirm on someone's behalf).
+    await expect(
+      t.as("authenticated", owner, "select token from public.newsletter_subscribers"),
+    ).rejects.toThrow(/permission denied/);
   });
 
   test("confirm and unsubscribe work by token; re-subscribing reopens", async () => {
@@ -597,5 +608,130 @@ describe("newsletter", () => {
     expect(await claim("c1@example.com")).toHaveLength(1);
     expect(await claim("c2@example.com")).toHaveLength(1);
     expect(await claim("c3@example.com")).toHaveLength(0);
+  });
+});
+
+describe("security review regressions", () => {
+  const asAuthor = <T>(sql: string, params: unknown[] = []) =>
+    t.as<T>("authenticated", author, sql, params);
+  const suspendAuthor = () =>
+    t.db.query("update public.members set status = 'suspended' where user_id = $1", [author]);
+  const asset = async (uploadedBy: string, visibility: "public" | "private" = "public") => {
+    const bucket = visibility === "public" ? "blog-public" : "blog-private";
+    const { rows } = await t.db.query<{ id: string }>(
+      `insert into public.media_assets
+         (uploaded_by, storage_bucket, storage_path, visibility, mime_type, alt_text)
+       values ($1, $2, $3, $4, 'image/webp', 'Alt') returning id`,
+      [uploadedBy, bucket, `media/${uploadedBy}/${crypto.randomUUID()}.webp`, visibility],
+    );
+    return rows[0]!.id;
+  };
+
+  test("only the intended public functions are callable by visitors", async () => {
+    const { rows } = await t.db.query<{ name: string }>(
+      `select p.proname as name
+       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
+       order by 1`,
+    );
+    expect(rows.map((row) => row.name)).toEqual([
+      "article_view_counts",
+      "confirm_newsletter",
+      "resolve_article_slug",
+      "search_articles",
+      "subscribe_newsletter",
+      "unsubscribe_newsletter",
+    ]);
+  });
+
+  test("suspended authors can no longer change articles, tags or media", async () => {
+    const draft = await article("Mine", { slug: "mine" });
+    const mediaId = await asset(author);
+    await suspendAuthor();
+    expect(
+      await asAuthor("update public.articles set title = 'x' where id = $1 returning id", [draft]),
+    ).toHaveLength(0);
+    await expect(
+      asAuthor("select public.set_article_tags($1, '[]'::jsonb)", [draft]),
+    ).rejects.toThrow();
+    expect(
+      await asAuthor("update public.media_assets set alt_text = 'x' where id = $1 returning id", [
+        mediaId,
+      ]),
+    ).toHaveLength(0);
+    expect(
+      await asAuthor("delete from public.media_assets where id = $1 returning id", [mediaId]),
+    ).toHaveLength(0);
+  });
+
+  test("images used as a cover cannot be deleted", async () => {
+    const mediaId = await asset(author);
+    await article("Covered", { slug: "covered", cover_image_id: mediaId, cover_image_alt: "Alt" });
+    await expect(
+      asAuthor("delete from public.media_assets where id = $1", [mediaId]),
+    ).rejects.toThrow(/foreign key/);
+  });
+
+  test("authors cannot use someone else's private image as cover", async () => {
+    const draft = await article("Draft cover", { slug: "draft-cover" });
+    const privateOfEditor = await asset(editor, "private");
+    const publicOfEditor = await asset(editor, "public");
+    const cover = (mediaId: string) =>
+      asAuthor("update public.articles set cover_image_id = $2 where id = $1 returning id", [
+        draft,
+        mediaId,
+      ]);
+    await expect(cover(privateOfEditor)).rejects.toThrow(/own uploads/);
+    expect(await cover(publicOfEditor)).toHaveLength(1);
+  });
+
+  test("storage renames stay inside the member's own folder", async () => {
+    const name = `media/${author}/a.webp`;
+    await t.db.query(
+      "insert into storage.objects (bucket_id, name, owner_id) values ('blog-public', $1, $2)",
+      [name, author],
+    );
+    expect(
+      await asAuthor(
+        "update storage.objects set name = 'branding/logo.webp' where name = $1 returning name",
+        [name],
+      ).catch(() => []),
+    ).toHaveLength(0);
+    expect(
+      await asAuthor("update storage.objects set name = $2 where name = $1 returning name", [
+        name,
+        `media/${author}/b.webp`,
+      ]),
+    ).toHaveLength(1);
+  });
+
+  test("nobody changes their own membership; non-members cannot edit a profile", async () => {
+    expect(
+      await t.as(
+        "authenticated",
+        owner,
+        "update public.members set role = 'author' where user_id = $1 returning user_id",
+        [owner],
+      ),
+    ).toHaveLength(0);
+    const outsider = await t.createUser("outsider@example.com");
+    expect(
+      await t.as(
+        "authenticated",
+        outsider,
+        "update public.profiles set slug = 'owner' where id = $1 returning id",
+        [outsider],
+      ),
+    ).toHaveLength(0);
+  });
+
+  test("a sign-up cannot change a confirmed subscriber", async () => {
+    await t.as("anon", null, "select public.subscribe_newsletter('c@example.com', 'el')");
+    await t.db.query("update public.newsletter_subscribers set status = 'confirmed'");
+    await t.as("anon", null, "select public.subscribe_newsletter('C@example.com', 'en')");
+    const { rows } = await t.db.query<{ language: string; status: string }>(
+      "select language, status from public.newsletter_subscribers",
+    );
+    expect(rows).toEqual([{ language: "el", status: "confirmed" }]);
   });
 });

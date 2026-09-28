@@ -55,6 +55,10 @@ export const uploadMedia = createServerFn({ method: "POST" })
       }
       if (!isAllowedImageType(value.type)) throw new DomainError(mediaMessages.type, "invalid");
       if (value.size > maxImageBytes) throw new DomainError(mediaMessages.size, "invalid");
+      // One copy per allowed width, never more.
+      if (variants.some((variant) => variant.width === width)) {
+        throw new DomainError(mediaMessages.type, "invalid");
+      }
       if (meta.width !== null && width >= meta.width) continue;
       variants.push({ width, file: value });
     }

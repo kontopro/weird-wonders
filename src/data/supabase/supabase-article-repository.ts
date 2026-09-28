@@ -116,7 +116,14 @@ const toDateValue = (row: ArticleRow) =>
   (row.published_at ?? row.scheduled_at ?? row.updated_at ?? row.created_at).slice(0, 10);
 
 export class SupabaseArticleRepository implements ArticleRepository {
-  constructor(private readonly client: SupabaseClient) {}
+  /**
+   * `admin` (secret key) records views: visitors cannot call
+   * `record_article_view` directly, so the app's per-visitor limits hold.
+   */
+  constructor(
+    private readonly client: SupabaseClient,
+    private readonly admin: SupabaseClient | null = null,
+  ) {}
 
   private mediaSource(media: MediaRow | null) {
     if (!media || media.visibility !== "public") return null;
@@ -433,7 +440,11 @@ export class SupabaseArticleRepository implements ArticleRepository {
   }
 
   async recordView(articleId: string) {
-    const { error } = await this.client.rpc("record_article_view", { p_article_id: articleId });
+    if (!this.admin) {
+      console.warn("[views] SUPABASE_SECRET_KEY is not set: views are not counted.");
+      return;
+    }
+    const { error } = await this.admin.rpc("record_article_view", { p_article_id: articleId });
     if (error) throw error;
   }
 

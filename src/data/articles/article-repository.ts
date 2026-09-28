@@ -1,6 +1,7 @@
 import { messages } from "@/config/messages";
 import { mainLanguage } from "@/config/site";
 import { z } from "zod";
+import { DomainError } from "@/domain/errors";
 import type { Page } from "@/domain/listing";
 import type { PublicMediaSource } from "@/domain/media";
 import type { MemberRole } from "@/lib/auth-types";
@@ -153,8 +154,9 @@ export function parseArticleWriteInput(input: unknown): ArticleWriteInput {
 
 export function assertArticleWriteInvariants(input: ArticleWriteInput) {
   if (input.isHighlighted && input.status !== "published") {
-    throw new Error(
+    throw new DomainError(
       `${messages[mainLanguage]?.site.contentLabels.highlight ?? "Highlight"}: μόνο δημοσιευμένο άρθρο.`,
+      "invalid",
     );
   }
 }

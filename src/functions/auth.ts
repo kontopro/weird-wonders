@@ -31,15 +31,26 @@ export const signIn = createServerFn({ method: "POST" })
   .validator((input: SignInInput) => signInSchema.parse(input))
   .handler(async ({ data }): Promise<SignInResult> => {
     // Slows down password guessing: only failed attempts count.
+    // Counted per visitor and per account, so switching IP addresses does not
+    // help guessing one account's password.
     const visitor = visitorKey();
+    const account = "email" in data && data.email ? `account:${data.email.toLowerCase()}` : "";
     if (isLimited("signIn", visitor)) {
       return {
         ok: false,
         message: "Πολλές αποτυχημένες προσπάθειες. Δοκίμασε ξανά σε λίγα λεπτά.",
       };
     }
+    // Many failures for one account slow every attempt on it down instead of
+    // blocking it, so nobody can lock a known member out on purpose.
+    if (account && isLimited("signIn", account)) {
+      await new Promise((resolve) => setTimeout(resolve, 3_000));
+    }
     const result = await getAuthProvider().signIn(data);
-    if (!result.ok) hit("signIn", visitor);
+    if (!result.ok) {
+      hit("signIn", visitor);
+      if (account) hit("signIn", account);
+    }
     return result;
   });
 

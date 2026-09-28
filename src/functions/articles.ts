@@ -170,6 +170,7 @@ export const recordArticleView = createServerFn({ method: "POST" })
   .validator((articleId: string) => idSchema.parse(articleId))
   .handler(async ({ data }) => {
     // Reloads and scripted calls do not inflate counts; excess views are ignored.
-    if (!allow("viewPerArticle", data) || !allow("views")) return;
+    // The visitor-wide limit is checked first so made-up ids cannot fill memory.
+    if (!allow("views") || !allow("viewPerArticle", data)) return;
     await getRepositories().articles.recordView(data);
   });

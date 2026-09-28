@@ -42,6 +42,12 @@ export function hit(name: RateLimitName, visitor: string, scope = "", now = Date
   const counter = counters.get(key);
   if (!counter || counter.resetAt <= now) {
     if (counters.size >= maxCounters) forgetExpired(now);
+    // Still full (a flood of new keys): drop the oldest counters rather than
+    // grow without bound or refuse everyone. Maps keep insertion order.
+    for (const oldest of counters.keys()) {
+      if (counters.size < maxCounters) break;
+      counters.delete(oldest);
+    }
     counters.set(key, { count: 1, resetAt: now + windowMs });
     return true;
   }

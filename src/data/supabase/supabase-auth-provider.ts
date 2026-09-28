@@ -84,8 +84,14 @@ export class SupabaseAuthProvider implements AuthProvider {
     const { data } = await this.client.auth.getClaims();
     if (!data?.claims?.sub) return { ok: false, message: "Απαιτείται σύνδεση." };
     const { error } = await this.client.auth.updateUser({ password });
-    return error
-      ? { ok: false, message: "Ο κωδικός δεν άλλαξε. Δοκίμασε έναν πιο ισχυρό κωδικό." }
-      : { ok: true };
+    if (!error) return { ok: true };
+    // "Secure password change": the last sign-in is too old.
+    if (error.code === "reauthentication_needed" || /reauthenticat/i.test(error.message)) {
+      return {
+        ok: false,
+        message: "Για λόγους ασφαλείας, αποσυνδέσου και συνδέσου ξανά πριν αλλάξεις κωδικό.",
+      };
+    }
+    return { ok: false, message: "Ο κωδικός δεν άλλαξε. Δοκίμασε έναν πιο ισχυρό κωδικό." };
   }
 }

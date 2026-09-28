@@ -93,4 +93,18 @@ test.describe("addresses and feeds", () => {
     expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
     expect(headers["x-frame-options"]).toBe("DENY");
   });
+
+  test("the demo newsletter accepts only example addresses", async ({ page }) => {
+    await page.goto("/en");
+    await page.getByRole("textbox", { name: "Email" }).fill("someone@gmail.com");
+    await page.getByRole("button", { name: "Subscribe" }).click();
+    await expect(page.getByText(/use an @example\.com address/)).toBeVisible();
+  });
+
+  test("e-mail links wait for a click before they are used", async ({ page }) => {
+    await page.goto("/auth/confirm?token_hash=abc&type=invite");
+    await expect(page.getByRole("button", { name: "Συνέχεια" })).toBeVisible();
+    await page.goto("/auth/confirm");
+    await expect(page.getByRole("alert")).toHaveText("Ο σύνδεσμος δεν είναι πλήρης.");
+  });
 });

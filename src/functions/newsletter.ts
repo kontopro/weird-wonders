@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { subscribeInputSchema, type SubscribeInput } from "@/domain/newsletter";
+import { isDemoEmail, subscribeInputSchema, type SubscribeInput } from "@/domain/newsletter";
+import { getDataSource } from "@/lib/data-source";
 import { requireMember } from "@/server/auth";
 import { DomainError } from "@/domain/errors";
 import { allow } from "@/server/rate-limit";
@@ -15,8 +16,12 @@ const listManagers = ["owner", "admin"] as const;
 export const subscribeToNewsletter = createServerFn({ method: "POST" })
   .validator((input: SubscribeInput) => subscribeInputSchema.parse(input))
   .handler(async ({ data }) => {
-    if (!allow("subscribe"))
+    if (!allow("subscribe")) {
       throw new DomainError("Too many sign-ups. Try again later.", "invalid");
+    }
+    if (getDataSource() === "mock" && !isDemoEmail(data.email)) {
+      throw new DomainError("Demo: use an address at example.com.", "invalid");
+    }
     await getRepositories().newsletter.subscribe(data);
     // Double opt-in: the address counts only after the link in this e-mail.
     await sendNewsletterConfirmation(data.email);

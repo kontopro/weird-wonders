@@ -37,6 +37,14 @@ export default tseslint.config(
     },
   },
   {
+    // Route files export `Route` next to their components; the router plugin
+    // splits them for hot reload, so the rule does not apply.
+    files: ["src/routes/**/*.{ts,tsx}"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
+  {
     files: ["src/components/ui/**/*.{ts,tsx}"],
     rules: {
       "react-refresh/only-export-components": "off",

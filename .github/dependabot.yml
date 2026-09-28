@@ -7,6 +7,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # TypeScript 7 (the Go compiler) is not supported by typescript-eslint
+      # yet; remove this once typescript-eslint supports it.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
     groups:
       # One pull request for all minor and patch updates.
       minor-and-patch:

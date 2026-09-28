@@ -111,10 +111,14 @@ security definer
 set search_path = ''
 as $$
 begin
-  -- A slug in use by an article is never also a redirect.
-  delete from public.article_slug_history
-  where language = new.language
-    and slug = new.slug;
+  -- A slug used by a public article is no longer a redirect. Drafts do not
+  -- take over the address of a published article's old URL.
+  if new.status = 'published' or (new.status = 'scheduled' and new.scheduled_at <= now()) then
+    delete from public.article_slug_history
+    where language = new.language
+      and slug = new.slug
+      and article_id <> new.id;
+  end if;
 
   if tg_op = 'UPDATE'
     and (old.slug <> new.slug or old.language <> new.language)
@@ -130,7 +134,7 @@ $$;
 revoke all on function private.track_article_slug() from public;
 
 create trigger articles_track_slug
-after insert or update of slug, language on public.articles
+after insert or update of slug, language, status on public.articles
 for each row execute function private.track_article_slug();
 
 -- Current slug for an old one, only when the article is public now.
@@ -167,8 +171,8 @@ alter table public.article_views enable row level security;
 
 create index article_views_day_idx on public.article_views (day);
 
--- Counts a view of a public article (anyone may call it; the app calls it
--- once per article per browser session).
+-- Counts a view of a public article. Server only (secret key): the app
+-- limits how often each visitor counts, which a direct API call would skip.
 create or replace function public.record_article_view(p_article_id uuid)
 returns void
 language sql
@@ -183,8 +187,8 @@ as $$
   on conflict (article_id, day) do update set views = public.article_views.views + 1;
 $$;
 
-revoke all on function public.record_article_view(uuid) from public;
-grant execute on function public.record_article_view(uuid) to anon, authenticated;
+revoke all on function public.record_article_view(uuid) from public, anon, authenticated;
+grant execute on function public.record_article_view(uuid) to service_role;
 
 -- Views per article over the last p_days (all time when null), for the
 -- popular list and the admin. Runs with the caller's rights (see policies).
@@ -248,11 +252,10 @@ as $$
   on conflict ((lower(email))) do update
   set language = excluded.language,
       consent_at = now(),
-      status = case
-        when public.newsletter_subscribers.status = 'unsubscribed' then 'pending'
-        else public.newsletter_subscribers.status
-      end,
-      unsubscribed_at = null;
+      status = 'pending',
+      unsubscribed_at = null
+  -- Confirmed subscribers stay as they are (nobody can change their language).
+  where public.newsletter_subscribers.status <> 'confirmed';
 $$;
 
 create or replace function public.confirm_newsletter(p_token uuid)
@@ -281,11 +284,14 @@ $$;
 
 -- The server claims the right to send a confirmation e-mail: it gets the
 -- token only for a pending address that has not had one in the last
--- `p_min_interval`, so the form cannot be used to flood someone's inbox.
+-- `p_min_interval`, so the form cannot be used to flood someone's inbox, and
+-- only while fewer than `p_hourly_limit` confirmations went out in the last
+-- hour, so a flood of fake sign-ups cannot exhaust the e-mail quota.
 -- Server only (secret key): visitors never see tokens.
 create or replace function public.claim_newsletter_confirmation(
   p_email text,
-  p_min_interval interval default interval '10 minutes'
+  p_min_interval interval default interval '10 minutes',
+  p_hourly_limit integer default 100
 )
 returns table (token uuid, language text)
 language sql
@@ -300,11 +306,19 @@ as $$
       subscriber.confirmation_sent_at is null
       or subscriber.confirmation_sent_at <= now() - p_min_interval
     )
+    and (
+      select count(*)
+      from public.newsletter_subscribers as recent
+      where recent.confirmation_sent_at > now() - interval '1 hour'
+    ) < p_hourly_limit
   returning subscriber.token, subscriber.language;
 $$;
 
-revoke all on function public.claim_newsletter_confirmation(text, interval) from public;
-grant execute on function public.claim_newsletter_confirmation(text, interval) to service_role;
+-- Supabase grants new functions to anon/authenticated by default: revoke
+-- from them explicitly, not only from public.
+revoke all on function public.claim_newsletter_confirmation(text, interval, integer)
+from public, anon, authenticated;
+grant execute on function public.claim_newsletter_confirmation(text, interval, integer) to service_role;
 
 revoke all on function public.subscribe_newsletter(text, text) from public;
 revoke all on function public.confirm_newsletter(uuid) from public;
@@ -320,7 +334,13 @@ revoke all on table public.article_views from anon, authenticated;
 revoke all on table public.newsletter_subscribers from anon, authenticated;
 
 grant select on table public.article_views to anon, authenticated;
-grant select, delete on table public.newsletter_subscribers to authenticated;
+-- Every column except `token`: owners/admins manage the list but cannot act
+-- on a subscriber's behalf.
+grant select (
+  id, email, language, status, consent_at, confirmed_at, unsubscribed_at,
+  confirmation_sent_at, created_at, updated_at
+) on table public.newsletter_subscribers to authenticated;
+grant delete on table public.newsletter_subscribers to authenticated;
 
 -- View counts are not personal: anyone may read counts of public articles;
 -- members read all (admin statistics).

@@ -50,6 +50,7 @@
 - [x] CI στο GitHub: έλεγχοι και browser tests σε κάθε pull request
 - [x] Admin: λίστα άρθρων με σελίδες και φίλτρα στη διεύθυνση, πραγματικά νούμερα στην επισκόπηση
 - [x] Email: double opt-in επιβεβαίωση newsletter μέσω Resend (ή demo outbox), όριο επανάληψης, επιβεβαίωση με κουμπί
+- [x] Ασφάλεια: security headers, όρια ενεργειών, έλεγχος περιεχομένου uploads, ανεξάρτητος έλεγχος και διορθώσεις (RLS, grants, storage)
 - [ ] Ενεργοποίηση Resend (API key, επαλήθευση domain) και αποστολή τευχών newsletter στη λίστα
 - [ ] Έλεγχος σε hosted project (`docs/hosted-supabase-validation.md`)
 - [x] Article CRUD contract και αντικατάσταση των άμεσων mock article imports

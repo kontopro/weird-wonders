@@ -9,6 +9,13 @@ create role service_role nologin bypassrls;
 create schema extensions;
 create schema auth;
 create schema storage;
+-- Like hosted Supabase: every new table, function and sequence in `public`
+-- is granted to the API roles by default. Migrations must revoke explicitly
+-- (`revoke ... from public` alone does not remove these grants).
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+
 -- Supabase lets the API roles use extension functions (e.g. unaccent).
 grant usage on schema public, auth, storage, extensions to anon, authenticated, service_role;
 

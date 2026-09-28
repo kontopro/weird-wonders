@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { NewsletterRepository } from "@/data/newsletter/newsletter-repository";
 import { toDomainError } from "@/data/supabase/supabase-errors";
 import {
+  confirmationHourlyLimit,
   confirmationIntervalMinutes,
   subscriberStatuses,
   type SubscribeInput,
@@ -44,6 +45,7 @@ export class SupabaseNewsletterRepository implements NewsletterRepository {
     const { data, error } = await this.admin.rpc("claim_newsletter_confirmation", {
       p_email: email,
       p_min_interval: `${confirmationIntervalMinutes} minutes`,
+      p_hourly_limit: confirmationHourlyLimit,
     });
     if (error) throw toDomainError(error, "");
     const [row] = z.array(z.object({ token: z.string(), language: z.string() })).parse(data ?? []);

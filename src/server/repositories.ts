@@ -77,7 +77,7 @@ export function getRepositories(): Repositories {
 
   const client = createSupabaseServerClient();
   return {
-    articles: new SupabaseArticleRepository(client),
+    articles: new SupabaseArticleRepository(client, createSupabaseAdminClient()),
     taxonomy: new SupabaseTaxonomyRepository(client),
     authors: new SupabaseAuthorRepository(client),
     media: new SupabaseMediaRepository(client),
@@ -92,15 +92,16 @@ export function getRepositories(): Repositories {
 }
 
 /**
- * Picks how e-mails leave the app: Resend when `RESEND_API_KEY` and
- * `EMAIL_FROM` are set (server-only variables), the in-memory demo outbox in
- * mock mode, otherwise none (e-mails are skipped and logged).
+ * Picks how e-mails leave the app: the in-memory demo outbox in mock mode;
+ * otherwise Resend when `RESEND_API_KEY` and `EMAIL_FROM` are set (server-only
+ * variables), or none (e-mails are skipped and logged).
  */
 export function getEmailSender(): EmailSender | null {
+  // Demo mode never sends real e-mails, even when a provider is configured.
+  if (getDataSource() === "mock") return new OutboxEmailSender(getMockStore());
   const apiKey = process.env["RESEND_API_KEY"];
   const from = process.env["EMAIL_FROM"];
   if (apiKey && from) return new ResendEmailSender(apiKey, from);
-  if (getDataSource() === "mock") return new OutboxEmailSender(getMockStore());
   return null;
 }
 

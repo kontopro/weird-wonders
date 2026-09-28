@@ -97,6 +97,7 @@ export const en: SiteMessages = {
     subscribe: "Subscribe",
     subscribed: "Almost there! Open the email we just sent you to confirm your subscription.",
     invalidEmail: "Please enter a valid email address.",
+    demoEmailOnly: "Demo: use an @example.com address (real e-mail addresses are not stored).",
     subscribeFailed: "Sign-up didn't go through. Please try again shortly.",
     consent: "By subscribing you agree to receive the newsletter. Unsubscribe any time.",
   },

@@ -157,7 +157,8 @@ export class SupabaseMediaRepository implements MediaRepository {
         .upload(item.path, item.bytes, { contentType: item.mimeType, upsert: false });
       if (uploadError) {
         await cleanUp();
-        throw new DomainError(uploadError.message, "invalid");
+        console.error("[media] Storage upload failed:", uploadError);
+        throw new DomainError("Το ανέβασμα απέτυχε. Δοκίμασε ξανά.", "invalid");
       }
       uploaded.push(item.path);
     }

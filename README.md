@@ -19,6 +19,18 @@ bun run dev
 
 To block merging while checks fail: GitHub → _Settings → Branches → Add rule_ for `main` → _Require status checks to pass_ and pick both CI jobs.
 
+## Security
+
+- **Access rules live in the database** (RLS on every table, storage policies, `security definer` functions with a fixed `search_path`); the app checks roles again in every server function. `supabase/tests` checks them per role — including that visitors can call only the intended functions, with Supabase's default grants reproduced in the test database.
+- **Headers:** production responses send a Content-Security-Policy, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` and HSTS (`src/server/security-headers.ts`). Scripts may run inline (the framework needs it); everything else is limited to this site, Supabase Storage and the two video players.
+- **Limits** (`src/server/rate-limit.ts`): failed sign-ins per visitor and per account, newsletter sign-ups and links, and view counting (one view per article per visitor every 30 minutes). They count per server instance; for a busy site back them with a shared store (e.g. Upstash). The database caps confirmation e-mails per address and per hour.
+- **Server-only secret key:** `SUPABASE_SECRET_KEY` is needed in production for invitations, newsletter confirmation e-mails and view counts (visitors cannot call those database functions directly).
+- **Uploads** are typed by their contents; SVG is refused.
+- **Errors:** unexpected server errors reach the browser as a generic message; details stay in the server log.
+- **Demo mode** never sends e-mails and accepts only `@example.com` newsletter addresses, because its admin is open to everyone.
+- **In the Supabase dashboard** (hosted projects do not read `config.toml`): turn off sign-ups, turn on e-mail confirmations and _Secure password change_ (Authentication → Providers → Email).
+- **Known limits:** inline scripts are allowed by the CSP (nonces would need framework support); rate limits are per instance; the confirmation e-mail is sent during the sign-up request.
+
 ## Browser tests
 
 `bun run test:e2e` builds the site with demo data and the demo admin (`e2e/serve.ts`, never Supabase), starts it on port 4173 and drives a real Chromium through the public site and the admin: publishing an article with an uploaded cover, its responsive copies, feeds, a translation draft, the article list filters, role limits and team invitations. Any browser console error fails a test. It needs Node.js for the built server.

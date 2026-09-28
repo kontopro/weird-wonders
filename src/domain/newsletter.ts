@@ -27,8 +27,16 @@ export const subscribeInputSchema = z
   .strict();
 export type SubscribeInput = z.infer<typeof subscribeInputSchema>;
 
+/**
+ * Demo mode accepts only example addresses, so a public demo never collects
+ * real e-mail addresses (its admin is open to everyone).
+ */
+export const isDemoEmail = (email: string) => /@example\.(com|org|net)$/i.test(email.trim());
+
 /** At most one confirmation e-mail per address in this many minutes. */
 export const confirmationIntervalMinutes = 10;
+/** At most this many confirmation e-mails in any hour (protects the e-mail quota). */
+export const confirmationHourlyLimit = 100;
 
 /** What the server needs to e-mail a confirmation link. Never sent to browsers. */
 export type ConfirmationTicket = { token: string; language: string };

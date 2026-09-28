@@ -22,7 +22,8 @@ create table public.articles (
   excerpt text check (excerpt is null or char_length(excerpt) <= 500),
   content_version integer not null default 1 check (content_version > 0),
   content_blocks jsonb not null default '{"version":1,"blocks":[]}'::jsonb,
-  cover_image_id uuid references public.media_assets(id) on delete set null,
+  -- Restrict: an image used by an article cannot be deleted (the app says so first).
+  cover_image_id uuid references public.media_assets(id) on delete restrict,
   cover_image_alt text check (cover_image_alt is null or char_length(cover_image_alt) <= 500),
   status text not null default 'draft' check (status in ('draft', 'in_review', 'scheduled', 'published', 'archived')),
   is_featured boolean not null default false,
@@ -34,7 +35,7 @@ create table public.articles (
   public_at timestamptz generated always as (coalesce(published_at, scheduled_at)) stored,
   seo_title text check (seo_title is null or char_length(seo_title) <= 60),
   seo_description text check (seo_description is null or char_length(seo_description) <= 160),
-  social_image_id uuid references public.media_assets(id) on delete set null,
+  social_image_id uuid references public.media_assets(id) on delete restrict,
   reading_time_minutes integer check (reading_time_minutes is null or reading_time_minutes > 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -85,6 +86,24 @@ begin
     raise exception 'Article author must be an active member';
   end if;
 
+  -- Authors may only use their own uploads or public images as cover and
+  -- social image (editors may use any). Direct database writes (no signed-in
+  -- user, e.g. migrations and seeds) are not checked.
+  if (select auth.uid()) is not null
+    and not (select private.has_role(array['owner', 'admin', 'editor']))
+    and exists (
+      select 1
+      from public.media_assets m
+      where m.id in (new.cover_image_id, new.social_image_id)
+        and (tg_op = 'INSERT'
+          or m.id is distinct from old.cover_image_id and m.id = new.cover_image_id
+          or m.id is distinct from old.social_image_id and m.id = new.social_image_id)
+        and m.visibility <> 'public'
+        and m.uploaded_by is distinct from (select auth.uid())
+    ) then
+    raise exception 'Only public images or your own uploads can be used';
+  end if;
+
   if tg_op = 'INSERT' then
     new.published_at = case when new.status = 'published' then now() else null end;
   elsif old.published_at is not null then
@@ -118,7 +137,8 @@ create trigger articles_prepare_write
 before insert or update on public.articles
 for each row execute function private.prepare_article_write();
 
--- Editors edit everything; authors only their own drafts and articles in review.
+-- Editors edit everything; active authors only their own drafts and articles
+-- in review (suspended members edit nothing).
 create or replace function private.can_edit_article(target_article_id uuid)
 returns boolean
 language sql
@@ -128,12 +148,15 @@ set search_path = ''
 as $$
   select
     (select private.has_role(array['owner', 'admin', 'editor']))
-    or exists (
-      select 1
-      from public.articles
-      where id = target_article_id
-        and author_id = (select auth.uid())
-        and status in ('draft', 'in_review')
+    or (
+      (select private.is_active_member())
+      and exists (
+        select 1
+        from public.articles
+        where id = target_article_id
+          and author_id = (select auth.uid())
+          and status in ('draft', 'in_review')
+      )
     );
 $$;
 

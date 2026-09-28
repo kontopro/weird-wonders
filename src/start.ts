@@ -1,5 +1,7 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
+import { isNotFound, isRedirect } from "@tanstack/react-router";
+import { DomainError } from "./domain/errors";
 import { renderErrorPage } from "./lib/error-page";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
@@ -24,6 +26,29 @@ const csrfMiddleware = createCsrfMiddleware({
   filter: (ctx) => ctx.handlerType === "serverFn",
 });
 
+/**
+ * Server functions return expected errors (validation, permissions, "not
+ * found") as they are; anything unexpected (a database or provider error)
+ * is logged on the server and reaches the browser as a generic message, so
+ * table names, SQL and provider details never leak.
+ */
+const hideUnexpectedErrors = createMiddleware({ type: "function" }).server(async ({ next }) => {
+  try {
+    return await next();
+  } catch (error) {
+    const expected =
+      error instanceof DomainError ||
+      isRedirect(error) ||
+      isNotFound(error) ||
+      // By name: AuthorizationError lives in server-only code.
+      (error instanceof Error && ["AuthorizationError", "ZodError"].includes(error.name));
+    if (expected) throw error;
+    console.error(error);
+    throw new Error("Κάτι πήγε στραβά. Δοκίμασε ξανά σε λίγο.");
+  }
+});
+
 export const startInstance = createStart(() => ({
   requestMiddleware: [errorMiddleware, csrfMiddleware],
+  functionMiddleware: [hideUnexpectedErrors],
 }));

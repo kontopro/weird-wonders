@@ -26,6 +26,8 @@ jobs:
         with:
           bun-version: 1.3.13
       - run: bun install --frozen-lockfile
+      # Fails on dependencies with known high or critical vulnerabilities.
+      - run: bun audit --audit-level=high
       - run: bun run format:check
       - run: bun run lint
       - run: bun run typecheck

@@ -10,6 +10,8 @@ import { categoryClass } from "@/lib/category-class";
 import { Button } from "@/components/ui/button";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { siteConfig } from "@/config/site";
+import { isDemoEmail } from "@/domain/newsletter";
+import { getDataSource } from "@/lib/data-source";
 import { localizedPath, messagesFor, useT } from "@/i18n";
 import { langOf, sitewideAlternates } from "@/i18n/head";
 import { socialMeta, websiteJsonLd } from "@/i18n/seo";
@@ -80,6 +82,10 @@ function Index() {
     event.preventDefault();
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       setMessage({ ok: false, text: t.home.invalidEmail });
+      return;
+    }
+    if (getDataSource() === "mock" && !isDemoEmail(email)) {
+      setMessage({ ok: false, text: t.home.demoEmailOnly });
       return;
     }
     setSubscribing(true);

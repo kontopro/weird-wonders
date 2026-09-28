@@ -16,6 +16,10 @@ updates:
       # not used yet): upgrade together with its first real use.
       - dependency-name: recharts
         update-types: [version-update:semver-major]
+      # Node.js types follow the Node.js version the site runs on (22, as in
+      # CI); raise both together.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
     groups:
       # One pull request for all minor and patch updates.
       minor-and-patch:

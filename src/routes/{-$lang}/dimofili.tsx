@@ -42,7 +42,7 @@ function PopularPage() {
           <li key={article.slug}>
             <span>{String(index + 1).padStart(2, "0")}</span>
             <img
-              src={article.image}
+              src={article.image || undefined}
               srcSet={article.imageSrcSet || undefined}
               sizes={article.imageSrcSet ? imageSizes.thumb : undefined}
               alt=""

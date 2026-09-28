@@ -20,3 +20,23 @@ set
   name = excluded.name,
   icon_key = excluded.icon_key,
   sort_order = excluded.sort_order;
+
+-- English names and addresses of the categories (the site publishes in el + en).
+insert into public.category_translations (category_id, language, name, slug)
+select c.id, 'en', t.name, t.slug
+from (
+  values
+    ('epistimi', 'Science', 'science'),
+    ('istoria', 'History', 'history'),
+    ('technologia', 'Technology', 'technology'),
+    ('fysi', 'Nature', 'nature'),
+    ('diastima', 'Space', 'space'),
+    ('politismos', 'Culture', 'culture'),
+    ('anthropos', 'Humans', 'humans'),
+    ('kathimerinotita', 'Everyday life', 'everyday-life')
+) as t (category_slug, name, slug)
+join public.categories c on c.slug = t.category_slug
+on conflict (category_id, language) do update
+set
+  name = excluded.name,
+  slug = excluded.slug;

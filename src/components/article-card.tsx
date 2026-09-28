@@ -26,7 +26,7 @@ export function ArticleCard({
         className="story-image-wrap"
       >
         <img
-          src={article.image}
+          src={article.image || undefined}
           srcSet={article.imageSrcSet || undefined}
           sizes={article.imageSrcSet ? imageSizes.card : undefined}
           alt=""

@@ -104,7 +104,7 @@ function Index() {
       <section className="hero section-shell">
         <div className="hero-lead">
           <img
-            src={featured.image}
+            src={featured.image || undefined}
             srcSet={featured.imageSrcSet || undefined}
             sizes={featured.imageSrcSet ? imageSizes.hero : undefined}
             alt=""
@@ -146,7 +146,7 @@ function Index() {
               className="trending-card"
             >
               <img
-                src={article.image}
+                src={article.image || undefined}
                 srcSet={article.imageSrcSet || undefined}
                 sizes={article.imageSrcSet ? imageSizes.thumb : undefined}
                 alt=""

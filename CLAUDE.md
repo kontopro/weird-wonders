@@ -21,15 +21,14 @@ A **reusable blog/site starter**: each new site gets its own copy of this reposi
 - security: RLS on everything, CSP and other headers, rate limits, upload sniffing. Two independent reviews were fixed.
 - CI (GitHub Actions) and Dependabot
 
-**The hosted Supabase project exists** (free plan). On 2026-09-28 the eight migrations and the seed were pushed and the baseline checks passed (RLS on every table, visitor functions, buckets, categories, no seeded users). The app itself has still only run in mock mode: the Supabase adapters (`src/data/supabase`) have **never run against a real Supabase** yet.
+**The hosted Supabase project exists** (free plan). On 2026-09-28 the eight migrations and the seed were pushed and the baseline checks passed (RLS on every table, visitor functions, buckets, categories, no seeded users). Sign-ups are off and the first owner is bootstrapped. The app now runs against it locally (`bun run dev` with `.env.local`), signed in as the owner. **Verified on Supabase:** sign-in and the admin guard; every admin page; writing, saving, publishing and deleting articles (blocks, sources, tags, category); cover upload to Storage with the 480/960/1440 copies; an English version with hreflang; category and tag translations; slug change with a 301; search, category, tag, author, popular pages, RSS and sitemap; view counts; the newsletter sign-up, confirmation and erasure. Two bugs were fixed: an ambiguous `members → profiles` embed (PGRST201) and `<img src="">` on articles without a cover. The site holds one real article (the trees fact, el + en).
 
 **Next steps, in order:**
 
 1. **Hosted Supabase project.** The owner skipped a local (Docker) Supabase: the site is not in production yet, so the adapters are exercised directly on a hosted project. Then:
    - ~~create and link the project, fill `.env.local`, push the migrations and the seed~~ (done)
-   - dashboard: sign-ups were still **on** after the push; the owner turns them off (plus _Secure password change_ on)
-   - bootstrap the first owner (README → "Supabase: first owner")
-   - run the app with `VITE_DATA_SOURCE=supabase`, follow `docs/hosted-supabase-validation.md` step by step, and fix what breaks in the adapters
+   - ~~sign-ups off, first owner, run the app on Supabase~~ (done)
+   - still to check from `docs/hosted-supabase-validation.md`: other roles (invite an editor and an author; needs SMTP, see below) and the RLS/Storage matrices with them; deleting an image and its copies; an image in use cannot be deleted
    - set the Vercel env vars (below)
 
    The free plan's built-in e-mail sends only a few messages an hour, to the Supabase organisation's own members, so invites to others need custom SMTP (Resend offers SMTP; step 2).
@@ -76,7 +75,7 @@ bun run build          # production build (.output/), run it with: node .output/
 | `src/components/`                | UI. `components/ui/` is vendored shadcn/ui: keep it as upstream ships it (some lint rules are off there).                                                                                                                                                                     |
 | `src/emails/`                    | E-mail templates (HTML + text).                                                                                                                                                                                                                                               |
 | `supabase/migrations/`           | Eight baseline SQL files (foundation, people, media, taxonomy, articles, access policies, storage, reader features).                                                                                                                                                          |
-| `supabase/seed.sql`              | Categories.                                                                                                                                                                                                                                                                   |
+| `supabase/seed.sql`              | Categories and their English names.                                                                                                                                                                                                                                           |
 | `supabase/tests/`                | PGlite schema tests plus `supabase-shim.sql`, which imitates Supabase roles, `auth.uid()`, storage and **Supabase's default grants**.                                                                                                                                         |
 | `e2e/`                           | Playwright tests plus `serve.ts`, which always builds in mock mode.                                                                                                                                                                                                           |
 | `docs/`                          | `supabase-mvp-design.md` (schema design), `hosted-supabase-validation.md` (go-live checklist).                                                                                                                                                                                |

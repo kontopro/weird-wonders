@@ -330,20 +330,31 @@ describe("languages and translations", () => {
     ).rejects.toThrow(/unique/);
   });
 
+  test("the seed names every category in English", async () => {
+    const { rows } = await t.db.query<{ missing: number }>(
+      `select count(*)::int as missing from public.categories c
+        where not exists (
+          select 1 from public.category_translations t
+          where t.category_id = c.id and t.language = 'en'
+        )`,
+    );
+    expect(rows[0]!.missing).toBe(0);
+  });
+
   test("category translations are public to read and editor-only to write", async () => {
     await t.as(
       "authenticated",
       editor,
       `insert into public.category_translations (category_id, language, name, slug)
-       values ($1, 'en', 'Science', 'science')`,
+       values ($1, 'fr', 'Sciences', 'sciences')`,
       [categoryId],
     );
     const rows = await t.as<{ name: string }>(
       "anon",
       null,
-      "select name from public.category_translations where language = 'en'",
+      "select name from public.category_translations where language = 'fr'",
     );
-    expect(rows.map((row) => row.name)).toEqual(["Science"]);
+    expect(rows.map((row) => row.name)).toEqual(["Sciences"]);
     const tag = await t.db.query<{ id: string }>(
       "insert into public.tags (slug, name) values ('zoa', 'Ζώα') returning id",
     );

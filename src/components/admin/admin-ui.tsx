@@ -194,7 +194,7 @@ export function ArticlesTable({
             <tr key={article.id}>
               <td>
                 <div className="article-cell">
-                  <img src={article.image} alt="" />
+                  <img src={article.image || undefined} alt="" />
                   <div>
                     <strong>
                       <Link
@@ -227,7 +227,7 @@ export function ArticlesTable({
       <div className="articles-mobile-list">
         {articles.map((article) => (
           <article className="admin-article-card" key={article.id}>
-            <img src={article.image} alt="" />
+            <img src={article.image || undefined} alt="" />
             <div className="admin-article-card-head">
               <ArticleStatusBadge status={article.status} />
               <ArticleActions article={article} onDelete={onDelete} onDuplicate={onDuplicate} />

@@ -25,7 +25,9 @@ const memberRowSchema = z.object({
 });
 type MemberRow = z.infer<typeof memberRowSchema>;
 
-const MEMBER_COLUMNS = "user_id, role, status, profile:profiles(display_name, slug)";
+// The FK is named because `members` has two foreign keys to `profiles` (member and inviter).
+const MEMBER_COLUMNS =
+  "user_id, role, status, profile:profiles!members_user_id_fkey(display_name, slug)";
 const roleOrder = (role: TeamMember["role"]) => memberRoles.indexOf(role);
 
 /**

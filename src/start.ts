@@ -44,6 +44,8 @@ const hideUnexpectedErrors = createMiddleware({ type: "function" }).server(async
       (error instanceof Error && ["AuthorizationError", "ZodError"].includes(error.name));
     if (expected) throw error;
     console.error(error);
+    // No `cause`: it would carry the original error to the browser.
+    // eslint-disable-next-line preserve-caught-error
     throw new Error("Κάτι πήγε στραβά. Δοκίμασε ξανά σε λίγο.");
   }
 });

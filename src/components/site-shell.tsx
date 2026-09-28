@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Menu, Moon, Search, Shuffle, Sun, X, ArrowUp } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { articleApi } from "@/data/articles";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
@@ -33,26 +33,34 @@ function LanguageLinks() {
   );
 }
 
+const isDarkTheme = () => document.documentElement.classList.contains("dark");
+
+/** Follows the `dark` class on <html>, however it changes. */
+function subscribeTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => observer.disconnect();
+}
+
 export function SiteShell({ children }: { children: ReactNode }) {
   const t = useT();
   const { lang, lp } = useLocalized();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const [menu, setMenu] = useState(false);
-  const [dark, setDark] = useState(false);
+  // The menu belongs to the page it was opened on: navigating closes it.
+  const [menuPath, setMenuPath] = useState<string | null>(null);
+  const menu = menuPath === pathname;
+  const setMenu = (open: boolean) => setMenuPath(open ? pathname : null);
+  // The theme is applied before the page paints (see `themeScript` in __root.tsx).
+  const dark = useSyncExternalStore(subscribeTheme, isDarkTheme, () => false);
   const [showTop, setShowTop] = useState(false);
   useEffect(() => {
-    // The theme is applied before the page paints (see `themeScript` in __root.tsx).
-    setDark(document.documentElement.classList.contains("dark"));
     const onScroll = () => setShowTop(window.scrollY > 700);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  // Close the mobile menu after navigation.
-  useEffect(() => setMenu(false), [pathname]);
   const toggleTheme = () => {
     const next = !dark;
-    setDark(next);
     try {
       localStorage.setItem("theme", next ? "dark" : "light");
     } catch {

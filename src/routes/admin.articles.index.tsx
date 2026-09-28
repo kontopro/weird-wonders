@@ -65,7 +65,12 @@ function ArticlesPage() {
   const router = useRouter();
   const [query, setQuery] = useState(search.q ?? "");
   const [target, setTarget] = useState<AdminArticle>();
-  useEffect(() => setQuery(search.q ?? ""), [search.q]);
+  // When ?q= changes (back button, "clear filters"), show it in the box.
+  const [shownQ, setShownQ] = useState(search.q);
+  if (shownQ !== search.q) {
+    setShownQ(search.q);
+    setQuery(search.q ?? "");
+  }
   // Any filter change starts again from the first page.
   const setFilter = (next: Partial<z.infer<typeof searchSchema>>) =>
     navigate({

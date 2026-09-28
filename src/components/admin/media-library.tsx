@@ -35,9 +35,20 @@ export function MediaLibraryProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // First load; state changes only after the request answers.
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let active = true;
+    mediaApi
+      .list()
+      .then((list) => active && setAssets(list))
+      .catch((error: unknown) =>
+        toast.error(errorMessage(error, "Η βιβλιοθήκη εικόνων δεν φόρτωσε.")),
+      )
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const value = useMemo<MediaLibraryContextValue>(
     () => ({

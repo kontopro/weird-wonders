@@ -45,9 +45,12 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/components/ui/**/*.{ts,tsx}"],
+    // Vendored shadcn/ui components: kept as upstream ships them.
+    files: ["src/components/ui/**/*.{ts,tsx}", "src/hooks/use-mobile.tsx"],
     rules: {
       "react-refresh/only-export-components": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
     },
   },
   eslintPluginPrettier,

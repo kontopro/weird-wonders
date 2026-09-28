@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { mainLanguage } from "@/config/site";
 import { popularWindowDays } from "@/domain/listing";
 import { Button } from "@/components/ui/button";
@@ -49,8 +49,10 @@ export const Route = createFileRoute("/admin/")({
   }),
 });
 
+const noSubscription = () => () => {};
+
 /** Greeting by the time of day. */
-function greeting(hour = new Date().getHours()) {
+function greeting(hour = new Date().getHours()): string {
   if (hour >= 5 && hour < 12) return "Καλημέρα";
   if (hour >= 12 && hour < 18) return "Καλό απόγευμα";
   return "Καλησπέρα";
@@ -63,8 +65,7 @@ function AdminDashboard() {
   const [target, setTarget] = useState<AdminArticle>();
   const firstName = user.displayName.split(" ")[0] || user.displayName;
   // Chosen in the browser: the server's clock may be in another time zone.
-  const [hello, setHello] = useState("Γεια σου");
-  useEffect(() => setHello(greeting()), []);
+  const hello = useSyncExternalStore(noSubscription, greeting, () => "Γεια σου");
   const duplicate = async (article: AdminArticle) => {
     try {
       await articleApi.duplicate(article.id);

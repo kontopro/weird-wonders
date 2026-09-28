@@ -24,7 +24,7 @@ export async function createTestDatabase(options: { seed?: boolean } = {}) {
     try {
       await db.exec(await read(`migrations/${file}`));
     } catch (error) {
-      throw new Error(`Migration ${file} failed: ${(error as Error).message}`);
+      throw new Error(`Migration ${file} failed: ${(error as Error).message}`, { cause: error });
     }
   }
   if (options.seed !== false) await db.exec(await read("seed.sql"));

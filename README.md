@@ -4,6 +4,8 @@ A reusable editorial blog built with React, TanStack Start, Tailwind CSS and an 
 
 ## Development
 
+Working on the code (people or AI agents): start with [`CLAUDE.md`](CLAUDE.md), the handover brief — status, next steps, architecture and the rules the code keeps.
+
 Install [Bun](https://bun.sh), then run:
 
 ```sh

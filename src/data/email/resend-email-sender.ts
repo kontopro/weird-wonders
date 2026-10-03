@@ -4,7 +4,8 @@ import type { EmailMessage } from "@/domain/email";
 /**
  * Sends through Resend's HTTP API (https://resend.com/docs/api-reference).
  * Needs `RESEND_API_KEY` and a verified sender domain for `EMAIL_FROM`
- * (e.g. `FACTάκι <newsletter@factaki.gr>`). Server-only.
+ * (e.g. `FACTάκι <newsletter@factaki.gr>`). Optional `replyTo` addresses
+ * receive the readers' answers. Server-only.
  */
 export class ResendEmailSender implements EmailSender {
   readonly name = "Resend";
@@ -12,6 +13,7 @@ export class ResendEmailSender implements EmailSender {
   constructor(
     private readonly apiKey: string,
     private readonly from: string,
+    private readonly replyTo: readonly string[] = [],
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
@@ -28,6 +30,7 @@ export class ResendEmailSender implements EmailSender {
         subject: message.subject,
         text: message.text,
         html: message.html,
+        ...(this.replyTo.length > 0 ? { reply_to: this.replyTo } : {}),
         ...(message.headers ? { headers: message.headers } : {}),
       }),
     });

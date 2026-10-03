@@ -13,7 +13,7 @@ describe("ResendEmailSender", () => {
       calls.push({ url, init });
       return new Response(JSON.stringify({ id: "1" }), { status: 200 });
     }) as unknown as typeof fetch;
-    await new ResendEmailSender("re_test", "Blog <news@example.com>", fakeFetch).send({
+    await new ResendEmailSender("re_test", "Blog <news@example.com>", [], fakeFetch).send({
       ...message,
       headers: { "List-Unsubscribe": "<https://example.com/u>" },
     });
@@ -29,12 +29,26 @@ describe("ResendEmailSender", () => {
     });
   });
 
+  test("sends answers to the reply-to addresses when set", async () => {
+    let body: unknown;
+    const fakeFetch = (async (_url: string, init: RequestInit) => {
+      body = JSON.parse(String(init.body));
+      return new Response(JSON.stringify({ id: "1" }), { status: 200 });
+    }) as unknown as typeof fetch;
+    await new ResendEmailSender("re_test", "x@example.com", ["hi@example.com"], fakeFetch).send(
+      message,
+    );
+    expect(body).toMatchObject({ reply_to: ["hi@example.com"] });
+  });
+
   test("fails loudly on an error answer, without echoing the key", async () => {
     const fakeFetch = (async () =>
       new Response('{"message":"domain not verified"}', {
         status: 403,
       })) as unknown as typeof fetch;
-    const sending = new ResendEmailSender("re_secret", "x@example.com", fakeFetch).send(message);
+    const sending = new ResendEmailSender("re_secret", "x@example.com", [], fakeFetch).send(
+      message,
+    );
     await expect(sending).rejects.toThrow("Resend: 403");
     await expect(sending).rejects.not.toThrow("re_secret");
   });

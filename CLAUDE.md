@@ -36,7 +36,7 @@ A **reusable blog/site starter**: each new site gets its own copy of this reposi
 
    The Playwright suite targets mock mode; a Supabase variant should run against a separate test project, never the site's own.
 
-2. **Resend.** Verify the domain, then set `RESEND_API_KEY` and `EMAIL_FROM`.
+2. **Resend.** Verify the domain, then set `RESEND_API_KEY` and `EMAIL_FROM` (and `EMAIL_REPLY_TO`). The site is a gift: accounts are in the developer's name until the hand-over in `docs/handover.md`; keep e-mail addresses in settings, never in code.
 3. **Later / optional:**
    - sending newsletter issues to the list (not built)
    - a shared store for rate limits (Upstash)
@@ -87,7 +87,7 @@ bun run build          # production build (.output/), run it with: node .output/
 - **Database independence.** Pages and components call only `src/data/*/index.ts`, never Supabase. A new feature means: an interface method, then the mock adapter **and** the Supabase adapter, then a server function. Business rules go in `src/domain` and are mirrored in SQL/RLS; the mock mirrors the database rules.
 - **Migrations.** The baseline is applied to the hosted project, but the site is not in production, so until the owner declares the schema stable it is still **edited in place**: fix the baseline files and reset the hosted database (`bunx supabase db reset --linked`, which deletes its data), **asking the owner before every reset**. **Once the owner declares it stable, never edit applied migrations; add new ones.** Every table has RLS enabled in the migration that creates it. `security definer` functions use `set search_path = ''`.
 - **Grants.** Supabase grants every new function and table in `public` to `anon`/`authenticated` by default. Always `revoke ... from public, anon, authenticated` explicitly, then grant what is intended. A schema test lists the only functions visitors may call; update it deliberately.
-- **Server-only secrets.** `SUPABASE_SECRET_KEY`, `RESEND_API_KEY` and `EMAIL_FROM` are never prefixed `VITE_` and never logged. The service-role client (`src/server/supabase-admin.ts`) is used only after authorization, and only for:
+- **Server-only secrets.** `SUPABASE_SECRET_KEY`, `RESEND_API_KEY`, `EMAIL_FROM` and `EMAIL_REPLY_TO` are never prefixed `VITE_` and never logged. The service-role client (`src/server/supabase-admin.ts`) is used only after authorization, and only for:
   - Auth admin (invites)
   - `claim_newsletter_confirmation`
   - `record_article_view`
@@ -109,7 +109,7 @@ See `.env.example`.
 | `VITE_SITE_URL`                                      | build       | Public origin for canonical, hreflang, sitemap, RSS, OG. Defaults to `https://factaki.gr`. |
 | `VITE_ENABLE_DEMO_ADMIN`                             | build       | Open the demo admin on a deployed mock site                                                |
 | `SUPABASE_SECRET_KEY`                                | server only | Invites, confirmation e-mails, view counts. Needed in production.                          |
-| `RESEND_API_KEY`, `EMAIL_FROM`                       | server only | Sending e-mail                                                                             |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO`     | server only | Sending e-mail; reply-to is optional                                                       |
 
 ## Gotchas
 

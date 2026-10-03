@@ -94,14 +94,20 @@ export function getRepositories(): Repositories {
 /**
  * Picks how e-mails leave the app: the in-memory demo outbox in mock mode;
  * otherwise Resend when `RESEND_API_KEY` and `EMAIL_FROM` are set (server-only
- * variables), or none (e-mails are skipped and logged).
+ * variables), or none (e-mails are skipped and logged). `EMAIL_REPLY_TO`
+ * (optional, comma-separated) is where readers' answers go, so addresses can
+ * change without a code change.
  */
 export function getEmailSender(): EmailSender | null {
   // Demo mode never sends real e-mails, even when a provider is configured.
   if (getDataSource() === "mock") return new OutboxEmailSender(getMockStore());
   const apiKey = process.env["RESEND_API_KEY"];
   const from = process.env["EMAIL_FROM"];
-  if (apiKey && from) return new ResendEmailSender(apiKey, from);
+  const replyTo = (process.env["EMAIL_REPLY_TO"] ?? "")
+    .split(",")
+    .map((address) => address.trim())
+    .filter(Boolean);
+  if (apiKey && from) return new ResendEmailSender(apiKey, from, replyTo);
   return null;
 }
 
